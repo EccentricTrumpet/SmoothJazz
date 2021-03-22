@@ -13,17 +13,16 @@ import logging
 import operator
 import os
 import ssl
-import streaming_camera
 import sys
 import time
 
 
 ############################ CONSTANTS ###############################
-PORT = 443
+PORT = 8080
 # CA_CERT_FILE = "/etc/ssl/certs/chained.pem"
 # PRIVATE_KEY_FILE = "/etc/ssl/private/domain.key"
-CA_CERT_FILE = "/etc/letsencrypt/live/tabletenniser.ddns.net/fullchain.pem"
-PRIVATE_KEY_FILE = "/etc/letsencrypt/live/tabletenniser.ddns.net/privkey.pem"
+# CA_CERT_FILE = "/etc/letsencrypt/live/tabletenniser.ddns.net/fullchain.pem"
+# PRIVATE_KEY_FILE = "/etc/letsencrypt/live/tabletenniser.ddns.net/privkey.pem"
 CUR_FOLDER = os.getcwd()
 
 ######################## GLOBAL SETTINGS #############################
@@ -116,6 +115,10 @@ def display():
 def error_page(error):
   return {}
 
+@route('/')
+def display():
+  return "hello world"
+
 
 class SSLCherryPyServer(ServerAdapter):
   def run(self, handler):
@@ -138,5 +141,5 @@ if __name__ == "__main__":
           format='%(asctime)s %(levelname)s %(module)s.py:%(lineno)s: %(message)s',
           datefmt='%m-%d %H:%M:%S')
   app = SessionMiddleware(default_app(), session_opts)
-  run(app=app, host="0.0.0.0", port=443, server=SSLCherryPyServer, debug=True)
-  # run(app=app, host='0.0.0.0', port=PORT, debug=True)
+  # run(app=app, host="0.0.0.0", port=443, server=SSLCherryPyServer, debug=True)
+  run(app=app, host='localhost', port=PORT, debug=True)
