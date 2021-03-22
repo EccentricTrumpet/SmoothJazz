@@ -13,7 +13,6 @@ import logging
 import operator
 import os
 import ssl
-import streaming_camera
 import sys
 import time
 
