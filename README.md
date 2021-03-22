@@ -1,5 +1,3 @@
-- test commit
-
 Run backend/main.py:
 pip3 install beaker  
 pip3 install bottle  
