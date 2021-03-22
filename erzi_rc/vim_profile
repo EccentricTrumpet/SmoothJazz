@@ -1,0 +1,178 @@
+"======================"
+" Vundle configuration "
+"======================"
+
+filetype off
+set rtp+=~/.vim/bundle/Vundle.vim
+if isdirectory(expand('$HOME/.vim/bundle/Vundle.vim'))
+    call vundle#begin()
+    " Required
+    Plugin 'gmarik/vundle'
+    " Install plugins that come from github.  Once Vundle is installed,
+    " these can be installed with :PluginInstall
+    Plugin 'scrooloose/nerdcommenter'
+    Plugin 'Valloric/MatchTagAlways'
+    Plugin 'vim-scripts/netrw.vim'
+    Plugin 'tpope/vim-sensible'
+    Plugin 'SirVer/ultisnips'
+    Plugin 'honza/vim-snippets'
+    Plugin 'scrooloose/nerdtree'
+
+    " NERDTree config
+    map <C-n> :NERDTreeToggle<CR>
+    call vundle#end()
+else
+  echomsg 'Vundle is not installed. You can install Vundle from'
+         \'https://github.com/VundleVim/Vundle.vim'
+endif
+
+"===================="
+" Some basic options "
+"===================="
+"
+" Explicitly set the Leader to ;.
+"
+let mapleader='\'
+
+set spelllang=en_us,google,googlers
+nmap <F9> :set spell! <cr>
+
+
+"
+" Set the color scheme
+"
+colorscheme elflord
+
+set clipboard=unnamedplus
+
+"
+" Incremental search
+"
+set incsearch
+
+"
+" Turn on smart case search
+"
+set smartcase
+
+"
+" To paste text "as-is" from another app, Press <F11>
+" again
+"
+set pastetoggle=<F8>
+set nohls
+nmap <F12> :set hls! <cr>
+
+"
+" Re-open file at last line
+"
+if has("autocmd")
+  au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
+    \| exe "normal! g'\"" | endif
+endif
+
+"
+" Showing line numbers and length
+"
+set number  " show line numbers
+set tw=79   " width of document (used by gd)
+set nowrap  " don't automatically wrap on load
+set fo-=t   " don't automatically wrap text when typing
+if exists("&colorcolumn")
+  set colorcolumn=81
+  highlight ColorColumn ctermbg=233
+endif
+
+filetype plugin indent on
+
+
+"
+" Wrap autocmds inside an augroup to protect against reloading this script.
+" For more details, see:
+" http://learnvimscriptthehardway.stevelosh.com/chapters/14.html
+"
+augroup autoformat
+  autocmd!
+  " Autoformat BUILD files on write.
+  autocmd FileType bzl AutoFormatBuffer buildifier
+  " Autoformat go files on write.
+  " autocmd FileType go AutoFormatBuffer gofmt
+  " Autoformat proto files on write.
+  " autocmd FileType proto AutoFormatBuffer clang-format
+  " Autoformat c and c++ files on write.
+  " autocmd FileType c,cpp AutoFormatBuffer clang-format
+  " Autoformat py files on write.
+  " autocmd FileType python AutoFormatBuffer pyformat
+augroup END
+
+"
+" Use >> to mark Tabs and ? to mark trailing whitespace. This is a
+" " non-obtrusive way to mark these special characters.
+"
+" set list listchars=tab:>>\ ,trail:?
+
+"
+" Load the G4 plugin, which allows G4MoveFile, G4Edit, G4Pending, etc.
+" Use :h g4 for more details about this plugin
+"
+Glug g4
+
+
+"
+" Load the blaze plugins, with the <leader>b prefix on all commands.
+" " Thus, to Blaze build, you can do <leader>bb.
+"
+Glug blaze plugin[mappings]='<leader>b'
+
+"
+" Blazedeps allows you to update the BUILD file in accordance with the
+" header files included in the current file
+"
+Glug blazedeps
+
+
+"
+" Enable the corpweb plugin, which allows us to open codesearch from vim
+"
+Glug corpweb
+"
+" Search in codesearch for the word under the cursor
+"
+nnoremap <unique> <leader>ws :CorpWebCs <cword> <Cr>
+
+"
+" search in codesearch for the current file
+"
+nnoremap <unique> <leader>s :CorpWebCsFile<CR>
+
+"
+" Enable the google specific snippets
+"
+Glug ultisnips-google
+"
+" <tab> is the default completion key for selecting and navigating
+" the snippet. Since <tab> conflicts with YCM selector, we'll map it
+" to C-j, C-k (for moving backward in the snippet variables)
+"
+let g:UltiSnipsExpandTrigger = "<c-j>"
+let g:UltiSnipsJumpForwardTrigger = "<c-j>"
+let g:UltiSnipsJumpBackwardTrigger = "<c-k>"
+
+"
+" Uncomment once refactorer is working
+"
+"Glug refactorer plugin[mappings]='<leader>re'
+
+"
+" Autogenerate gbash boilerplate
+"
+source /home/build/google3/util/shell/gbash/tools/vim/autogen.vim
+
+" Show syntax highlighting groups for word under cursor
+nmap <C-S-P> :call <SID>SynStack()<CR>
+function! <SID>SynStack()
+  if !exists("*synstack")
+    return
+  endif
+  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+endfunc
