@@ -18,11 +18,11 @@
 		</data>
 		<key>CDVLaunchScreen.storyboardc/01J-lp-oVM-view-Ze5-6b-2t3.nib/objects-13.0+.nib</key>
 		<data>
-		EsjmVp6QR4y/dCh0b9sFIRysFlA=
+		Znv51OadSnJJmiu7ioE2q/pgkk0=
 		</data>
 		<key>CDVLaunchScreen.storyboardc/01J-lp-oVM-view-Ze5-6b-2t3.nib/runtime.nib</key>
 		<data>
-		Gh4q+MY6k5N9zrTeYOp/BXio1Vg=
+		R+HURDMsUHNLkXQPTxZphccgw9s=
 		</data>
 		<key>CDVLaunchScreen.storyboardc/Info.plist</key>
 		<data>
@@ -30,11 +30,11 @@
 		</data>
 		<key>CDVLaunchScreen.storyboardc/UIViewController-01J-lp-oVM.nib/objects-13.0+.nib</key>
 		<data>
-		5V24h+mRx8VAt3b5St7DGlc8H5I=
+		rVwht8OFmsjD6MqPHoUT3FD3E58=
 		</data>
 		<key>CDVLaunchScreen.storyboardc/UIViewController-01J-lp-oVM.nib/runtime.nib</key>
 		<data>
-		n4nAOLRwIoOYWvdAehjCNyk+u9I=
+		kno9LcKxY4ela1RtMl6YozLVZlA=
 		</data>
 		<key>Info.plist</key>
 		<data>
@@ -42,7 +42,7 @@
 		</data>
 		<key>MainViewController.nib</key>
 		<data>
-		cCT2CEI8hxSSfXnjYVS6QYyBc78=
+		BH1No2IZqBkHJOzAOMdPe2EdRfg=
 		</data>
 		<key>PkgInfo</key>
 		<data>
@@ -86,19 +86,19 @@
 		</data>
 		<key>www/css/index.css</key>
 		<data>
-		Cvb9YEW4fVVm3bKHPAze8kRX+e4=
+		eYvqVCnpUQkpRdzA8YAnMgWxWjs=
 		</data>
 		<key>www/img/logo.png</key>
 		<data>
-		MW0GF0+VJyF3L6n2kH6NKUswUL0=
+		pWAiW3IEkpD5LRsyvVex4BY6sjA=
 		</data>
 		<key>www/index.html</key>
 		<data>
-		Jb3c6NZmqBDCJWUPtC5CjZ+lG4E=
+		kQr91G1xtDX9s3IFtobsPEYV8cM=
 		</data>
 		<key>www/js/index.js</key>
 		<data>
-		DrH1taae11B0uQ6ME5XmoKc2a88=
+		BznWMhCQiVr2/N6pwuRp8oAtfNg=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -128,14 +128,14 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			3lc/1XvPUGj46JXDbN2OV5U73noLQWC9hJBsPtbmxNQ=
+			HjEyBIhfXz6ZlFXh06WDu1rzzNi2PMi1EqGdz3s2Ojg=
 			</data>
 		</dict>
 		<key>CDVLaunchScreen.storyboardc/01J-lp-oVM-view-Ze5-6b-2t3.nib/runtime.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			8tMVcHKmkhE7jcw0DtVD//E8IgMRR/6iWwkTLEbNusg=
+			eECy6V+E0jnxttKhFKYD5YN/wMbZ5sNObzHTaRlwdDU=
 			</data>
 		</dict>
 		<key>CDVLaunchScreen.storyboardc/Info.plist</key>
@@ -149,21 +149,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			fkaG3glIHLhJB+xKltwXJUdSnFKTNcJBGL2VscYoih8=
+			GDDbxHVMCkbI0+cPRwJMIvdAulqzSYEpMXWdMO9qXR0=
 			</data>
 		</dict>
 		<key>CDVLaunchScreen.storyboardc/UIViewController-01J-lp-oVM.nib/runtime.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			LRtUGL/1zvOSIP7SHCn2deWP3x6qszl3+xQ3scGsgr0=
+			feUYM74Dve5ZTm5mRxvG8vg/5RXp1FjkTG8MY2pRJQo=
 			</data>
 		</dict>
 		<key>MainViewController.nib</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			BkOclulW9lKKX3HnzV/lT79r6vW+UH9AhF2Qc3P3UcI=
+			ze66ofzjWx2D38XzJ/m0ydPfL6uD5PHX2W5J9nY/bR0=
 			</data>
 		</dict>
 		<key>config.xml</key>
@@ -233,28 +233,28 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			QUMIm6QghuAZQ6XbX4QNpBvRv/1mkYaWWiR9jLcxiYA=
+			2Gve2Q63pfNUH7MsYbVAF90fIafnrQftFPi9C1nVqC0=
 			</data>
 		</dict>
 		<key>www/img/logo.png</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			8JmHrhEr2x//0WYZDQyLdQyvokuPf/rAP06Yuah4neM=
+			0eURgpU9P30P8Da7VscyY8sf0Su4e0WPnfn32Gd6c1M=
 			</data>
 		</dict>
 		<key>www/index.html</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			IOXqc+0yrS5jPkY4t3eCtFuxqcJtt4kw2kPLy+SfnMI=
+			XvQra3m2kZ7B66gdyjABFUHouPykHH5OvvFAF/RuERA=
 			</data>
 		</dict>
 		<key>www/js/index.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			i2ic6YoNB5IKSU6cunWAE+dt5IFjnO+D4VK4bz2A/CU=
+			8Wdd8AlEETGEj+hVjcUMjRp7JbA00x08tm/HC8FIBn0=
 			</data>
 		</dict>
 	</dict>
