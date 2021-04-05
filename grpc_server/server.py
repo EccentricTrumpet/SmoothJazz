@@ -1,7 +1,7 @@
 # Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
+# you may not use self file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
@@ -25,65 +25,69 @@ import shengji_pb2
 import shengji_pb2_grpc
 
 class Shengji(shengji_pb2_grpc.ShengjiServicer):
-    game = dict()
-    game_id = 0
-
+    # game_state_lock protects all shared game states
     game_state_lock = threading.RLock()
     game_watchers = dict()
+    game = dict()
+    game_id = 0
 
     def __init__(self):
         pass
 
     def CreateGame(self, request, context):
-        game_state_lock.acquire()
+        self.game_state_lock.acquire()
 
         game_id = str(self.game_id)
         self.game[game_id] = shengji_pb2.Game() 
         self.game_id += 1
         self.game[game_id].game_id = game_id
         self.game[game_id].creator_user_id = request.user_id
-        logging.info("Received a CreateGame request from user_id [%s], created a game with id [%s]", request.user_id, game_id)
 
         # Creates a game watcher
-        game_watchers[game_id] = threading.Condition()
+        self.game_watchers[game_id] = threading.Condition()
+
+        logging.info("Received a CreateGame request from user_id [%s], created a game with id [%s]", request.user_id, game_id)
+
         game = self.game[game_id]
-        game_state_lock.release()
+        self.game_state_lock.release()
         return game
 
     def PlayGame(self, request, context):
         logging.info("Received a PlayGame request from user_id [%s], game_id [%s]", request.user_id, request.game_id)
         game_id = request.game_id
         user_id = request.user_id
-        game_state_lock.acquire()
+        self.game_state_lock.acquire()
 
         try:
             self.game[game_id]
         except:
             logging.info("Not found: game_id [%s]", request.game_id)
-        self.game[game_id].game_state.game_move_count += 1
+        self.game[game_id].state.game_move_count += 1
         game = self.game[game_id]
 
-        game_state_lock.release()
+        self.game_state_lock.release()
 
         # Notifies all watchers of state change
-        game_watchers[game_id].notify_all()
+        with self.game_watchers[game_id]:
+            self.game_watchers[game_id].notify_all()
+
         return game
 
     def StreamGame(self,
                    request: shengji_pb2.StreamGameRequest,
                    context: grpc.ServicerContext
                   ) -> Iterable[shengji_pb2.Game]:
-        logging.info("Received a shengji request for id [%s]", request.game_id)
+        logging.info("Received a StreamGame request for id [%s]", request.game_id)
         game = self.game[request.game_id]
-        logging.info("Got a shengji game [%s]", game)
 
-        # simulate some game updates
-        with game_watchers[request.game_id] as cond:
+        # wait for notification
+        with self.game_watchers[request.game_id]:
             while True:
-                cond.wait()
-                game_state_lock.acquire()
+                logging.info("Waiting for game update [%s]", self.game_watchers[request.game_id])
+                self.game_watchers[request.game_id].wait()
+                self.game_state_lock.acquire()
                 game = self.game[request.game_id]
-                game_state_lock.release()
+                self.game_state_lock.release()
                 logging.info("Streaming game update...")
                 yield game
 

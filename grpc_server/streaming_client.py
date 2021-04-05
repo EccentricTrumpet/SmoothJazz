@@ -66,7 +66,6 @@ class GameMonitor:
                                                       response_iterator)
 
     def wait(self) -> None:
-        logging.info("Waiting for peer to connect [%s]...", self._user_id)
         self._peer_responded.wait(timeout=None)
         if self._consumer_future.done():
             # If the future raises, forwards the exception here

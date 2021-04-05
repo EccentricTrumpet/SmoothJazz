@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import time
 import threading
 from typing import Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -46,7 +47,7 @@ def run():
         game_monitor = GameMonitor(channel, "zexuan", "0")
 
         for i in range(100):
-            sleep(1)
+            time.sleep(1)
             game_monitor.call()
 
 

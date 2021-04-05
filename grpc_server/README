@@ -1,0 +1,3 @@
+1- start the server: python3 server.py
+2- start a client that creates a game, then listens for game update: python3 streaming_client.py
+3- start a client that updates the game: python updating_client.py
