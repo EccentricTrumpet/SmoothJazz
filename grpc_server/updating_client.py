@@ -24,7 +24,7 @@ import shengji_pb2
 import shengji_pb2_grpc
 
 
-class GameMonitor:
+class GamePlayer:
 
     def __init__(self, channel: grpc.Channel, user_id: str, game_id: str) -> None:
         self._channel = channel
@@ -32,8 +32,7 @@ class GameMonitor:
         self._user_id = user_id
         self._game_id = game_id
 
-    def call(self) -> None:
-        # first create a game
+    def play(self) -> None:
         request = shengji_pb2.PlayGameRequest()
         request.user_id = self._user_id
         request.game_id = self._game_id
@@ -44,11 +43,11 @@ class GameMonitor:
 
 def run():
     with grpc.insecure_channel("localhost:50051") as channel:
-        game_monitor = GameMonitor(channel, "zexuan", "0")
+        player = GamePlayer(channel, "zexuan", "0")
 
         for i in range(100):
             time.sleep(1)
-            game_monitor.call()
+            player.play()
 
 
 if __name__ == '__main__':
