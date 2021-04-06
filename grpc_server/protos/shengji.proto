@@ -17,67 +17,94 @@ syntax = "proto3";
 package grpc.testing;
 
 service Shengji {
+  // Creates a new game.
   rpc CreateGame(CreateGameRequest) returns (Game);
 
+  // Only creator of the game can start/pause/resume a game
   rpc StartGame(StartGameRequest) returns (Game);
+  rpc PauseGame(PauseGameRequest) returns (Game);
+  rpc ResumeGame(PauseGameRequest) returns (Game);
 
-  rpc StopGame(StopGameRequest) returns (Game);
+  // Join a game.
+  rpc JoinGame(JoinGameRequest) returns (Game);
 
+  // Leaves a game. A player is considered left automatically after 60s of
+  // inactivity. 
+  rpc LeaveGame(LeaveGameRequest) returns (Game);
+
+  // Returns the game whenever the game state is changed
   rpc StreamGame(StreamGameRequest) returns (stream Game);
 
+  // Plays a hand
   rpc PlayGame(PlayGameRequest) returns (Game);
 }
 
+// Request protos
 message StreamGameRequest {
   string game_id = 1;
 }
 
 message CreateGameRequest {
-  string user_id = 1;
+  string player_id = 1;
 }
 
-message StartGameRequest {
-  string user_id = 1;
+message JoinGameRequest {
+  string player_id = 1;
   string game_id = 2;
 }
 
-message StopGameRequest {
-  string user_id = 1;
+message LeaveGameRequest {
+  string player_id = 1;
+  string game_id = 2;
+}
+
+message PauseGameRequest {
+  string player_id = 1;
+  string game_id = 2;
+}
+
+message ResumeGameRequest {
+  string player_id = 1;
+  string game_id = 2;
+}
+
+message StartGameRequest {
+  string player_id = 1;
   string game_id = 2;
 }
 
 message PlayGameRequest{
-  string user_id = 1;
+  string player_id = 1;
   string game_id = 2;
   repeated Card hand = 3;
 }
 
 message Card {
+  enum Suit {
+    UNDEFINED = 0;
+    HEATS = 1;
+    SPADES = 2;
+    CLUBS = 3;
+    DIAMONDS = 4;
+  }
+
+  enum Num {
+    ACE = 0;
+    TWO = 1;
+    THREE = 2;
+    FOUR = 3;
+    FIVE = 4;
+    SIX = 5;
+    SEVEN = 6;
+    EIGHT = 7;
+    NINE = 8;
+    TEN = 9;
+    JACK = 10;
+    QUEEN = 11;
+    KING = 12;
+  }
+
   message RegularCard {
-    enum Suit {
-      UNDEFINED = 0;
-      HEATS = 1;
-      SPADES = 2;
-      CLUBS = 3;
-      DIAMONDS = 4;
-    }
-  
-    enum Num {
-      ACE = 0;
-      TWO = 1;
-      THREE = 2;
-      FOUR = 3;
-      FIVE = 4;
-      SIX = 5;
-      SEVEN = 6;
-      EIGHT = 7;
-      NINE = 8;
-      TEN = 9;
-      JACK = 10;
-      QUEEN = 11;
-      KING = 12;
-    }
-  
     Suit suit = 1;
     Num num = 2;
   }
@@ -89,16 +116,55 @@ message Card {
   }
 }
 
-message Game {
-  // Game metadata
-  string game_id = 1;
-  string creator_user_id = 2;
-  map<string, string> teams = 3;
-
-  // Game state
-  GameState state = 4;
+message Hand {
+  repeated Card cards = 1;
 }
 
-message GameState {
-  int32 game_move_count = 1;
+message Game {
+  string game_id = 1;
+  string creator_player_id = 2;
+
+	// Ordered list of players 
+  repeated string player_ids = 3;
+	string teammate_id = 4;
+
+  // Game data, including cards on hand, currently played cards on table,
+  // score etc.
+  GameData data = 7;
+}
+
+message GameData {
+  enum GameState {
+    UNDEFINED = 0;
+    NOT_ENOUGH_PLAYERS = 1;
+    NOT_STARTED = 2;
+    STARTED = 3;
+    PAUSED = 4;
+    ENDED = 5;
+	}
+
+  // Game state
+  GameState state = 1;
+
+  // The player that needs to make a move. This field is only set if the game
+  // state is STARTED.
+  string waiting_for_player_id = 2;
+
+  // Total number of actions since the game was created. This is a monoincrease
+  // number that can be used for debugging purposes.
+  int32 game_action_count = 3;
+
+  // Current trump cards and suit.
+  Card.Suit trump_suit = 4;
+	Card.Num trump_num = 5;
+
+  // Cards on hand
+  Hand my_hand_cards = 6;
+
+  // Cards currely played on the table, keyed by player_id.
+  map<string, Hand> cards_on_table = 7;
+
+  // Scores
+  map<string, int32> current_scores = 8;
+  map<string, int32> cumulative_scores = 9;
 }

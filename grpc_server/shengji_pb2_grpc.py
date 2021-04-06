@@ -24,9 +24,24 @@ class ShengjiStub(object):
                 request_serializer=shengji__pb2.StartGameRequest.SerializeToString,
                 response_deserializer=shengji__pb2.Game.FromString,
                 )
-        self.StopGame = channel.unary_unary(
-                '/grpc.testing.Shengji/StopGame',
-                request_serializer=shengji__pb2.StopGameRequest.SerializeToString,
+        self.PauseGame = channel.unary_unary(
+                '/grpc.testing.Shengji/PauseGame',
+                request_serializer=shengji__pb2.PauseGameRequest.SerializeToString,
+                response_deserializer=shengji__pb2.Game.FromString,
+                )
+        self.ResumeGame = channel.unary_unary(
+                '/grpc.testing.Shengji/ResumeGame',
+                request_serializer=shengji__pb2.PauseGameRequest.SerializeToString,
+                response_deserializer=shengji__pb2.Game.FromString,
+                )
+        self.JoinGame = channel.unary_unary(
+                '/grpc.testing.Shengji/JoinGame',
+                request_serializer=shengji__pb2.JoinGameRequest.SerializeToString,
+                response_deserializer=shengji__pb2.Game.FromString,
+                )
+        self.LeaveGame = channel.unary_unary(
+                '/grpc.testing.Shengji/LeaveGame',
+                request_serializer=shengji__pb2.LeaveGameRequest.SerializeToString,
                 response_deserializer=shengji__pb2.Game.FromString,
                 )
         self.StreamGame = channel.unary_stream(
@@ -45,31 +60,56 @@ class ShengjiServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def CreateGame(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Creates a new game.
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def StartGame(self, request, context):
+        """Only creator of the game can start/pause/resume a game
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PauseGame(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def StopGame(self, request, context):
+    def ResumeGame(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def JoinGame(self, request, context):
+        """Join a game.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def LeaveGame(self, request, context):
+        """Leaves a game. A player is considered left automatically after 60s of
+        inactivity. 
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def StreamGame(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Returns the game whenever the game state is changed
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def PlayGame(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Plays a hand
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -87,9 +127,24 @@ def add_ShengjiServicer_to_server(servicer, server):
                     request_deserializer=shengji__pb2.StartGameRequest.FromString,
                     response_serializer=shengji__pb2.Game.SerializeToString,
             ),
-            'StopGame': grpc.unary_unary_rpc_method_handler(
-                    servicer.StopGame,
-                    request_deserializer=shengji__pb2.StopGameRequest.FromString,
+            'PauseGame': grpc.unary_unary_rpc_method_handler(
+                    servicer.PauseGame,
+                    request_deserializer=shengji__pb2.PauseGameRequest.FromString,
+                    response_serializer=shengji__pb2.Game.SerializeToString,
+            ),
+            'ResumeGame': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResumeGame,
+                    request_deserializer=shengji__pb2.PauseGameRequest.FromString,
+                    response_serializer=shengji__pb2.Game.SerializeToString,
+            ),
+            'JoinGame': grpc.unary_unary_rpc_method_handler(
+                    servicer.JoinGame,
+                    request_deserializer=shengji__pb2.JoinGameRequest.FromString,
+                    response_serializer=shengji__pb2.Game.SerializeToString,
+            ),
+            'LeaveGame': grpc.unary_unary_rpc_method_handler(
+                    servicer.LeaveGame,
+                    request_deserializer=shengji__pb2.LeaveGameRequest.FromString,
                     response_serializer=shengji__pb2.Game.SerializeToString,
             ),
             'StreamGame': grpc.unary_stream_rpc_method_handler(
@@ -147,7 +202,7 @@ class Shengji(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def StopGame(request,
+    def PauseGame(request,
             target,
             options=(),
             channel_credentials=None,
@@ -157,8 +212,59 @@ class Shengji(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/StopGame',
-            shengji__pb2.StopGameRequest.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/PauseGame',
+            shengji__pb2.PauseGameRequest.SerializeToString,
+            shengji__pb2.Game.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ResumeGame(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/ResumeGame',
+            shengji__pb2.PauseGameRequest.SerializeToString,
+            shengji__pb2.Game.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def JoinGame(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/JoinGame',
+            shengji__pb2.JoinGameRequest.SerializeToString,
+            shengji__pb2.Game.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def LeaveGame(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/LeaveGame',
+            shengji__pb2.LeaveGameRequest.SerializeToString,
             shengji__pb2.Game.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
