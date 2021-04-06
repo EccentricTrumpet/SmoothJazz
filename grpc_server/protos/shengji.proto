@@ -71,6 +71,10 @@ message ResumeGameRequest {
 message StartGameRequest {
   string player_id = 1;
   string game_id = 2;
+
+  // This is the "seating position". 1st player and 3rd player vs. 2nd player
+  // and 4th player.
+  repeated string ordered_player_ids = 3;
 }
 
 message PlayGameRequest{
