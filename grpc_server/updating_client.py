@@ -34,7 +34,7 @@ class GamePlayer:
 
     def play(self) -> None:
         request = shengji_pb2.PlayGameRequest()
-        request.user_id = self._user_id
+        request.player_id = self._user_id
         request.game_id = self._game_id
 
         response = self._stub.PlayGame(request)
