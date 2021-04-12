@@ -26,11 +26,11 @@ import shengji_pb2_grpc
 class GameMonitor:
 
     def __init__(self, executor: ThreadPoolExecutor, channel: grpc.Channel,
-                 user_id: str) -> None:
+                 player_id: str) -> None:
         self._executor = executor
         self._channel = channel
         self._stub = shengji_pb2_grpc.ShengjiStub(self._channel)
-        self._user_id = user_id
+        self._player_id = player_id
         self._peer_responded = threading.Event()
         self._call_finished = threading.Event()
         self._consumer_future = None
@@ -52,7 +52,7 @@ class GameMonitor:
     def call(self) -> None:
         # first create a game
         create_request = shengji_pb2.CreateGameRequest()
-        create_request.player_id = self._user_id
+        create_request.player_id = self._player_id
         create_response = self._stub.CreateGame(create_request)
         logging.info("Created game: game_id [%s] creator_id [%s]", create_response.game_id, create_response.creator_player_id)
         self._game_id = create_response.game_id 
@@ -73,8 +73,8 @@ class GameMonitor:
         return True
 
 def process_call(executor: ThreadPoolExecutor, channel: grpc.Channel,
-                 user_id: str) -> None:
-    game_monitor = GameMonitor(executor, channel, user_id)
+                 player_id: str) -> None:
+    game_monitor = GameMonitor(executor, channel, player_id)
     game_monitor.call()
     if game_monitor.wait():
         logging.info("Call finished!")

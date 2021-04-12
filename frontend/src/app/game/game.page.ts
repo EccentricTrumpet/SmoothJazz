@@ -1,4 +1,8 @@
 import { AfterViewChecked, Component, ViewChild } from '@angular/core';
+import {grpc} from "@improbable-eng/grpc-web";
+import {Shengji} from "proto-gen/shengji_pb_service";
+import {CreateGameRequest} from "proto-gen/shengji_pb";
+import * as $ from "jquery";
 declare var cards:any;
 
 @Component({
@@ -13,6 +17,14 @@ export class GamePage implements AfterViewChecked {
 
   constructor() { }
 
+  ngAfterViewInit() {
+    var that = this;
+    $('#startGameButton').on("click", function() {
+      console.log("I got a click!");
+      that.startGame();
+    });
+  }
+  
   ngAfterViewChecked() {
     if (!this.started) {
       if (this.tableElement.nativeElement.offsetHeight === 0) {
@@ -24,6 +36,21 @@ export class GamePage implements AfterViewChecked {
       new Game(nativeElement.clientHeight, nativeElement.clientWidth);
     }
   }
+  startGame() {
+    const createGameRequest = new CreateGameRequest();
+    createGameRequest.setPlayerId("my ts player");
+    grpc.unary(Shengji.CreateGame, {
+      request: createGameRequest,
+      host: "http://localhost:8080",
+      onEnd: res => {
+        const { status, statusMessage, headers, message, trailers } = res;
+        if (status === grpc.Code.OK && message) {
+          console.log("A game is created! Got book: ", message.toObject());
+        }
+      }
+    });
+  }
+
 }
 
 enum Suit {

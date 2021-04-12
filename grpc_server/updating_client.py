@@ -26,15 +26,15 @@ import shengji_pb2_grpc
 
 class GamePlayer:
 
-    def __init__(self, channel: grpc.Channel, user_id: str, game_id: str) -> None:
+    def __init__(self, channel: grpc.Channel, player_id: str, game_id: str) -> None:
         self._channel = channel
         self._stub = shengji_pb2_grpc.ShengjiStub(self._channel)
-        self._user_id = user_id
+        self._player_id = player_id
         self._game_id = game_id
 
     def play(self) -> None:
         request = shengji_pb2.PlayGameRequest()
-        request.player_id = self._user_id
+        request.player_id = self._player_id
         request.game_id = self._game_id
 
         response = self._stub.PlayGame(request)

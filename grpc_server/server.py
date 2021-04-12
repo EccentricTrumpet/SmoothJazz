@@ -41,21 +41,21 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         self.game[game_id] = shengji_pb2.Game() 
         self.game_id += 1
         self.game[game_id].game_id = game_id
-        self.game[game_id].creator_user_id = request.user_id
+        self.game[game_id].creator_player_id = request.player_id
 
         # Creates a game watcher
         self.game_watchers[game_id] = threading.Condition()
 
-        logging.info("Received a CreateGame request from user_id [%s], created a game with id [%s]", request.user_id, game_id)
+        logging.info("Received a CreateGame request from player_id [%s], created a game with id [%s]", request.player_id, game_id)
 
         game = self.game[game_id]
         self.game_state_lock.release()
         return game
 
     def PlayGame(self, request, context):
-        logging.info("Received a PlayGame request from user_id [%s], game_id [%s]", request.user_id, request.game_id)
+        logging.info("Received a PlayGame request from player_id [%s], game_id [%s]", request.player_id, request.game_id)
         game_id = request.game_id
-        user_id = request.user_id
+        player_id = request.player_id
         self.game_state_lock.acquire()
 
         try:
