@@ -42,6 +42,7 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         self.game_id += 1
         self.game[game_id].game_id = game_id
         self.game[game_id].creator_player_id = request.player_id
+        self.game[game_id].data.state = shengji_pb2.GameData.NOT_ENOUGH_PLAYERS
 
         # Creates a game watcher
         self.game_watchers[game_id] = threading.Condition()
@@ -73,22 +74,44 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
 
         return game
 
-    def StreamGame(self,
-                   request: shengji_pb2.StreamGameRequest,
+    def _addPlayer(self, game_id, player_name):
+        self.game_state_lock.acquire()
+        self.game[game_id].player_ids.append(player_name)
+        if len(self.game[game_id].player_ids) == 4:
+            self.game[game_id].data.state = shengji_pb2.GameData.STARTED
+        # Notifies all watchers of state change
+        with self.game_watchers[game_id]:
+            self.game_watchers[game_id].notify_all()
+        self.game_state_lock.release()
+
+    def AddAIPlayer(self,
+                   request: shengji_pb2.AddAIPlayerRequest,
+                   context: grpc.ServicerContext
+                   ) -> shengji_pb2.AddAIPlayerResponse:
+        logging.info("Adding AI to game: %s", request.game_id)
+        ai_name = "alex"
+        self._addPlayer(request.game_id, ai_name)
+        ai_player= shengji_pb2.AddAIPlayerResponse()
+        ai_player.player_name = ai_name
+        return ai_player
+
+    def EnterRoom(self,
+                   request: shengji_pb2.EnterRoomRequest,
                    context: grpc.ServicerContext
                   ) -> Iterable[shengji_pb2.Game]:
-        logging.info("Received a StreamGame request for id [%s]", request.game_id)
-        game = self.game[request.game_id]
+        logging.info("Received a EnterRoom request for id [%s]", request.game_id)
+        self._addPlayer(request.game_id, request.player_id)
 
         # wait for notification
         with self.game_watchers[request.game_id]:
+            self.game_watchers[request.game_id].notify_all()
             while True:
                 logging.info("Waiting for game update [%s]", self.game_watchers[request.game_id])
                 self.game_watchers[request.game_id].wait()
+                logging.info("Streaming game update...")
                 self.game_state_lock.acquire()
                 game = self.game[request.game_id]
                 self.game_state_lock.release()
-                logging.info("Streaming game update...")
                 yield game
 
         logging.info("Call finished [%s]", request.game_id)

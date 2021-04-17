@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"$\n\x11StreamGameRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"5\n\x0fJoinGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"6\n\x10LeaveGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"6\n\x10PauseGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"7\n\x11ResumeGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"R\n\x10StartGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12\x1a\n\x12ordered_player_ids\x18\x03 \x03(\t\"W\n\x0fPlayGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12 \n\x04hand\x18\x03 \x03(\x0b\x32\x12.grpc.testing.Card\"\xa2\x03\n\x04\x43\x61rd\x12.\n\x04\x63\x61rd\x18\x01 \x01(\x0b\x32\x1e.grpc.testing.Card.RegularCardH\x00\x12\x18\n\x0eis_small_joker\x18\x02 \x01(\x08H\x00\x12\x16\n\x0cis_big_joker\x18\x03 \x01(\x08H\x00\x1aY\n\x0bRegularCard\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12#\n\x03num\x18\x02 \x01(\x0e\x32\x16.grpc.testing.Card.Num\"E\n\x04Suit\x12\r\n\tUNDEFINED\x10\x00\x12\t\n\x05HEATS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\"\x87\x01\n\x03Num\x12\x07\n\x03\x41\x43\x45\x10\x00\x12\x07\n\x03TWO\x10\x01\x12\t\n\x05THREE\x10\x02\x12\x08\n\x04\x46OUR\x10\x03\x12\x08\n\x04\x46IVE\x10\x04\x12\x07\n\x03SIX\x10\x05\x12\t\n\x05SEVEN\x10\x06\x12\t\n\x05\x45IGHT\x10\x07\x12\x08\n\x04NINE\x10\x08\x12\x07\n\x03TEN\x10\t\x12\x08\n\x04JACK\x10\n\x12\t\n\x05QUEEN\x10\x0b\x12\x08\n\x04KING\x10\x0c\x42\x0c\n\nActualCard\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card\"\x81\x01\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x12\n\nplayer_ids\x18\x03 \x03(\t\x12\x13\n\x0bteammate_id\x18\x04 \x01(\t\x12$\n\x04\x64\x61ta\x18\x07 \x01(\x0b\x32\x16.grpc.testing.GameData\"\xe7\x05\n\x08GameData\x12/\n\x05state\x18\x01 \x01(\x0e\x32 .grpc.testing.GameData.GameState\x12\x1d\n\x15waiting_for_player_id\x18\x02 \x01(\t\x12\x19\n\x11game_action_count\x18\x03 \x01(\x05\x12+\n\ntrump_suit\x18\x04 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12)\n\ttrump_num\x18\x05 \x01(\x0e\x32\x16.grpc.testing.Card.Num\x12)\n\rmy_hand_cards\x18\x06 \x01(\x0b\x32\x12.grpc.testing.Hand\x12@\n\x0e\x63\x61rds_on_table\x18\x07 \x03(\x0b\x32(.grpc.testing.GameData.CardsOnTableEntry\x12\x41\n\x0e\x63urrent_scores\x18\x08 \x03(\x0b\x32).grpc.testing.GameData.CurrentScoresEntry\x12G\n\x11\x63umulative_scores\x18\t \x03(\x0b\x32,.grpc.testing.GameData.CumulativeScoresEntry\x1aG\n\x11\x43\x61rdsOnTableEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12!\n\x05value\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand:\x02\x38\x01\x1a\x34\n\x12\x43urrentScoresEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x37\n\x15\x43umulativeScoresEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"g\n\tGameState\x12\r\n\tUNDEFINED\x10\x00\x12\x16\n\x12NOT_ENOUGH_PLAYERS\x10\x01\x12\x0f\n\x0bNOT_STARTED\x10\x02\x12\x0b\n\x07STARTED\x10\x03\x12\n\n\x06PAUSED\x10\x04\x12\t\n\x05\x45NDED\x10\x05\x32\x94\x04\n\x07Shengji\x12\x41\n\nCreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tStartGame\x12\x1e.grpc.testing.StartGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tPauseGame\x12\x1e.grpc.testing.PauseGameRequest\x1a\x12.grpc.testing.Game\x12@\n\nResumeGame\x12\x1e.grpc.testing.PauseGameRequest\x1a\x12.grpc.testing.Game\x12=\n\x08JoinGame\x12\x1d.grpc.testing.JoinGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tLeaveGame\x12\x1e.grpc.testing.LeaveGameRequest\x1a\x12.grpc.testing.Game\x12\x43\n\nStreamGame\x12\x1f.grpc.testing.StreamGameRequest\x1a\x12.grpc.testing.Game0\x01\x12=\n\x08PlayGame\x12\x1d.grpc.testing.PlayGameRequest\x1a\x12.grpc.testing.Gameb\x06proto3'
+  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"%\n\x12\x41\x64\x64\x41IPlayerRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"*\n\x13\x41\x64\x64\x41IPlayerResponse\x12\x13\n\x0bplayer_name\x18\x01 \x01(\t\"6\n\x10\x45nterRoomRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x11\n\tplayer_id\x18\x02 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"5\n\x0fJoinGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"6\n\x10LeaveGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"6\n\x10PauseGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"7\n\x11ResumeGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"R\n\x10StartGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12\x1a\n\x12ordered_player_ids\x18\x03 \x03(\t\"W\n\x0fPlayGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12 \n\x04hand\x18\x03 \x03(\x0b\x32\x12.grpc.testing.Card\"\xa2\x03\n\x04\x43\x61rd\x12.\n\x04\x63\x61rd\x18\x01 \x01(\x0b\x32\x1e.grpc.testing.Card.RegularCardH\x00\x12\x18\n\x0eis_small_joker\x18\x02 \x01(\x08H\x00\x12\x16\n\x0cis_big_joker\x18\x03 \x01(\x08H\x00\x1aY\n\x0bRegularCard\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12#\n\x03num\x18\x02 \x01(\x0e\x32\x16.grpc.testing.Card.Num\"E\n\x04Suit\x12\r\n\tUNDEFINED\x10\x00\x12\t\n\x05HEATS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\"\x87\x01\n\x03Num\x12\x07\n\x03\x41\x43\x45\x10\x00\x12\x07\n\x03TWO\x10\x01\x12\t\n\x05THREE\x10\x02\x12\x08\n\x04\x46OUR\x10\x03\x12\x08\n\x04\x46IVE\x10\x04\x12\x07\n\x03SIX\x10\x05\x12\t\n\x05SEVEN\x10\x06\x12\t\n\x05\x45IGHT\x10\x07\x12\x08\n\x04NINE\x10\x08\x12\x07\n\x03TEN\x10\t\x12\x08\n\x04JACK\x10\n\x12\t\n\x05QUEEN\x10\x0b\x12\x08\n\x04KING\x10\x0c\x42\x0c\n\nActualCard\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card\"\x81\x01\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x12\n\nplayer_ids\x18\x03 \x03(\t\x12\x13\n\x0bteammate_id\x18\x04 \x01(\t\x12$\n\x04\x64\x61ta\x18\x07 \x01(\x0b\x32\x16.grpc.testing.GameData\"\xe7\x05\n\x08GameData\x12/\n\x05state\x18\x01 \x01(\x0e\x32 .grpc.testing.GameData.GameState\x12\x1d\n\x15waiting_for_player_id\x18\x02 \x01(\t\x12\x19\n\x11game_action_count\x18\x03 \x01(\x05\x12+\n\ntrump_suit\x18\x04 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12)\n\ttrump_num\x18\x05 \x01(\x0e\x32\x16.grpc.testing.Card.Num\x12)\n\rmy_hand_cards\x18\x06 \x01(\x0b\x32\x12.grpc.testing.Hand\x12@\n\x0e\x63\x61rds_on_table\x18\x07 \x03(\x0b\x32(.grpc.testing.GameData.CardsOnTableEntry\x12\x41\n\x0e\x63urrent_scores\x18\x08 \x03(\x0b\x32).grpc.testing.GameData.CurrentScoresEntry\x12G\n\x11\x63umulative_scores\x18\t \x03(\x0b\x32,.grpc.testing.GameData.CumulativeScoresEntry\x1aG\n\x11\x43\x61rdsOnTableEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12!\n\x05value\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand:\x02\x38\x01\x1a\x34\n\x12\x43urrentScoresEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x37\n\x15\x43umulativeScoresEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"g\n\tGameState\x12\r\n\tUNDEFINED\x10\x00\x12\x16\n\x12NOT_ENOUGH_PLAYERS\x10\x01\x12\x0f\n\x0bNOT_STARTED\x10\x02\x12\x0b\n\x07STARTED\x10\x03\x12\n\n\x06PAUSED\x10\x04\x12\t\n\x05\x45NDED\x10\x05\x32\xe6\x04\n\x07Shengji\x12\x41\n\nCreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tStartGame\x12\x1e.grpc.testing.StartGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tPauseGame\x12\x1e.grpc.testing.PauseGameRequest\x1a\x12.grpc.testing.Game\x12@\n\nResumeGame\x12\x1e.grpc.testing.PauseGameRequest\x1a\x12.grpc.testing.Game\x12=\n\x08JoinGame\x12\x1d.grpc.testing.JoinGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tLeaveGame\x12\x1e.grpc.testing.LeaveGameRequest\x1a\x12.grpc.testing.Game\x12\x41\n\tEnterRoom\x12\x1e.grpc.testing.EnterRoomRequest\x1a\x12.grpc.testing.Game0\x01\x12=\n\x08PlayGame\x12\x1d.grpc.testing.PlayGameRequest\x1a\x12.grpc.testing.Game\x12R\n\x0b\x41\x64\x64\x41IPlayer\x12 .grpc.testing.AddAIPlayerRequest\x1a!.grpc.testing.AddAIPlayerResponseb\x06proto3'
 )
 
 
@@ -59,8 +59,8 @@ _CARD_SUIT = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=704,
-  serialized_end=773,
+  serialized_start=805,
+  serialized_end=874,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_SUIT)
 
@@ -139,8 +139,8 @@ _CARD_NUM = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=776,
-  serialized_end=911,
+  serialized_start=877,
+  serialized_end=1012,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_NUM)
 
@@ -184,22 +184,22 @@ _GAMEDATA_GAMESTATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1743,
-  serialized_end=1846,
+  serialized_start=1844,
+  serialized_end=1947,
 )
 _sym_db.RegisterEnumDescriptor(_GAMEDATA_GAMESTATE)
 
 
-_STREAMGAMEREQUEST = _descriptor.Descriptor(
-  name='StreamGameRequest',
-  full_name='grpc.testing.StreamGameRequest',
+_ADDAIPLAYERREQUEST = _descriptor.Descriptor(
+  name='AddAIPlayerRequest',
+  full_name='grpc.testing.AddAIPlayerRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.StreamGameRequest.game_id', index=0,
+      name='game_id', full_name='grpc.testing.AddAIPlayerRequest.game_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -218,7 +218,78 @@ _STREAMGAMEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=31,
-  serialized_end=67,
+  serialized_end=68,
+)
+
+
+_ADDAIPLAYERRESPONSE = _descriptor.Descriptor(
+  name='AddAIPlayerResponse',
+  full_name='grpc.testing.AddAIPlayerResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='player_name', full_name='grpc.testing.AddAIPlayerResponse.player_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=70,
+  serialized_end=112,
+)
+
+
+_ENTERROOMREQUEST = _descriptor.Descriptor(
+  name='EnterRoomRequest',
+  full_name='grpc.testing.EnterRoomRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='game_id', full_name='grpc.testing.EnterRoomRequest.game_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='player_id', full_name='grpc.testing.EnterRoomRequest.player_id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=114,
+  serialized_end=168,
 )
 
 
@@ -249,8 +320,8 @@ _CREATEGAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=69,
-  serialized_end=107,
+  serialized_start=170,
+  serialized_end=208,
 )
 
 
@@ -288,8 +359,8 @@ _JOINGAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=109,
-  serialized_end=162,
+  serialized_start=210,
+  serialized_end=263,
 )
 
 
@@ -327,8 +398,8 @@ _LEAVEGAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=164,
-  serialized_end=218,
+  serialized_start=265,
+  serialized_end=319,
 )
 
 
@@ -366,8 +437,8 @@ _PAUSEGAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=220,
-  serialized_end=274,
+  serialized_start=321,
+  serialized_end=375,
 )
 
 
@@ -405,8 +476,8 @@ _RESUMEGAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=276,
-  serialized_end=331,
+  serialized_start=377,
+  serialized_end=432,
 )
 
 
@@ -451,8 +522,8 @@ _STARTGAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=333,
-  serialized_end=415,
+  serialized_start=434,
+  serialized_end=516,
 )
 
 
@@ -497,8 +568,8 @@ _PLAYGAMEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=417,
-  serialized_end=504,
+  serialized_start=518,
+  serialized_end=605,
 )
 
 
@@ -536,8 +607,8 @@ _CARD_REGULARCARD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=613,
-  serialized_end=702,
+  serialized_start=714,
+  serialized_end=803,
 )
 
 _CARD = _descriptor.Descriptor(
@@ -588,8 +659,8 @@ _CARD = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=507,
-  serialized_end=925,
+  serialized_start=608,
+  serialized_end=1026,
 )
 
 
@@ -620,8 +691,8 @@ _HAND = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=927,
-  serialized_end=968,
+  serialized_start=1028,
+  serialized_end=1069,
 )
 
 
@@ -680,8 +751,8 @@ _GAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=971,
-  serialized_end=1100,
+  serialized_start=1072,
+  serialized_end=1201,
 )
 
 
@@ -719,8 +790,8 @@ _GAMEDATA_CARDSONTABLEENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1559,
-  serialized_end=1630,
+  serialized_start=1660,
+  serialized_end=1731,
 )
 
 _GAMEDATA_CURRENTSCORESENTRY = _descriptor.Descriptor(
@@ -757,8 +828,8 @@ _GAMEDATA_CURRENTSCORESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1632,
-  serialized_end=1684,
+  serialized_start=1733,
+  serialized_end=1785,
 )
 
 _GAMEDATA_CUMULATIVESCORESENTRY = _descriptor.Descriptor(
@@ -795,8 +866,8 @@ _GAMEDATA_CUMULATIVESCORESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1686,
-  serialized_end=1741,
+  serialized_start=1787,
+  serialized_end=1842,
 )
 
 _GAMEDATA = _descriptor.Descriptor(
@@ -883,8 +954,8 @@ _GAMEDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1103,
-  serialized_end=1846,
+  serialized_start=1204,
+  serialized_end=1947,
 )
 
 _PLAYGAMEREQUEST.fields_by_name['hand'].message_type = _CARD
@@ -917,7 +988,9 @@ _GAMEDATA.fields_by_name['cards_on_table'].message_type = _GAMEDATA_CARDSONTABLE
 _GAMEDATA.fields_by_name['current_scores'].message_type = _GAMEDATA_CURRENTSCORESENTRY
 _GAMEDATA.fields_by_name['cumulative_scores'].message_type = _GAMEDATA_CUMULATIVESCORESENTRY
 _GAMEDATA_GAMESTATE.containing_type = _GAMEDATA
-DESCRIPTOR.message_types_by_name['StreamGameRequest'] = _STREAMGAMEREQUEST
+DESCRIPTOR.message_types_by_name['AddAIPlayerRequest'] = _ADDAIPLAYERREQUEST
+DESCRIPTOR.message_types_by_name['AddAIPlayerResponse'] = _ADDAIPLAYERRESPONSE
+DESCRIPTOR.message_types_by_name['EnterRoomRequest'] = _ENTERROOMREQUEST
 DESCRIPTOR.message_types_by_name['CreateGameRequest'] = _CREATEGAMEREQUEST
 DESCRIPTOR.message_types_by_name['JoinGameRequest'] = _JOINGAMEREQUEST
 DESCRIPTOR.message_types_by_name['LeaveGameRequest'] = _LEAVEGAMEREQUEST
@@ -931,12 +1004,26 @@ DESCRIPTOR.message_types_by_name['Game'] = _GAME
 DESCRIPTOR.message_types_by_name['GameData'] = _GAMEDATA
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-StreamGameRequest = _reflection.GeneratedProtocolMessageType('StreamGameRequest', (_message.Message,), {
-  'DESCRIPTOR' : _STREAMGAMEREQUEST,
+AddAIPlayerRequest = _reflection.GeneratedProtocolMessageType('AddAIPlayerRequest', (_message.Message,), {
+  'DESCRIPTOR' : _ADDAIPLAYERREQUEST,
   '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.StreamGameRequest)
+  # @@protoc_insertion_point(class_scope:grpc.testing.AddAIPlayerRequest)
   })
-_sym_db.RegisterMessage(StreamGameRequest)
+_sym_db.RegisterMessage(AddAIPlayerRequest)
+
+AddAIPlayerResponse = _reflection.GeneratedProtocolMessageType('AddAIPlayerResponse', (_message.Message,), {
+  'DESCRIPTOR' : _ADDAIPLAYERRESPONSE,
+  '__module__' : 'shengji_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.testing.AddAIPlayerResponse)
+  })
+_sym_db.RegisterMessage(AddAIPlayerResponse)
+
+EnterRoomRequest = _reflection.GeneratedProtocolMessageType('EnterRoomRequest', (_message.Message,), {
+  'DESCRIPTOR' : _ENTERROOMREQUEST,
+  '__module__' : 'shengji_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.testing.EnterRoomRequest)
+  })
+_sym_db.RegisterMessage(EnterRoomRequest)
 
 CreateGameRequest = _reflection.GeneratedProtocolMessageType('CreateGameRequest', (_message.Message,), {
   'DESCRIPTOR' : _CREATEGAMEREQUEST,
@@ -1059,8 +1146,8 @@ _SHENGJI = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1849,
-  serialized_end=2381,
+  serialized_start=1950,
+  serialized_end=2564,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateGame',
@@ -1123,11 +1210,11 @@ _SHENGJI = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='StreamGame',
-    full_name='grpc.testing.Shengji.StreamGame',
+    name='EnterRoom',
+    full_name='grpc.testing.Shengji.EnterRoom',
     index=6,
     containing_service=None,
-    input_type=_STREAMGAMEREQUEST,
+    input_type=_ENTERROOMREQUEST,
     output_type=_GAME,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
@@ -1139,6 +1226,16 @@ _SHENGJI = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_PLAYGAMEREQUEST,
     output_type=_GAME,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='AddAIPlayer',
+    full_name='grpc.testing.Shengji.AddAIPlayer',
+    index=8,
+    containing_service=None,
+    input_type=_ADDAIPLAYERREQUEST,
+    output_type=_ADDAIPLAYERRESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

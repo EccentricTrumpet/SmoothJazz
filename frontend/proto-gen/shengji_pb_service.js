@@ -64,12 +64,12 @@ Shengji.LeaveGame = {
   responseType: shengji_pb.Game
 };
 
-Shengji.StreamGame = {
-  methodName: "StreamGame",
+Shengji.EnterRoom = {
+  methodName: "EnterRoom",
   service: Shengji,
   requestStream: false,
   responseStream: true,
-  requestType: shengji_pb.StreamGameRequest,
+  requestType: shengji_pb.EnterRoomRequest,
   responseType: shengji_pb.Game
 };
 
@@ -80,6 +80,15 @@ Shengji.PlayGame = {
   responseStream: false,
   requestType: shengji_pb.PlayGameRequest,
   responseType: shengji_pb.Game
+};
+
+Shengji.AddAIPlayer = {
+  methodName: "AddAIPlayer",
+  service: Shengji,
+  requestStream: false,
+  responseStream: false,
+  requestType: shengji_pb.AddAIPlayerRequest,
+  responseType: shengji_pb.AddAIPlayerResponse
 };
 
 exports.Shengji = Shengji;
@@ -275,13 +284,13 @@ ShengjiClient.prototype.leaveGame = function leaveGame(requestMessage, metadata,
   };
 };
 
-ShengjiClient.prototype.streamGame = function streamGame(requestMessage, metadata) {
+ShengjiClient.prototype.enterRoom = function enterRoom(requestMessage, metadata) {
   var listeners = {
     data: [],
     end: [],
     status: []
   };
-  var client = grpc.invoke(Shengji.StreamGame, {
+  var client = grpc.invoke(Shengji.EnterRoom, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,
@@ -319,6 +328,37 @@ ShengjiClient.prototype.playGame = function playGame(requestMessage, metadata, c
     callback = arguments[1];
   }
   var client = grpc.unary(Shengji.PlayGame, {
+    request: requestMessage,
+    host: this.serviceHost,
+    metadata: metadata,
+    transport: this.options.transport,
+    debug: this.options.debug,
+    onEnd: function (response) {
+      if (callback) {
+        if (response.status !== grpc.Code.OK) {
+          var err = new Error(response.statusMessage);
+          err.code = response.status;
+          err.metadata = response.trailers;
+          callback(err, null);
+        } else {
+          callback(null, response.message);
+        }
+      }
+    }
+  });
+  return {
+    cancel: function () {
+      callback = null;
+      client.close();
+    }
+  };
+};
+
+ShengjiClient.prototype.addAIPlayer = function addAIPlayer(requestMessage, metadata, callback) {
+  if (arguments.length === 2) {
+    callback = arguments[1];
+  }
+  var client = grpc.unary(Shengji.AddAIPlayer, {
     request: requestMessage,
     host: this.serviceHost,
     metadata: metadata,

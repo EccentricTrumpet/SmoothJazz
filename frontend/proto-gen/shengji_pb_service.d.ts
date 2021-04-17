@@ -58,12 +58,12 @@ type ShengjiLeaveGame = {
   readonly responseType: typeof shengji_pb.Game;
 };
 
-type ShengjiStreamGame = {
+type ShengjiEnterRoom = {
   readonly methodName: string;
   readonly service: typeof Shengji;
   readonly requestStream: false;
   readonly responseStream: true;
-  readonly requestType: typeof shengji_pb.StreamGameRequest;
+  readonly requestType: typeof shengji_pb.EnterRoomRequest;
   readonly responseType: typeof shengji_pb.Game;
 };
 
@@ -76,6 +76,15 @@ type ShengjiPlayGame = {
   readonly responseType: typeof shengji_pb.Game;
 };
 
+type ShengjiAddAIPlayer = {
+  readonly methodName: string;
+  readonly service: typeof Shengji;
+  readonly requestStream: false;
+  readonly responseStream: false;
+  readonly requestType: typeof shengji_pb.AddAIPlayerRequest;
+  readonly responseType: typeof shengji_pb.AddAIPlayerResponse;
+};
+
 export class Shengji {
   static readonly serviceName: string;
   static readonly CreateGame: ShengjiCreateGame;
@@ -84,8 +93,9 @@ export class Shengji {
   static readonly ResumeGame: ShengjiResumeGame;
   static readonly JoinGame: ShengjiJoinGame;
   static readonly LeaveGame: ShengjiLeaveGame;
-  static readonly StreamGame: ShengjiStreamGame;
+  static readonly EnterRoom: ShengjiEnterRoom;
   static readonly PlayGame: ShengjiPlayGame;
+  static readonly AddAIPlayer: ShengjiAddAIPlayer;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }
@@ -174,7 +184,7 @@ export class ShengjiClient {
     requestMessage: shengji_pb.LeaveGameRequest,
     callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
   ): UnaryResponse;
-  streamGame(requestMessage: shengji_pb.StreamGameRequest, metadata?: grpc.Metadata): ResponseStream<shengji_pb.Game>;
+  enterRoom(requestMessage: shengji_pb.EnterRoomRequest, metadata?: grpc.Metadata): ResponseStream<shengji_pb.Game>;
   playGame(
     requestMessage: shengji_pb.PlayGameRequest,
     metadata: grpc.Metadata,
@@ -183,6 +193,15 @@ export class ShengjiClient {
   playGame(
     requestMessage: shengji_pb.PlayGameRequest,
     callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
+  ): UnaryResponse;
+  addAIPlayer(
+    requestMessage: shengji_pb.AddAIPlayerRequest,
+    metadata: grpc.Metadata,
+    callback: (error: ServiceError|null, responseMessage: shengji_pb.AddAIPlayerResponse|null) => void
+  ): UnaryResponse;
+  addAIPlayer(
+    requestMessage: shengji_pb.AddAIPlayerRequest,
+    callback: (error: ServiceError|null, responseMessage: shengji_pb.AddAIPlayerResponse|null) => void
   ): UnaryResponse;
 }
 

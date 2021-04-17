@@ -58,9 +58,9 @@ class GameMonitor:
         self._game_id = create_response.game_id 
 
         logging.info("Listening for game updates")
-        request = shengji_pb2.StreamGameRequest()
+        request = shengji_pb2.EnterRoomRequest()
         request.game_id = self._game_id
-        response_iterator = self._stub.StreamGame(request)
+        response_iterator = self._stub.EnterRoom(request)
         # Instead of consuming the response on current thread, spawn a consumption thread.
         self._consumer_future = self._executor.submit(self._response_watcher,
                                                       response_iterator)

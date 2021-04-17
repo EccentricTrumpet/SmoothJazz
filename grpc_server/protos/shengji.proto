@@ -29,19 +29,30 @@ service Shengji {
   rpc JoinGame(JoinGameRequest) returns (Game);
 
   // Leaves a game. A player is considered left automatically after 60s of
-  // inactivity. 
+  // inactivity.
   rpc LeaveGame(LeaveGameRequest) returns (Game);
 
   // Returns the game whenever the game state is changed
-  rpc StreamGame(StreamGameRequest) returns (stream Game);
+  rpc EnterRoom(EnterRoomRequest) returns (stream Game);
 
   // Plays a hand
   rpc PlayGame(PlayGameRequest) returns (Game);
+
+  rpc AddAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
 }
 
 // Request protos
-message StreamGameRequest {
+message AddAIPlayerRequest {
   string game_id = 1;
+}
+
+message AddAIPlayerResponse {
+  string player_name = 1;
+}
+
+message EnterRoomRequest {
+  string game_id = 1;
+  string player_id = 2;
 }
 
 message CreateGameRequest {
@@ -112,7 +123,7 @@ message Card {
     Suit suit = 1;
     Num num = 2;
   }
-  
+
   oneof ActualCard {
     RegularCard card = 1;
     bool is_small_joker = 2;
@@ -128,7 +139,7 @@ message Game {
   string game_id = 1;
   string creator_player_id = 2;
 
-	// Ordered list of players 
+	// Ordered list of players
   repeated string player_ids = 3;
 	string teammate_id = 4;
 

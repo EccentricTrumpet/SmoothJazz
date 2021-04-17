@@ -44,15 +44,20 @@ class ShengjiStub(object):
                 request_serializer=shengji__pb2.LeaveGameRequest.SerializeToString,
                 response_deserializer=shengji__pb2.Game.FromString,
                 )
-        self.StreamGame = channel.unary_stream(
-                '/grpc.testing.Shengji/StreamGame',
-                request_serializer=shengji__pb2.StreamGameRequest.SerializeToString,
+        self.EnterRoom = channel.unary_stream(
+                '/grpc.testing.Shengji/EnterRoom',
+                request_serializer=shengji__pb2.EnterRoomRequest.SerializeToString,
                 response_deserializer=shengji__pb2.Game.FromString,
                 )
         self.PlayGame = channel.unary_unary(
                 '/grpc.testing.Shengji/PlayGame',
                 request_serializer=shengji__pb2.PlayGameRequest.SerializeToString,
                 response_deserializer=shengji__pb2.Game.FromString,
+                )
+        self.AddAIPlayer = channel.unary_unary(
+                '/grpc.testing.Shengji/AddAIPlayer',
+                request_serializer=shengji__pb2.AddAIPlayerRequest.SerializeToString,
+                response_deserializer=shengji__pb2.AddAIPlayerResponse.FromString,
                 )
 
 
@@ -94,13 +99,13 @@ class ShengjiServicer(object):
 
     def LeaveGame(self, request, context):
         """Leaves a game. A player is considered left automatically after 60s of
-        inactivity. 
+        inactivity.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def StreamGame(self, request, context):
+    def EnterRoom(self, request, context):
         """Returns the game whenever the game state is changed
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -110,6 +115,12 @@ class ShengjiServicer(object):
     def PlayGame(self, request, context):
         """Plays a hand
         """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AddAIPlayer(self, request, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -147,15 +158,20 @@ def add_ShengjiServicer_to_server(servicer, server):
                     request_deserializer=shengji__pb2.LeaveGameRequest.FromString,
                     response_serializer=shengji__pb2.Game.SerializeToString,
             ),
-            'StreamGame': grpc.unary_stream_rpc_method_handler(
-                    servicer.StreamGame,
-                    request_deserializer=shengji__pb2.StreamGameRequest.FromString,
+            'EnterRoom': grpc.unary_stream_rpc_method_handler(
+                    servicer.EnterRoom,
+                    request_deserializer=shengji__pb2.EnterRoomRequest.FromString,
                     response_serializer=shengji__pb2.Game.SerializeToString,
             ),
             'PlayGame': grpc.unary_unary_rpc_method_handler(
                     servicer.PlayGame,
                     request_deserializer=shengji__pb2.PlayGameRequest.FromString,
                     response_serializer=shengji__pb2.Game.SerializeToString,
+            ),
+            'AddAIPlayer': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddAIPlayer,
+                    request_deserializer=shengji__pb2.AddAIPlayerRequest.FromString,
+                    response_serializer=shengji__pb2.AddAIPlayerResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -270,7 +286,7 @@ class Shengji(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def StreamGame(request,
+    def EnterRoom(request,
             target,
             options=(),
             channel_credentials=None,
@@ -280,8 +296,8 @@ class Shengji(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/grpc.testing.Shengji/StreamGame',
-            shengji__pb2.StreamGameRequest.SerializeToString,
+        return grpc.experimental.unary_stream(request, target, '/grpc.testing.Shengji/EnterRoom',
+            shengji__pb2.EnterRoomRequest.SerializeToString,
             shengji__pb2.Game.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -300,5 +316,22 @@ class Shengji(object):
         return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/PlayGame',
             shengji__pb2.PlayGameRequest.SerializeToString,
             shengji__pb2.Game.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def AddAIPlayer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/AddAIPlayer',
+            shengji__pb2.AddAIPlayerRequest.SerializeToString,
+            shengji__pb2.AddAIPlayerResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

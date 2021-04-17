@@ -3,23 +3,67 @@
 
 import * as jspb from "google-protobuf";
 
-export class StreamGameRequest extends jspb.Message {
+export class AddAIPlayerRequest extends jspb.Message {
   getGameId(): string;
   setGameId(value: string): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StreamGameRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: StreamGameRequest): StreamGameRequest.AsObject;
+  toObject(includeInstance?: boolean): AddAIPlayerRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AddAIPlayerRequest): AddAIPlayerRequest.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: StreamGameRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StreamGameRequest;
-  static deserializeBinaryFromReader(message: StreamGameRequest, reader: jspb.BinaryReader): StreamGameRequest;
+  static serializeBinaryToWriter(message: AddAIPlayerRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AddAIPlayerRequest;
+  static deserializeBinaryFromReader(message: AddAIPlayerRequest, reader: jspb.BinaryReader): AddAIPlayerRequest;
 }
 
-export namespace StreamGameRequest {
+export namespace AddAIPlayerRequest {
   export type AsObject = {
     gameId: string,
+  }
+}
+
+export class AddAIPlayerResponse extends jspb.Message {
+  getPlayerName(): string;
+  setPlayerName(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AddAIPlayerResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AddAIPlayerResponse): AddAIPlayerResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: AddAIPlayerResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AddAIPlayerResponse;
+  static deserializeBinaryFromReader(message: AddAIPlayerResponse, reader: jspb.BinaryReader): AddAIPlayerResponse;
+}
+
+export namespace AddAIPlayerResponse {
+  export type AsObject = {
+    playerName: string,
+  }
+}
+
+export class EnterRoomRequest extends jspb.Message {
+  getGameId(): string;
+  setGameId(value: string): void;
+
+  getPlayerId(): string;
+  setPlayerId(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): EnterRoomRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: EnterRoomRequest): EnterRoomRequest.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: EnterRoomRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): EnterRoomRequest;
+  static deserializeBinaryFromReader(message: EnterRoomRequest, reader: jspb.BinaryReader): EnterRoomRequest;
+}
+
+export namespace EnterRoomRequest {
+  export type AsObject = {
+    gameId: string,
+    playerId: string,
   }
 }
 

@@ -1,7 +1,9 @@
 import { AfterViewChecked, Component, ViewChild } from '@angular/core';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game} from "proto-gen/shengji_pb";
+import { AlertController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import * as $ from "jquery";
 declare var cards:any;
 
@@ -13,18 +15,23 @@ declare var cards:any;
 
 export class GamePage implements AfterViewChecked {
 @ViewChild('cardTable') tableElement: any;
+  nativeElement: any;
+  gameId = 'None';
   started = false;
+  backend_host = "http://localhost:8080";
 
-  constructor() { }
+  constructor(public alertController: AlertController, private router: Router) {
+    this.presentNamePrompt();
+  }
 
   ngAfterViewInit() {
     var that = this;
-    $('#startGameButton').on("click", function() {
-      console.log("I got a click!");
-      that.startGame();
+    $('#addAIButton').on("click", function() {
+      console.log("Button got a click!");
+      that.addAIPlayer();
     });
   }
-  
+
   ngAfterViewChecked() {
     if (!this.started) {
       if (this.tableElement.nativeElement.offsetHeight === 0) {
@@ -32,25 +39,98 @@ export class GamePage implements AfterViewChecked {
       }
 
       this.started = true;
-      let nativeElement = this.tableElement.nativeElement;
-      new Game(nativeElement.clientHeight, nativeElement.clientWidth);
+      this.nativeElement = this.tableElement.nativeElement;
     }
   }
-  startGame() {
-    const createGameRequest = new CreateGameRequest();
-    createGameRequest.setPlayerId("my ts player");
-    grpc.unary(Shengji.CreateGame, {
-      request: createGameRequest,
-      host: "http://localhost:8080",
+  async presentNamePrompt() {
+    const alert = await this.alertController.create({
+      // cssClass: 'my-custom-class',
+      header: 'Please Enter Your Name:',
+      inputs: [
+        {
+          name: 'player_name',
+          id: 'player_name',
+          type: 'text',
+          placeholder: '<My Name>'
+        },
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+            console.log('Player refuses to enter name.');
+            this.router.navigate(['/']);
+          }
+        }, {
+          text: 'Ok',
+          handler: (inputData) => {
+            console.log('Player entered: '+JSON.stringify(inputData));
+            this.startGame(inputData.player_name);
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+  addAIPlayer() {
+    const createAIRequest = new AddAIPlayerRequest();
+    createAIRequest.setGameId(this.gameId);
+    console.log('Adding AI Player for: '+this.gameId);
+    grpc.unary(Shengji.AddAIPlayer, {
+      request: createAIRequest,
+      host: this.backend_host,
       onEnd: res => {
         const { status, statusMessage, headers, message, trailers } = res;
         if (status === grpc.Code.OK && message) {
-          console.log("A game is created! Got book: ", message.toObject());
+          var AIName = message.toObject()['playerName']
+          alert(AIName + " is added to room");
         }
       }
     });
   }
-
+  startGame(player_name: string) {
+    const createGameRequest = new CreateGameRequest();
+    createGameRequest.setPlayerId(player_name);
+    grpc.unary(Shengji.CreateGame, {
+      request: createGameRequest,
+      host: this.backend_host,
+      onEnd: res => {
+        const { status, statusMessage, headers, message, trailers } = res;
+        if (status === grpc.Code.OK && message) {
+          var gameId = message.toObject()['gameId']
+          alert("A game is created room number: " + gameId);
+          this.gameId = gameId;
+          console.log("Created game object: ", message.toObject());
+          this.enterRoom(player_name, gameId);
+        }
+      }
+    });
+  }
+  enterRoom(player_name: string, game_id: any) {
+    const enterRoomRequest = new EnterRoomRequest();
+    enterRoomRequest.setPlayerId(player_name);
+    enterRoomRequest.setGameId(game_id);
+    grpc.invoke(Shengji.EnterRoom, {
+      request: enterRoomRequest,
+      host: this.backend_host,
+      onMessage: (message: Game) => {
+        console.log("Current game state: ", message.toObject());
+        if (message.toObject()['data']['state'] == 3) {
+          alert("game is starting!")
+          new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
+        }
+      },
+      onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
+        if (code == grpc.Code.OK) {
+          console.log("all ok")
+        } else {
+          console.log("hit an error", code, msg, trailers);
+        }
+      }
+    });
+  }
 }
 
 enum Suit {
@@ -623,7 +703,7 @@ class TrickPile {
 }
 
 class Player {
-  game: Game;
+  game: FrontendGame;
   index: number;
   x: number;
   y: number;
@@ -631,7 +711,7 @@ class Player {
   tricksWonUI;
   selectedCardUIs = new Set<any>();
 
-  constructor(game: Game, index: number, x: number, y: number) {
+  constructor(game: FrontendGame, index: number, x: number, y: number) {
     this.game = game;
     this.index = index;
     this.x = x;
@@ -679,7 +759,7 @@ class Player {
   }
 }
 
-class Game {
+class FrontendGame {
   // Game metadata
   cardsInKitty = 8;
   gameStage = GameStage.Deal;
