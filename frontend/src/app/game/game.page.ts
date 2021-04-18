@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@angular/core';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
 import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game} from "proto-gen/shengji_pb";
@@ -14,14 +14,16 @@ declare var cards:any;
 })
 
 export class GamePage implements AfterViewChecked {
-@ViewChild('cardTable') tableElement: any;
+@ViewChild('cardTable') tableElement: ElementRef;
+@ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
+@ViewChild('playerInfo', { static: false }) playerInfo: ElementRef;
   nativeElement: any;
   gameId = 'None';
   started = false;
   backend_host = "http://localhost:8080";
   createGame: boolean;
 
-  constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController) {
+  constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
     this.route.queryParams.subscribe(params => {
       if (this.router.getCurrentNavigation().extras.state) {
         this.createGame = this.router.getCurrentNavigation().extras.state.createGame;
@@ -136,7 +138,7 @@ export class GamePage implements AfterViewChecked {
         const { status, statusMessage, headers, message, trailers } = res;
         if (status === grpc.Code.OK && message) {
           var AIName = message.toObject()['playerName']
-          alert(AIName + " is added to room");
+          console.log(AIName + " is added to room");
         }
       }
     });
@@ -150,11 +152,12 @@ export class GamePage implements AfterViewChecked {
       onEnd: res => {
         const { status, statusMessage, headers, message, trailers } = res;
         if (status === grpc.Code.OK && message) {
-          var gameId = message.toObject()['gameId']
-          alert("A game is created room number: " + gameId);
-          this.gameId = gameId;
+          this.gameId = message.toObject()['gameId']
+          const gameIdText = this.renderer.createText('Room ID: '+this.gameId);
+          this.renderer.appendChild(this.gameInfo.nativeElement, gameIdText);
+
           console.log("Created game object: ", message.toObject());
-          this.enterRoom(player_name, gameId);
+          this.enterRoom(player_name, this.gameId);
         }
       }
     });
@@ -168,8 +171,12 @@ export class GamePage implements AfterViewChecked {
       host: this.backend_host,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
+
+        const playerIdsStr = "Players:" + message.toObject()['playerIdsList'];
+        this.renderer.setProperty(this.playerInfo.nativeElement, 'innerHTML', playerIdsStr);
+
         if (message.toObject()['data']['state'] == 3) {
-          alert("game is starting!")
+          console.log("game is starting!")
           new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
         }
       },
