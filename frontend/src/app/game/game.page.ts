@@ -3,7 +3,7 @@ import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
 import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import * as $ from "jquery";
 declare var cards:any;
 
@@ -19,9 +19,21 @@ export class GamePage implements AfterViewChecked {
   gameId = 'None';
   started = false;
   backend_host = "http://localhost:8080";
+  createGame: boolean;
 
-  constructor(public alertController: AlertController, private router: Router) {
-    this.presentNamePrompt();
+  constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController) {
+    this.route.queryParams.subscribe(params => {
+      if (this.router.getCurrentNavigation().extras.state) {
+        this.createGame = this.router.getCurrentNavigation().extras.state.createGame;
+      }
+    });
+    this.createGame = this.router.getCurrentNavigation().extras.state.createGame;
+    console.log("game page, createGame is "+this.createGame);
+    if (this.createGame) {
+      this.roomCreationPrompt();
+    } else {
+      this.roomJoinPrompt();
+    }
   }
 
   ngAfterViewInit() {
@@ -32,19 +44,19 @@ export class GamePage implements AfterViewChecked {
     });
   }
 
+  // TODO(Aaron): Check if this can be replaced by ionViewDidEnter
   ngAfterViewChecked() {
     if (!this.started) {
       if (this.tableElement.nativeElement.offsetHeight === 0) {
         return;
       }
-
       this.started = true;
       this.nativeElement = this.tableElement.nativeElement;
     }
   }
-  async presentNamePrompt() {
+  async roomCreationPrompt() {
     const alert = await this.alertController.create({
-      // cssClass: 'my-custom-class',
+      // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
       header: 'Please Enter Your Name:',
       inputs: [
         {
@@ -68,6 +80,45 @@ export class GamePage implements AfterViewChecked {
           handler: (inputData) => {
             console.log('Player entered: '+JSON.stringify(inputData));
             this.startGame(inputData.player_name);
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+  async roomJoinPrompt() {
+    const alert = await this.alertController.create({
+      // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
+      header: 'Please Enter Game Room ID and Your Name:',
+      inputs: [
+        {
+          name: 'game_id',
+          id: 'game_id',
+          type: 'text',
+          placeholder: '<Game Room ID>'
+        },
+        {
+          name: 'player_name',
+          id: 'player_name',
+          type: 'text',
+          placeholder: '<My Name>'
+        },
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+            console.log('Player refuses to enter game ID or name.');
+            this.router.navigate(['/']);
+          }
+        }, {
+          text: 'Ok',
+          handler: (inputData) => {
+            console.log('Player entered: '+JSON.stringify(inputData));
+            this.gameId = inputData.game_id;
+            this.enterRoom(inputData.player_name, inputData.game_id);
           }
         }
       ]

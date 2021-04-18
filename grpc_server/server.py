@@ -99,20 +99,25 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
                    request: shengji_pb2.EnterRoomRequest,
                    context: grpc.ServicerContext
                   ) -> Iterable[shengji_pb2.Game]:
-        logging.info("Received a EnterRoom request for id [%s]", request.game_id)
+        logging.info("Received a EnterRoom request: %s", request)
         self._addPlayer(request.game_id, request.player_id)
 
         # wait for notification
         with self.game_watchers[request.game_id]:
             self.game_watchers[request.game_id].notify_all()
-            while True:
+        self.game_state_lock.acquire()
+        game = self.game[request.game_id]
+        self.game_state_lock.release()
+        yield game
+        while True:
+            with self.game_watchers[request.game_id]:
                 logging.info("Waiting for game update [%s]", self.game_watchers[request.game_id])
                 self.game_watchers[request.game_id].wait()
                 logging.info("Streaming game update...")
                 self.game_state_lock.acquire()
                 game = self.game[request.game_id]
                 self.game_state_lock.release()
-                yield game
+            yield game
 
         logging.info("Call finished [%s]", request.game_id)
 
@@ -127,5 +132,6 @@ def serve(address: str) -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s")
     serve("[::]:50051")
