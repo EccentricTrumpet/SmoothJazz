@@ -21,15 +21,12 @@ export class GamePage implements AfterViewChecked {
   gameId = 'None';
   started = false;
   backend_host = "http://localhost:8080";
-  createGame: boolean;
+  createGame = true;
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
-    this.route.queryParams.subscribe(params => {
-      if (this.router.getCurrentNavigation().extras.state) {
-        this.createGame = this.router.getCurrentNavigation().extras.state.createGame;
-      }
-    });
-    this.createGame = this.router.getCurrentNavigation().extras.state.createGame;
+    if (this.router.getCurrentNavigation().extras.state) {
+      this.createGame = this.router.getCurrentNavigation().extras.state.createGame;
+    }
     console.log("game page, createGame is "+this.createGame);
     if (this.createGame) {
       this.roomCreationPrompt();
