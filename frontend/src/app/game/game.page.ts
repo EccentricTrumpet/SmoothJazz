@@ -20,6 +20,7 @@ export class GamePage implements AfterViewChecked {
   nativeElement: any;
   gameId = 'None';
   started = false;
+  // TODO(Aaron): Make this a commandline flag instead of setting it statically here.
   backend_host = "http://localhost:8080";
   createGame = true;
 
@@ -38,7 +39,7 @@ export class GamePage implements AfterViewChecked {
   ngAfterViewInit() {
     var that = this;
     $('#addAIButton').on("click", function() {
-      console.log("Button got a click!");
+      console.log("Adding new AI player!");
       that.addAIPlayer();
     });
   }
