@@ -189,7 +189,7 @@ export class GamePage implements AfterViewChecked {
   }
 }
 
-enum Suit {
+export enum Suit {
   None,
   Spades,
   Hearts,
@@ -262,7 +262,7 @@ const cardWidth = function() : number { return cards.options.cardSize.width };
 const padding = function() : number { return cards.options.cardSize.padding };
 
 // Card abstraction, mock type used for gRPC
-class Card {
+export class Card {
   suit: Suit;
   rank: number;
 
@@ -280,7 +280,7 @@ class Card {
   }
 }
 
-class CardRanking {
+export class CardRanking {
   trumpSuit = Suit.None;
   trumpRank: number;
   uiRanks = new Map();

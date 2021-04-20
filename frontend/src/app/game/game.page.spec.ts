@@ -1,24 +1,20 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { IonicModule } from '@ionic/angular';
-
-import { GamePage } from './game.page';
+import * as src from './game.page';
 
 describe('GamePage', () => {
-  let component: GamePage;
-  let fixture: ComponentFixture<GamePage>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ GamePage ],
-      imports: [IonicModule.forRoot()]
-    }).compileComponents();
+  it('should resolve Trump suit', () => {
+    let ranking = new src.CardRanking(3)
+    ranking.resetOrder(src.Suit.Clubs)
 
-    fixture = TestBed.createComponent(GamePage);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  }));
+    let resolvedTrump = ranking.getFunctionalSuit(new src.Card(src.Suit.Clubs, 1))
+    expect(resolvedTrump).toBe(src.Suit.Trump)
+  })
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+  it('should resolve Trump rank', () => {
+    let ranking = new src.CardRanking(3)
+    let resolvedTrump = ranking.getFunctionalSuit(new src.Card(src.Suit.Clubs, 3))
+
+    expect(resolvedTrump).toBe(src.Suit.Trump)
+  })
+
 });

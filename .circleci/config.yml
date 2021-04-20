@@ -1,7 +1,46 @@
 version: 2.1
-orbs:
-  node: circleci/node@3.0.0
+jobs:
+  test-backend:
+    working_directory: ~/repo/backend
+    docker:
+      - image: circleci/python:3.7.2
+    resource_class: small
+    steps:
+      - checkout:
+          path: ~/repo
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
+      - restore_cache:  # ensure this step occurs *before* installing dependencies
+          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run:
+          command: |
+            sudo pip install pipenv
+            pipenv install
+      - save_cache:
+          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - ".venv"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.7/site-packages"
+      - run: python test.py -v
+  test-frontend:
+    working_directory: ~/repo/frontend
+    docker:
+      - image: circleci/node:10-browsers
+    steps:
+      - checkout:
+          path: ~/repo
+      - restore_cache:
+          key: my-project-{{ .Branch }}-{{ checksum "package-lock.json" }}
+      - run: npm install
+      - save_cache:
+          key: my-project-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "node_modules"
+      - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
+
 workflows:
-  node-tests:
+  ci-tests:
     jobs:
-      - node/test
+      - test-backend
+      - test-frontend

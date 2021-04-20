@@ -43,7 +43,7 @@ class Game:
         if len(self.players.keys()) == 4:
             return False
         self.players[player_id] = Player()
-    
+
     # Sets the play order - this should be called exactly once before the first
     # game starts
     def SetPlayerOrder(self, player_ids):
@@ -214,7 +214,7 @@ class Player:
     # Returns true if the given cards can be played
     def CanPlayCards(self, cards, previous_player_hand):
         pass
-        
+
 
     def PlayCards(self, cards, previous_player_hand):
         # Returns false if the cards do not form a hand
@@ -282,7 +282,7 @@ class CardCollection:
 """ A hand represents a valid shengji move, which consists of one of the following
 1- A single card of any kind
 2- A pair of cards of the same suit
-3- Three-of-a-kind 
+3- Three-of-a-kind
 4- Four-of-a-kind (bomb)
 5- Straight within the same suit with more than 3 cards
 6- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
