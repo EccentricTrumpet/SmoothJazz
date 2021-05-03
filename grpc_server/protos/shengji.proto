@@ -43,6 +43,8 @@ message PlayHandRequest{
     CLAIM_TRUMP = 0;
     // Plays a hand.
     PLAY_HAND = 1;
+    // Hides kitty cards.
+    HIDE_KITTY = 2;
   }
 
   Intention intention = 3;
