@@ -82,6 +82,9 @@ message Game {
   // Player who needs to play a hand.
   string next_turn_player_id = 4;
 
+  // Player seat assignment, dictates play order and teams.
+  repeated string player_seat_assignment = 10;
+
   // Player who wins the current round.
   string current_round_winner_player_id = 5;
 
