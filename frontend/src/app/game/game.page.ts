@@ -464,13 +464,13 @@ class TrickPile {
     this.players = players;
     this.ranking = ranking;
     this.cardsPlayedUI = [players.length];
-    for (let i = 0; i < this.players.length; i++) {
+    for (let i = 0; i < players.length; i++) {
       let vector = [players[i].x - x, players[i].y - y];
       let magnitude = Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
-
       this.cardsPlayedUI[i] = new cards.Hand({faceUp: true,
-        x:x + vector[0]*cardHeight()/magnitude,
-        y:y - cardHeight()/2 + vector[1]*cardHeight()/magnitude});
+        x:x + vector[0]*cardWidth()/magnitude,
+        y:y + vector[1]*cardHeight()/magnitude
+      })
     }
   }
 
@@ -772,8 +772,8 @@ class Player {
     this.index = index;
     this.x = x;
     this.y = y;
-    this.handUI = new cards.Hand({faceUp: true, x:x, y:y - cardHeight()});
-    this.tricksWonUI = new cards.Hand({faceUp: true, x:x, y:y + padding()});
+    this.handUI = new cards.Hand({faceUp: true, x:x, y:y - (cardHeight() + game.cardMargin) / 2});
+    this.tricksWonUI = new cards.Hand({faceUp: true, x:x, y:y + (cardHeight() + game.cardMargin) / 2});
     let that = this;
     this.handUI.click((c, e) => that.act(c, e));
   }
@@ -832,23 +832,49 @@ class FrontendGame {
   kittyPlayer = 0;
 
   // UI elements
+  cardMargin = -1;
+  labelHeight = -1;
   deckUI;
   kittyUI;
 
   constructor(height: number, width: number) {
     // Initialize with two decks
-    cards.init({table: "#card-table", loop: 2});
+    this.cardMargin = height / 300;
+    this.labelHeight = height / 40;
+    // Seven rows layout: 1) top layer hands; 2) top player winning
+    // tricks; 3) top player played cards; 4) left / right player
+    // hands with played cards; 5) left / right player winning cards;
+    // 6) bottom player hands; 7) bottome player winning tricks.
+    const minCardHeight = (height - 6 * this.cardMargin - 3 * this.labelHeight) / 7;
+    // Middle player row layout: 1 face plus 24 1/5 shown hands * 2 + 3 playing card + 4 padding
+    // NOTE: Worst case for bottom row layout isn't included in the calculation:
+    // 1 face plus 7 1/5 shown hidden kitty + 1 face hand card
+    // + 1 face winning card + 95 1/5 shown winning card + 2 padding
+    // const minCardWidth = (width - 2 * this.cardMargin) / 25;
+    const minCardWidth = (width - 6 * this.cardMargin) / 17;
+    const originCardWidth = 69;
+    const originCardHeight = 94;
+    const cardSize = {
+      width: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight),
+      height: Math.min(minCardHeight, minCardWidth * originCardHeight / originCardWidth),
+      padding: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight) / 5,
+    }
+    cards.init({table: "#card-table", loop: 2, cardSize: cardSize});
     this.deckUI = new cards.Deck({x:width/2, y:height/2});
     this.deckUI.addCards(cards.all);
     cards.shuffle(this.deckUI);
     this.deckUI.render({immediate: true});
 
-    // Create players
+    // Create players. Note that x and y coordinates are the central
+    // point between hand pile and trickWon pile.
+    // For left / right player, We can have a max of 33 cards (25
+    // cards + 8 kitty), so the central_x locates at (1 full face
+    // card plus 32 padding)/2
     this.players = [
-      new Player(this, 0, width/2, height - cardHeight()/2 - padding()*2),
-      new Player(this, 1, width*4/5, height/2),
-      new Player(this, 2, width/2, cardHeight()*1.5 + padding()),
-      new Player(this, 3, width/5, height/2) ];
+      new Player(this, 0, width/2, height - cardHeight() - this.cardMargin), // bottom
+      new Player(this, 1, width - (cardWidth() + padding() * 32)/2, height/2), // right
+      new Player(this, 2, width/2, cardHeight() + this.cardMargin), // top
+      new Player(this, 3, (cardWidth() + padding() * 32)/2, height/2) ]; // left
 
     // Create kitty
     this.kittyUI = new cards.Hand({faceUp:true, x:cardWidth()/2 + 4.5*padding(), y:height - cardWidth()/2 - padding()})

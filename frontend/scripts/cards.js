@@ -14,7 +14,7 @@ var cards = (function() {
     table: 'body',
     cardback: 'red',
     acesHigh: true,
-    cardsUrl: 'assets/cards_js_img/cards.png',
+    cardsUrl: 'assets/cards_js_img/',
     blackJoker: true,
     redJoker: true,
     type: STANDARD,
@@ -104,15 +104,16 @@ var cards = (function() {
 
   Card.prototype = {
     init: function(suit, rank, table) {
-      this.shortName = suit + rank;
       this.suit = suit;
       this.rank = rank;
       this.name = suit.toUpperCase() + rank;
       this.faceUp = false;
+      let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
       this.el = $('<div/>').css({
         width: opt.cardSize.width,
         height: opt.cardSize.height,
-        "background-image": 'url(' + opt.cardsUrl + ')',
+        "background-image": 'url(' + opt.cardsUrl + card_back + '.svg)',
+        "background-size": '100%',
         position: 'absolute',
         cursor: 'pointer'
       }).addClass('card').data('card', this).appendTo($(table));
@@ -142,28 +143,14 @@ var cards = (function() {
     },
 
     showCard: function() {
-      var offsets = {
-        "c": 0,
-        "d": 1,
-        "h": 2,
-        "s": 3,
-        "rj": 2,
-        "bj": 3
-      };
-      var xpos, ypos;
-      var rank = this.rank;
-      if (rank == 14) {
-        rank = 1; //Aces high must work as well.
-      }
-      xpos = -rank * opt.cardSize.width;
-      ypos = -offsets[this.suit] * opt.cardSize.height;
-      this.rotate(0);
-      $(this.el).css('background-position', xpos + 'px ' + ypos + 'px');
+      let r = (this.rank == 14) ? 1 : this.rank;
+      let shortName = this.suit + r;
+      $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
     },
 
     hideCard: function(position) {
-      var y = opt.cardback == 'red' ? 0 * opt.cardSize.height : -1 * opt.cardSize.height;
-      $(this.el).css('background-position', '0px ' + y + 'px');
+      let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
+      $(this.el).css('background-image', 'url(' + opt.cardsUrl + card_back + '.svg)');
       this.rotate(0);
     },
 
