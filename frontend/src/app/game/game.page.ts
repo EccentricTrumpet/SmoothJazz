@@ -174,7 +174,7 @@ export class GamePage implements AfterViewChecked {
         const playerIdsStr = "Players:" + message.toObject()['playerIdsList'];
         this.renderer.setProperty(this.playerInfo.nativeElement, 'innerHTML', playerIdsStr);
 
-        if (gameStarted == false && message.toObject()['playerStates'].size() == 4) {
+        if (gameStarted == false && message.getPlayerStatesList().length == 4) {
           console.log("game is starting!")
           gameStarted = true;
           new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
