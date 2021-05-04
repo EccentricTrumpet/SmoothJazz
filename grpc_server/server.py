@@ -42,7 +42,6 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         self.game_id += 1
         self.game[game_id].game_id = game_id
         self.game[game_id].creator_player_id = request.player_id
-        self.game[game_id].data.state = shengji_pb2.GameData.NOT_ENOUGH_PLAYERS
 
         # Creates a game watcher
         self.game_watchers[game_id] = threading.Condition()
@@ -53,8 +52,9 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         self.game_state_lock.release()
         return game
 
-    def PlayGame(self, request, context):
+    def PlayHand(self, request, context):
         logging.info("Received a PlayGame request from player_id [%s], game_id [%s]", request.player_id, request.game_id)
+        logging.info("UNIMPLEMENTED")
         game_id = request.game_id
         player_id = request.player_id
         self.game_state_lock.acquire()
@@ -63,7 +63,6 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
             self.game[game_id]
         except:
             logging.info("Not found: game_id [%s]", request.game_id)
-        self.game[game_id].state.game_move_count += 1
         game = self.game[game_id]
 
         self.game_state_lock.release()
@@ -74,12 +73,11 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
 
         return game
 
-    def _addPlayer(self, game_id, player_name):
+    def _addPlayer(self, game_id, player_id):
         self.game_state_lock.acquire()
-        self.game[game_id].player_ids.append(player_name)
-        if len(self.game[game_id].player_ids) == 4:
-            self.game[game_id].data.state = shengji_pb2.GameData.STARTED
-        # Notifies all watchers of state change
+        player_state = shengji_pb2.PlayerState()
+        player_state.player_id = player_id 
+        self.game[game_id].player_states.append(player_state)
         with self.game_watchers[game_id]:
             self.game_watchers[game_id].notify_all()
         self.game_state_lock.release()
@@ -109,6 +107,7 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         game = self.game[request.game_id]
         self.game_state_lock.release()
         yield game
+
         while True:
             with self.game_watchers[request.game_id]:
                 logging.info("Waiting for game update [%s]", self.game_watchers[request.game_id])

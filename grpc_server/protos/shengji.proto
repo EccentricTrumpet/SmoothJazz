@@ -1,47 +1,22 @@
-// Copyright 2020 The gRPC Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 syntax = "proto3";
-
 package grpc.testing;
+
 
 service Shengji {
   // Creates a new game.
   rpc CreateGame(CreateGameRequest) returns (Game);
 
-  // Only creator of the game can start/pause/resume a game
-  rpc StartGame(StartGameRequest) returns (Game);
-  rpc PauseGame(PauseGameRequest) returns (Game);
-  rpc ResumeGame(PauseGameRequest) returns (Game);
-
-  // Join a game.
-  rpc JoinGame(JoinGameRequest) returns (Game);
-
-  // Leaves a game. A player is considered left automatically after 60s of
-  // inactivity.
-  rpc LeaveGame(LeaveGameRequest) returns (Game);
-
-  // Returns the game whenever the game state is changed
+  // Enters the room if the player has not entered the room yet. Streams back
+  // the game whenever game state changes.
   rpc EnterRoom(EnterRoomRequest) returns (stream Game);
 
-  // Plays a hand
-  rpc PlayGame(PlayGameRequest) returns (Game);
+  // Plays a hand or tries to claim trump suit.
+  rpc PlayHand(PlayHandRequest) returns (PlayHandResponse);
 
   rpc AddAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
 }
 
-// Request protos
+// Request and response protos
 message AddAIPlayerRequest {
   string game_id = 1;
 }
@@ -59,52 +34,97 @@ message CreateGameRequest {
   string player_id = 1;
 }
 
-message JoinGameRequest {
+message PlayHandRequest{
   string player_id = 1;
   string game_id = 2;
+
+  enum Intention {
+    // Claims trump suit - this is only valid while cards are being served.
+    CLAIM_TRUMP = 0;
+    // Plays a hand.
+    PLAY_HAND = 1;
+    // Hides kitty cards.
+    HIDE_KITTY = 2;
+  }
+
+  Intention intention = 3;
+  Hand hand = 4;
 }
 
-message LeaveGameRequest {
-  string player_id = 1;
-  string game_id = 2;
+message PlayHandResponse{
+  // TODO: Ideally FE only needs to handle RPC failure. Use a boolean here for
+  // now.
+  bool success = 1;
+  string error_message = 2;
 }
 
-message PauseGameRequest {
-  string player_id = 1;
-  string game_id = 2;
+// Player-specific state
+message PlayerState {
+  // ID of the player
+  string player_id = 4;
+
+  // Cards you have on your hand
+  Hand cards_on_hand = 1;
+
+  // Cards you have in your discard pile
+  Hand discard_pile = 2;
+
+  // You current score
+  int32 score = 3;
 }
 
-message ResumeGameRequest {
-  string player_id = 1;
-  string game_id = 2;
-}
+message Game {
+  // Game ID.
+  string game_id = 1;
 
-message StartGameRequest {
-  string player_id = 1;
-  string game_id = 2;
+  // Creator of the game.
+  string creator_player_id = 2;
 
-  // This is the "seating position". 1st player and 3rd player vs. 2nd player
-  // and 4th player.
-  repeated string ordered_player_ids = 3;
-}
+  // Dealer of this round. The dealer is the first player to play a hand and
+  // has RO access to kitty.
+  string dealer_player_id = 3;
 
-message PlayGameRequest{
-  string player_id = 1;
-  string game_id = 2;
-  repeated Card hand = 3;
+  // Player who needs to play a hand.
+  // Either "ANYONE" or a specific user id.
+  //
+  // ANYONE: Anyone can claim trump
+  // specific user id: Only that user can play (hide kitty or play a hand)
+  string next_turn_player_id = 4;
+
+  // Player who wins the current round.
+  string current_round_winner_player_id = 5;
+
+  // All player states. Private states will be redacted by the server (e.g.
+  // other players' hand cards).
+  // Order of player_states == play order.
+  // The first player is guaranteed to be the caller.
+  repeated PlayerState player_states = 6;
+
+  // Kitty/hidden hand. This is only visible to the dealer.
+  Hand kitty = 7;
+
+  // Current trump suit. If trump_suit is SUIT_UNDEFINED, then we're playing a
+  // game without trump suit.
+  Card.Suit trump_suit = 8; 
+
+  // Trump number.
+  Card.Num trump_num = 9; 
 }
 
 message Card {
   enum Suit {
-    UNDEFINED = 0;
+    SUIT_UNDEFINED = 0;
     HEATS = 1;
     SPADES = 2;
     CLUBS = 3;
     DIAMONDS = 4;
+
+    SMALL_JOKER = 5;
+    BIG_JOKER = 6;
   }
 
   enum Num {
-    ACE = 0;
+    NUM_UNDEFINED = 0;
     TWO = 1;
     THREE = 2;
     FOUR = 3;
@@ -117,69 +137,13 @@ message Card {
     JACK = 10;
     QUEEN = 11;
     KING = 12;
+    ACE = 13;
   }
 
-  message RegularCard {
-    Suit suit = 1;
-    Num num = 2;
-  }
-
-  oneof ActualCard {
-    RegularCard card = 1;
-    bool is_small_joker = 2;
-    bool is_big_joker = 3;
-  }
+  Suit suit = 1;
+  Num num = 2;
 }
 
 message Hand {
   repeated Card cards = 1;
-}
-
-message Game {
-  string game_id = 1;
-  string creator_player_id = 2;
-
-	// Ordered list of players
-  repeated string player_ids = 3;
-	string teammate_id = 4;
-
-  // Game data, including cards on hand, currently played cards on table,
-  // score etc.
-  GameData data = 7;
-}
-
-message GameData {
-  enum GameState {
-    UNDEFINED = 0;
-    NOT_ENOUGH_PLAYERS = 1;
-    NOT_STARTED = 2;
-    STARTED = 3;
-    PAUSED = 4;
-    ENDED = 5;
-	}
-
-  // Game state
-  GameState state = 1;
-
-  // The player that needs to make a move. This field is only set if the game
-  // state is STARTED.
-  string waiting_for_player_id = 2;
-
-  // Total number of actions since the game was created. This is a monoincrease
-  // number that can be used for debugging purposes.
-  int32 game_action_count = 3;
-
-  // Current trump cards and suit.
-  Card.Suit trump_suit = 4;
-	Card.Num trump_num = 5;
-
-  // Cards on hand
-  Hand my_hand_cards = 6;
-
-  // Cards currely played on the table, keyed by player_id.
-  map<string, Hand> cards_on_table = 7;
-
-  // Scores
-  map<string, int32> current_scores = 8;
-  map<string, int32> cumulative_scores = 9;
 }

@@ -19,10 +19,40 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"%\n\x12\x41\x64\x64\x41IPlayerRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"*\n\x13\x41\x64\x64\x41IPlayerResponse\x12\x13\n\x0bplayer_name\x18\x01 \x01(\t\"6\n\x10\x45nterRoomRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x11\n\tplayer_id\x18\x02 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"5\n\x0fJoinGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"6\n\x10LeaveGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"6\n\x10PauseGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"7\n\x11ResumeGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\"R\n\x10StartGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12\x1a\n\x12ordered_player_ids\x18\x03 \x03(\t\"W\n\x0fPlayGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12 \n\x04hand\x18\x03 \x03(\x0b\x32\x12.grpc.testing.Card\"\xa2\x03\n\x04\x43\x61rd\x12.\n\x04\x63\x61rd\x18\x01 \x01(\x0b\x32\x1e.grpc.testing.Card.RegularCardH\x00\x12\x18\n\x0eis_small_joker\x18\x02 \x01(\x08H\x00\x12\x16\n\x0cis_big_joker\x18\x03 \x01(\x08H\x00\x1aY\n\x0bRegularCard\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12#\n\x03num\x18\x02 \x01(\x0e\x32\x16.grpc.testing.Card.Num\"E\n\x04Suit\x12\r\n\tUNDEFINED\x10\x00\x12\t\n\x05HEATS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\"\x87\x01\n\x03Num\x12\x07\n\x03\x41\x43\x45\x10\x00\x12\x07\n\x03TWO\x10\x01\x12\t\n\x05THREE\x10\x02\x12\x08\n\x04\x46OUR\x10\x03\x12\x08\n\x04\x46IVE\x10\x04\x12\x07\n\x03SIX\x10\x05\x12\t\n\x05SEVEN\x10\x06\x12\t\n\x05\x45IGHT\x10\x07\x12\x08\n\x04NINE\x10\x08\x12\x07\n\x03TEN\x10\t\x12\x08\n\x04JACK\x10\n\x12\t\n\x05QUEEN\x10\x0b\x12\x08\n\x04KING\x10\x0c\x42\x0c\n\nActualCard\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card\"\x81\x01\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x12\n\nplayer_ids\x18\x03 \x03(\t\x12\x13\n\x0bteammate_id\x18\x04 \x01(\t\x12$\n\x04\x64\x61ta\x18\x07 \x01(\x0b\x32\x16.grpc.testing.GameData\"\xe7\x05\n\x08GameData\x12/\n\x05state\x18\x01 \x01(\x0e\x32 .grpc.testing.GameData.GameState\x12\x1d\n\x15waiting_for_player_id\x18\x02 \x01(\t\x12\x19\n\x11game_action_count\x18\x03 \x01(\x05\x12+\n\ntrump_suit\x18\x04 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12)\n\ttrump_num\x18\x05 \x01(\x0e\x32\x16.grpc.testing.Card.Num\x12)\n\rmy_hand_cards\x18\x06 \x01(\x0b\x32\x12.grpc.testing.Hand\x12@\n\x0e\x63\x61rds_on_table\x18\x07 \x03(\x0b\x32(.grpc.testing.GameData.CardsOnTableEntry\x12\x41\n\x0e\x63urrent_scores\x18\x08 \x03(\x0b\x32).grpc.testing.GameData.CurrentScoresEntry\x12G\n\x11\x63umulative_scores\x18\t \x03(\x0b\x32,.grpc.testing.GameData.CumulativeScoresEntry\x1aG\n\x11\x43\x61rdsOnTableEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12!\n\x05value\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand:\x02\x38\x01\x1a\x34\n\x12\x43urrentScoresEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x37\n\x15\x43umulativeScoresEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"g\n\tGameState\x12\r\n\tUNDEFINED\x10\x00\x12\x16\n\x12NOT_ENOUGH_PLAYERS\x10\x01\x12\x0f\n\x0bNOT_STARTED\x10\x02\x12\x0b\n\x07STARTED\x10\x03\x12\n\n\x06PAUSED\x10\x04\x12\t\n\x05\x45NDED\x10\x05\x32\xe6\x04\n\x07Shengji\x12\x41\n\nCreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tStartGame\x12\x1e.grpc.testing.StartGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tPauseGame\x12\x1e.grpc.testing.PauseGameRequest\x1a\x12.grpc.testing.Game\x12@\n\nResumeGame\x12\x1e.grpc.testing.PauseGameRequest\x1a\x12.grpc.testing.Game\x12=\n\x08JoinGame\x12\x1d.grpc.testing.JoinGameRequest\x1a\x12.grpc.testing.Game\x12?\n\tLeaveGame\x12\x1e.grpc.testing.LeaveGameRequest\x1a\x12.grpc.testing.Game\x12\x41\n\tEnterRoom\x12\x1e.grpc.testing.EnterRoomRequest\x1a\x12.grpc.testing.Game0\x01\x12=\n\x08PlayGame\x12\x1d.grpc.testing.PlayGameRequest\x1a\x12.grpc.testing.Game\x12R\n\x0b\x41\x64\x64\x41IPlayer\x12 .grpc.testing.AddAIPlayerRequest\x1a!.grpc.testing.AddAIPlayerResponseb\x06proto3'
+  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"%\n\x12\x41\x64\x64\x41IPlayerRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"*\n\x13\x41\x64\x64\x41IPlayerResponse\x12\x13\n\x0bplayer_name\x18\x01 \x01(\t\"6\n\x10\x45nterRoomRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x11\n\tplayer_id\x18\x02 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"\xd0\x01\n\x0fPlayHandRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12:\n\tintention\x18\x03 \x01(\x0e\x32\'.grpc.testing.PlayHandRequest.Intention\x12 \n\x04hand\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\";\n\tIntention\x12\x0f\n\x0b\x43LAIM_TRUMP\x10\x00\x12\r\n\tPLAY_HAND\x10\x01\x12\x0e\n\nHIDE_KITTY\x10\x02\":\n\x10PlayHandResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x15\n\rerror_message\x18\x02 \x01(\t\"\x84\x01\n\x0bPlayerState\x12\x11\n\tplayer_id\x18\x04 \x01(\t\x12)\n\rcards_on_hand\x18\x01 \x01(\x0b\x32\x12.grpc.testing.Hand\x12(\n\x0c\x64iscard_pile\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand\x12\r\n\x05score\x18\x03 \x01(\x05\"\xbe\x02\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x18\n\x10\x64\x65\x61ler_player_id\x18\x03 \x01(\t\x12\x1b\n\x13next_turn_player_id\x18\x04 \x01(\t\x12&\n\x1e\x63urrent_round_winner_player_id\x18\x05 \x01(\t\x12\x30\n\rplayer_states\x18\x06 \x03(\x0b\x32\x19.grpc.testing.PlayerState\x12!\n\x05kitty\x18\x07 \x01(\x0b\x32\x12.grpc.testing.Hand\x12+\n\ntrump_suit\x18\x08 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12)\n\ttrump_num\x18\t \x01(\x0e\x32\x16.grpc.testing.Card.Num\"\xdb\x02\n\x04\x43\x61rd\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12#\n\x03num\x18\x02 \x01(\x0e\x32\x16.grpc.testing.Card.Num\"j\n\x04Suit\x12\x12\n\x0eSUIT_UNDEFINED\x10\x00\x12\t\n\x05HEATS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\x12\x0f\n\x0bSMALL_JOKER\x10\x05\x12\r\n\tBIG_JOKER\x10\x06\"\x9a\x01\n\x03Num\x12\x11\n\rNUM_UNDEFINED\x10\x00\x12\x07\n\x03TWO\x10\x01\x12\t\n\x05THREE\x10\x02\x12\x08\n\x04\x46OUR\x10\x03\x12\x08\n\x04\x46IVE\x10\x04\x12\x07\n\x03SIX\x10\x05\x12\t\n\x05SEVEN\x10\x06\x12\t\n\x05\x45IGHT\x10\x07\x12\x08\n\x04NINE\x10\x08\x12\x07\n\x03TEN\x10\t\x12\x08\n\x04JACK\x10\n\x12\t\n\x05QUEEN\x10\x0b\x12\x08\n\x04KING\x10\x0c\x12\x07\n\x03\x41\x43\x45\x10\r\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card2\xae\x02\n\x07Shengji\x12\x41\n\nCreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12\x41\n\tEnterRoom\x12\x1e.grpc.testing.EnterRoomRequest\x1a\x12.grpc.testing.Game0\x01\x12I\n\x08PlayHand\x12\x1d.grpc.testing.PlayHandRequest\x1a\x1e.grpc.testing.PlayHandResponse\x12R\n\x0b\x41\x64\x64\x41IPlayer\x12 .grpc.testing.AddAIPlayerRequest\x1a!.grpc.testing.AddAIPlayerResponseb\x06proto3'
 )
 
 
+
+_PLAYHANDREQUEST_INTENTION = _descriptor.EnumDescriptor(
+  name='Intention',
+  full_name='grpc.testing.PlayHandRequest.Intention',
+  filename=None,
+  file=DESCRIPTOR,
+  create_key=_descriptor._internal_create_key,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='CLAIM_TRUMP', index=0, number=0,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='PLAY_HAND', index=1, number=1,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='HIDE_KITTY', index=2, number=2,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=360,
+  serialized_end=419,
+)
+_sym_db.RegisterEnumDescriptor(_PLAYHANDREQUEST_INTENTION)
 
 _CARD_SUIT = _descriptor.EnumDescriptor(
   name='Suit',
@@ -32,7 +62,7 @@ _CARD_SUIT = _descriptor.EnumDescriptor(
   create_key=_descriptor._internal_create_key,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='UNDEFINED', index=0, number=0,
+      name='SUIT_UNDEFINED', index=0, number=0,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
@@ -56,11 +86,21 @@ _CARD_SUIT = _descriptor.EnumDescriptor(
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='SMALL_JOKER', index=5, number=5,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='BIG_JOKER', index=6, number=6,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=805,
-  serialized_end=874,
+  serialized_start=1022,
+  serialized_end=1128,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_SUIT)
 
@@ -72,7 +112,7 @@ _CARD_NUM = _descriptor.EnumDescriptor(
   create_key=_descriptor._internal_create_key,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='ACE', index=0, number=0,
+      name='NUM_UNDEFINED', index=0, number=0,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
@@ -136,58 +176,18 @@ _CARD_NUM = _descriptor.EnumDescriptor(
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='ACE', index=13, number=13,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=877,
-  serialized_end=1012,
+  serialized_start=1131,
+  serialized_end=1285,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_NUM)
-
-_GAMEDATA_GAMESTATE = _descriptor.EnumDescriptor(
-  name='GameState',
-  full_name='grpc.testing.GameData.GameState',
-  filename=None,
-  file=DESCRIPTOR,
-  create_key=_descriptor._internal_create_key,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='UNDEFINED', index=0, number=0,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='NOT_ENOUGH_PLAYERS', index=1, number=1,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='NOT_STARTED', index=2, number=2,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='STARTED', index=3, number=3,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='PAUSED', index=4, number=4,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='ENDED', index=5, number=5,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-  ],
-  containing_type=None,
-  serialized_options=None,
-  serialized_start=1844,
-  serialized_end=1947,
-)
-_sym_db.RegisterEnumDescriptor(_GAMEDATA_GAMESTATE)
 
 
 _ADDAIPLAYERREQUEST = _descriptor.Descriptor(
@@ -325,272 +325,131 @@ _CREATEGAMEREQUEST = _descriptor.Descriptor(
 )
 
 
-_JOINGAMEREQUEST = _descriptor.Descriptor(
-  name='JoinGameRequest',
-  full_name='grpc.testing.JoinGameRequest',
+_PLAYHANDREQUEST = _descriptor.Descriptor(
+  name='PlayHandRequest',
+  full_name='grpc.testing.PlayHandRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='player_id', full_name='grpc.testing.JoinGameRequest.player_id', index=0,
+      name='player_id', full_name='grpc.testing.PlayHandRequest.player_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.JoinGameRequest.game_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=210,
-  serialized_end=263,
-)
-
-
-_LEAVEGAMEREQUEST = _descriptor.Descriptor(
-  name='LeaveGameRequest',
-  full_name='grpc.testing.LeaveGameRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='player_id', full_name='grpc.testing.LeaveGameRequest.player_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.LeaveGameRequest.game_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=265,
-  serialized_end=319,
-)
-
-
-_PAUSEGAMEREQUEST = _descriptor.Descriptor(
-  name='PauseGameRequest',
-  full_name='grpc.testing.PauseGameRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='player_id', full_name='grpc.testing.PauseGameRequest.player_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.PauseGameRequest.game_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=321,
-  serialized_end=375,
-)
-
-
-_RESUMEGAMEREQUEST = _descriptor.Descriptor(
-  name='ResumeGameRequest',
-  full_name='grpc.testing.ResumeGameRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='player_id', full_name='grpc.testing.ResumeGameRequest.player_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.ResumeGameRequest.game_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=377,
-  serialized_end=432,
-)
-
-
-_STARTGAMEREQUEST = _descriptor.Descriptor(
-  name='StartGameRequest',
-  full_name='grpc.testing.StartGameRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='player_id', full_name='grpc.testing.StartGameRequest.player_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.StartGameRequest.game_id', index=1,
+      name='game_id', full_name='grpc.testing.PlayHandRequest.game_id', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='ordered_player_ids', full_name='grpc.testing.StartGameRequest.ordered_player_ids', index=2,
-      number=3, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=434,
-  serialized_end=516,
-)
-
-
-_PLAYGAMEREQUEST = _descriptor.Descriptor(
-  name='PlayGameRequest',
-  full_name='grpc.testing.PlayGameRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='player_id', full_name='grpc.testing.PlayGameRequest.player_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.PlayGameRequest.game_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='hand', full_name='grpc.testing.PlayGameRequest.hand', index=2,
-      number=3, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=518,
-  serialized_end=605,
-)
-
-
-_CARD_REGULARCARD = _descriptor.Descriptor(
-  name='RegularCard',
-  full_name='grpc.testing.Card.RegularCard',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='suit', full_name='grpc.testing.Card.RegularCard.suit', index=0,
-      number=1, type=14, cpp_type=8, label=1,
+      name='intention', full_name='grpc.testing.PlayHandRequest.intention', index=2,
+      number=3, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='num', full_name='grpc.testing.Card.RegularCard.num', index=1,
-      number=2, type=14, cpp_type=8, label=1,
+      name='hand', full_name='grpc.testing.PlayHandRequest.hand', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _PLAYHANDREQUEST_INTENTION,
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=211,
+  serialized_end=419,
+)
+
+
+_PLAYHANDRESPONSE = _descriptor.Descriptor(
+  name='PlayHandResponse',
+  full_name='grpc.testing.PlayHandResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='success', full_name='grpc.testing.PlayHandResponse.success', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='error_message', full_name='grpc.testing.PlayHandResponse.error_message', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=421,
+  serialized_end=479,
+)
+
+
+_PLAYERSTATE = _descriptor.Descriptor(
+  name='PlayerState',
+  full_name='grpc.testing.PlayerState',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='player_id', full_name='grpc.testing.PlayerState.player_id', index=0,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='cards_on_hand', full_name='grpc.testing.PlayerState.cards_on_hand', index=1,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='discard_pile', full_name='grpc.testing.PlayerState.discard_pile', index=2,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='score', full_name='grpc.testing.PlayerState.score', index=3,
+      number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -607,9 +466,98 @@ _CARD_REGULARCARD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=714,
-  serialized_end=803,
+  serialized_start=482,
+  serialized_end=614,
 )
+
+
+_GAME = _descriptor.Descriptor(
+  name='Game',
+  full_name='grpc.testing.Game',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='game_id', full_name='grpc.testing.Game.game_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='creator_player_id', full_name='grpc.testing.Game.creator_player_id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='dealer_player_id', full_name='grpc.testing.Game.dealer_player_id', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='next_turn_player_id', full_name='grpc.testing.Game.next_turn_player_id', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='current_round_winner_player_id', full_name='grpc.testing.Game.current_round_winner_player_id', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='player_states', full_name='grpc.testing.Game.player_states', index=5,
+      number=6, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='kitty', full_name='grpc.testing.Game.kitty', index=6,
+      number=7, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='trump_suit', full_name='grpc.testing.Game.trump_suit', index=7,
+      number=8, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='trump_num', full_name='grpc.testing.Game.trump_num', index=8,
+      number=9, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=617,
+  serialized_end=935,
+)
+
 
 _CARD = _descriptor.Descriptor(
   name='Card',
@@ -620,30 +568,23 @@ _CARD = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='card', full_name='grpc.testing.Card.card', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='suit', full_name='grpc.testing.Card.suit', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='is_small_joker', full_name='grpc.testing.Card.is_small_joker', index=1,
-      number=2, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='is_big_joker', full_name='grpc.testing.Card.is_big_joker', index=2,
-      number=3, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
+      name='num', full_name='grpc.testing.Card.num', index=1,
+      number=2, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
-  nested_types=[_CARD_REGULARCARD, ],
+  nested_types=[],
   enum_types=[
     _CARD_SUIT,
     _CARD_NUM,
@@ -653,14 +594,9 @@ _CARD = _descriptor.Descriptor(
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
-    _descriptor.OneofDescriptor(
-      name='ActualCard', full_name='grpc.testing.Card.ActualCard',
-      index=0, containing_type=None,
-      create_key=_descriptor._internal_create_key,
-    fields=[]),
   ],
-  serialized_start=608,
-  serialized_end=1026,
+  serialized_start=938,
+  serialized_end=1285,
 )
 
 
@@ -691,317 +627,34 @@ _HAND = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1028,
-  serialized_end=1069,
+  serialized_start=1287,
+  serialized_end=1328,
 )
 
-
-_GAME = _descriptor.Descriptor(
-  name='Game',
-  full_name='grpc.testing.Game',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='game_id', full_name='grpc.testing.Game.game_id', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='creator_player_id', full_name='grpc.testing.Game.creator_player_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='player_ids', full_name='grpc.testing.Game.player_ids', index=2,
-      number=3, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='teammate_id', full_name='grpc.testing.Game.teammate_id', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='data', full_name='grpc.testing.Game.data', index=4,
-      number=7, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1072,
-  serialized_end=1201,
-)
-
-
-_GAMEDATA_CARDSONTABLEENTRY = _descriptor.Descriptor(
-  name='CardsOnTableEntry',
-  full_name='grpc.testing.GameData.CardsOnTableEntry',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='key', full_name='grpc.testing.GameData.CardsOnTableEntry.key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='grpc.testing.GameData.CardsOnTableEntry.value', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=b'8\001',
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1660,
-  serialized_end=1731,
-)
-
-_GAMEDATA_CURRENTSCORESENTRY = _descriptor.Descriptor(
-  name='CurrentScoresEntry',
-  full_name='grpc.testing.GameData.CurrentScoresEntry',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='key', full_name='grpc.testing.GameData.CurrentScoresEntry.key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='grpc.testing.GameData.CurrentScoresEntry.value', index=1,
-      number=2, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=b'8\001',
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1733,
-  serialized_end=1785,
-)
-
-_GAMEDATA_CUMULATIVESCORESENTRY = _descriptor.Descriptor(
-  name='CumulativeScoresEntry',
-  full_name='grpc.testing.GameData.CumulativeScoresEntry',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='key', full_name='grpc.testing.GameData.CumulativeScoresEntry.key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='grpc.testing.GameData.CumulativeScoresEntry.value', index=1,
-      number=2, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=b'8\001',
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1787,
-  serialized_end=1842,
-)
-
-_GAMEDATA = _descriptor.Descriptor(
-  name='GameData',
-  full_name='grpc.testing.GameData',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='state', full_name='grpc.testing.GameData.state', index=0,
-      number=1, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='waiting_for_player_id', full_name='grpc.testing.GameData.waiting_for_player_id', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='game_action_count', full_name='grpc.testing.GameData.game_action_count', index=2,
-      number=3, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='trump_suit', full_name='grpc.testing.GameData.trump_suit', index=3,
-      number=4, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='trump_num', full_name='grpc.testing.GameData.trump_num', index=4,
-      number=5, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='my_hand_cards', full_name='grpc.testing.GameData.my_hand_cards', index=5,
-      number=6, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='cards_on_table', full_name='grpc.testing.GameData.cards_on_table', index=6,
-      number=7, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='current_scores', full_name='grpc.testing.GameData.current_scores', index=7,
-      number=8, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='cumulative_scores', full_name='grpc.testing.GameData.cumulative_scores', index=8,
-      number=9, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[_GAMEDATA_CARDSONTABLEENTRY, _GAMEDATA_CURRENTSCORESENTRY, _GAMEDATA_CUMULATIVESCORESENTRY, ],
-  enum_types=[
-    _GAMEDATA_GAMESTATE,
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1204,
-  serialized_end=1947,
-)
-
-_PLAYGAMEREQUEST.fields_by_name['hand'].message_type = _CARD
-_CARD_REGULARCARD.fields_by_name['suit'].enum_type = _CARD_SUIT
-_CARD_REGULARCARD.fields_by_name['num'].enum_type = _CARD_NUM
-_CARD_REGULARCARD.containing_type = _CARD
-_CARD.fields_by_name['card'].message_type = _CARD_REGULARCARD
+_PLAYHANDREQUEST.fields_by_name['intention'].enum_type = _PLAYHANDREQUEST_INTENTION
+_PLAYHANDREQUEST.fields_by_name['hand'].message_type = _HAND
+_PLAYHANDREQUEST_INTENTION.containing_type = _PLAYHANDREQUEST
+_PLAYERSTATE.fields_by_name['cards_on_hand'].message_type = _HAND
+_PLAYERSTATE.fields_by_name['discard_pile'].message_type = _HAND
+_GAME.fields_by_name['player_states'].message_type = _PLAYERSTATE
+_GAME.fields_by_name['kitty'].message_type = _HAND
+_GAME.fields_by_name['trump_suit'].enum_type = _CARD_SUIT
+_GAME.fields_by_name['trump_num'].enum_type = _CARD_NUM
+_CARD.fields_by_name['suit'].enum_type = _CARD_SUIT
+_CARD.fields_by_name['num'].enum_type = _CARD_NUM
 _CARD_SUIT.containing_type = _CARD
 _CARD_NUM.containing_type = _CARD
-_CARD.oneofs_by_name['ActualCard'].fields.append(
-  _CARD.fields_by_name['card'])
-_CARD.fields_by_name['card'].containing_oneof = _CARD.oneofs_by_name['ActualCard']
-_CARD.oneofs_by_name['ActualCard'].fields.append(
-  _CARD.fields_by_name['is_small_joker'])
-_CARD.fields_by_name['is_small_joker'].containing_oneof = _CARD.oneofs_by_name['ActualCard']
-_CARD.oneofs_by_name['ActualCard'].fields.append(
-  _CARD.fields_by_name['is_big_joker'])
-_CARD.fields_by_name['is_big_joker'].containing_oneof = _CARD.oneofs_by_name['ActualCard']
 _HAND.fields_by_name['cards'].message_type = _CARD
-_GAME.fields_by_name['data'].message_type = _GAMEDATA
-_GAMEDATA_CARDSONTABLEENTRY.fields_by_name['value'].message_type = _HAND
-_GAMEDATA_CARDSONTABLEENTRY.containing_type = _GAMEDATA
-_GAMEDATA_CURRENTSCORESENTRY.containing_type = _GAMEDATA
-_GAMEDATA_CUMULATIVESCORESENTRY.containing_type = _GAMEDATA
-_GAMEDATA.fields_by_name['state'].enum_type = _GAMEDATA_GAMESTATE
-_GAMEDATA.fields_by_name['trump_suit'].enum_type = _CARD_SUIT
-_GAMEDATA.fields_by_name['trump_num'].enum_type = _CARD_NUM
-_GAMEDATA.fields_by_name['my_hand_cards'].message_type = _HAND
-_GAMEDATA.fields_by_name['cards_on_table'].message_type = _GAMEDATA_CARDSONTABLEENTRY
-_GAMEDATA.fields_by_name['current_scores'].message_type = _GAMEDATA_CURRENTSCORESENTRY
-_GAMEDATA.fields_by_name['cumulative_scores'].message_type = _GAMEDATA_CUMULATIVESCORESENTRY
-_GAMEDATA_GAMESTATE.containing_type = _GAMEDATA
 DESCRIPTOR.message_types_by_name['AddAIPlayerRequest'] = _ADDAIPLAYERREQUEST
 DESCRIPTOR.message_types_by_name['AddAIPlayerResponse'] = _ADDAIPLAYERRESPONSE
 DESCRIPTOR.message_types_by_name['EnterRoomRequest'] = _ENTERROOMREQUEST
 DESCRIPTOR.message_types_by_name['CreateGameRequest'] = _CREATEGAMEREQUEST
-DESCRIPTOR.message_types_by_name['JoinGameRequest'] = _JOINGAMEREQUEST
-DESCRIPTOR.message_types_by_name['LeaveGameRequest'] = _LEAVEGAMEREQUEST
-DESCRIPTOR.message_types_by_name['PauseGameRequest'] = _PAUSEGAMEREQUEST
-DESCRIPTOR.message_types_by_name['ResumeGameRequest'] = _RESUMEGAMEREQUEST
-DESCRIPTOR.message_types_by_name['StartGameRequest'] = _STARTGAMEREQUEST
-DESCRIPTOR.message_types_by_name['PlayGameRequest'] = _PLAYGAMEREQUEST
+DESCRIPTOR.message_types_by_name['PlayHandRequest'] = _PLAYHANDREQUEST
+DESCRIPTOR.message_types_by_name['PlayHandResponse'] = _PLAYHANDRESPONSE
+DESCRIPTOR.message_types_by_name['PlayerState'] = _PLAYERSTATE
+DESCRIPTOR.message_types_by_name['Game'] = _GAME
 DESCRIPTOR.message_types_by_name['Card'] = _CARD
 DESCRIPTOR.message_types_by_name['Hand'] = _HAND
-DESCRIPTOR.message_types_by_name['Game'] = _GAME
-DESCRIPTOR.message_types_by_name['GameData'] = _GAMEDATA
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 AddAIPlayerRequest = _reflection.GeneratedProtocolMessageType('AddAIPlayerRequest', (_message.Message,), {
@@ -1032,69 +685,26 @@ CreateGameRequest = _reflection.GeneratedProtocolMessageType('CreateGameRequest'
   })
 _sym_db.RegisterMessage(CreateGameRequest)
 
-JoinGameRequest = _reflection.GeneratedProtocolMessageType('JoinGameRequest', (_message.Message,), {
-  'DESCRIPTOR' : _JOINGAMEREQUEST,
+PlayHandRequest = _reflection.GeneratedProtocolMessageType('PlayHandRequest', (_message.Message,), {
+  'DESCRIPTOR' : _PLAYHANDREQUEST,
   '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.JoinGameRequest)
+  # @@protoc_insertion_point(class_scope:grpc.testing.PlayHandRequest)
   })
-_sym_db.RegisterMessage(JoinGameRequest)
+_sym_db.RegisterMessage(PlayHandRequest)
 
-LeaveGameRequest = _reflection.GeneratedProtocolMessageType('LeaveGameRequest', (_message.Message,), {
-  'DESCRIPTOR' : _LEAVEGAMEREQUEST,
+PlayHandResponse = _reflection.GeneratedProtocolMessageType('PlayHandResponse', (_message.Message,), {
+  'DESCRIPTOR' : _PLAYHANDRESPONSE,
   '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.LeaveGameRequest)
+  # @@protoc_insertion_point(class_scope:grpc.testing.PlayHandResponse)
   })
-_sym_db.RegisterMessage(LeaveGameRequest)
+_sym_db.RegisterMessage(PlayHandResponse)
 
-PauseGameRequest = _reflection.GeneratedProtocolMessageType('PauseGameRequest', (_message.Message,), {
-  'DESCRIPTOR' : _PAUSEGAMEREQUEST,
+PlayerState = _reflection.GeneratedProtocolMessageType('PlayerState', (_message.Message,), {
+  'DESCRIPTOR' : _PLAYERSTATE,
   '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.PauseGameRequest)
+  # @@protoc_insertion_point(class_scope:grpc.testing.PlayerState)
   })
-_sym_db.RegisterMessage(PauseGameRequest)
-
-ResumeGameRequest = _reflection.GeneratedProtocolMessageType('ResumeGameRequest', (_message.Message,), {
-  'DESCRIPTOR' : _RESUMEGAMEREQUEST,
-  '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.ResumeGameRequest)
-  })
-_sym_db.RegisterMessage(ResumeGameRequest)
-
-StartGameRequest = _reflection.GeneratedProtocolMessageType('StartGameRequest', (_message.Message,), {
-  'DESCRIPTOR' : _STARTGAMEREQUEST,
-  '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.StartGameRequest)
-  })
-_sym_db.RegisterMessage(StartGameRequest)
-
-PlayGameRequest = _reflection.GeneratedProtocolMessageType('PlayGameRequest', (_message.Message,), {
-  'DESCRIPTOR' : _PLAYGAMEREQUEST,
-  '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.PlayGameRequest)
-  })
-_sym_db.RegisterMessage(PlayGameRequest)
-
-Card = _reflection.GeneratedProtocolMessageType('Card', (_message.Message,), {
-
-  'RegularCard' : _reflection.GeneratedProtocolMessageType('RegularCard', (_message.Message,), {
-    'DESCRIPTOR' : _CARD_REGULARCARD,
-    '__module__' : 'shengji_pb2'
-    # @@protoc_insertion_point(class_scope:grpc.testing.Card.RegularCard)
-    })
-  ,
-  'DESCRIPTOR' : _CARD,
-  '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.Card)
-  })
-_sym_db.RegisterMessage(Card)
-_sym_db.RegisterMessage(Card.RegularCard)
-
-Hand = _reflection.GeneratedProtocolMessageType('Hand', (_message.Message,), {
-  'DESCRIPTOR' : _HAND,
-  '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.Hand)
-  })
-_sym_db.RegisterMessage(Hand)
+_sym_db.RegisterMessage(PlayerState)
 
 Game = _reflection.GeneratedProtocolMessageType('Game', (_message.Message,), {
   'DESCRIPTOR' : _GAME,
@@ -1103,41 +713,21 @@ Game = _reflection.GeneratedProtocolMessageType('Game', (_message.Message,), {
   })
 _sym_db.RegisterMessage(Game)
 
-GameData = _reflection.GeneratedProtocolMessageType('GameData', (_message.Message,), {
-
-  'CardsOnTableEntry' : _reflection.GeneratedProtocolMessageType('CardsOnTableEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GAMEDATA_CARDSONTABLEENTRY,
-    '__module__' : 'shengji_pb2'
-    # @@protoc_insertion_point(class_scope:grpc.testing.GameData.CardsOnTableEntry)
-    })
-  ,
-
-  'CurrentScoresEntry' : _reflection.GeneratedProtocolMessageType('CurrentScoresEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GAMEDATA_CURRENTSCORESENTRY,
-    '__module__' : 'shengji_pb2'
-    # @@protoc_insertion_point(class_scope:grpc.testing.GameData.CurrentScoresEntry)
-    })
-  ,
-
-  'CumulativeScoresEntry' : _reflection.GeneratedProtocolMessageType('CumulativeScoresEntry', (_message.Message,), {
-    'DESCRIPTOR' : _GAMEDATA_CUMULATIVESCORESENTRY,
-    '__module__' : 'shengji_pb2'
-    # @@protoc_insertion_point(class_scope:grpc.testing.GameData.CumulativeScoresEntry)
-    })
-  ,
-  'DESCRIPTOR' : _GAMEDATA,
+Card = _reflection.GeneratedProtocolMessageType('Card', (_message.Message,), {
+  'DESCRIPTOR' : _CARD,
   '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.GameData)
+  # @@protoc_insertion_point(class_scope:grpc.testing.Card)
   })
-_sym_db.RegisterMessage(GameData)
-_sym_db.RegisterMessage(GameData.CardsOnTableEntry)
-_sym_db.RegisterMessage(GameData.CurrentScoresEntry)
-_sym_db.RegisterMessage(GameData.CumulativeScoresEntry)
+_sym_db.RegisterMessage(Card)
+
+Hand = _reflection.GeneratedProtocolMessageType('Hand', (_message.Message,), {
+  'DESCRIPTOR' : _HAND,
+  '__module__' : 'shengji_pb2'
+  # @@protoc_insertion_point(class_scope:grpc.testing.Hand)
+  })
+_sym_db.RegisterMessage(Hand)
 
 
-_GAMEDATA_CARDSONTABLEENTRY._options = None
-_GAMEDATA_CURRENTSCORESENTRY._options = None
-_GAMEDATA_CUMULATIVESCORESENTRY._options = None
 
 _SHENGJI = _descriptor.ServiceDescriptor(
   name='Shengji',
@@ -1146,8 +736,8 @@ _SHENGJI = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1950,
-  serialized_end=2564,
+  serialized_start=1331,
+  serialized_end=1633,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateGame',
@@ -1160,59 +750,9 @@ _SHENGJI = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='StartGame',
-    full_name='grpc.testing.Shengji.StartGame',
-    index=1,
-    containing_service=None,
-    input_type=_STARTGAMEREQUEST,
-    output_type=_GAME,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='PauseGame',
-    full_name='grpc.testing.Shengji.PauseGame',
-    index=2,
-    containing_service=None,
-    input_type=_PAUSEGAMEREQUEST,
-    output_type=_GAME,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='ResumeGame',
-    full_name='grpc.testing.Shengji.ResumeGame',
-    index=3,
-    containing_service=None,
-    input_type=_PAUSEGAMEREQUEST,
-    output_type=_GAME,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='JoinGame',
-    full_name='grpc.testing.Shengji.JoinGame',
-    index=4,
-    containing_service=None,
-    input_type=_JOINGAMEREQUEST,
-    output_type=_GAME,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='LeaveGame',
-    full_name='grpc.testing.Shengji.LeaveGame',
-    index=5,
-    containing_service=None,
-    input_type=_LEAVEGAMEREQUEST,
-    output_type=_GAME,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
     name='EnterRoom',
     full_name='grpc.testing.Shengji.EnterRoom',
-    index=6,
+    index=1,
     containing_service=None,
     input_type=_ENTERROOMREQUEST,
     output_type=_GAME,
@@ -1220,19 +760,19 @@ _SHENGJI = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='PlayGame',
-    full_name='grpc.testing.Shengji.PlayGame',
-    index=7,
+    name='PlayHand',
+    full_name='grpc.testing.Shengji.PlayHand',
+    index=2,
     containing_service=None,
-    input_type=_PLAYGAMEREQUEST,
-    output_type=_GAME,
+    input_type=_PLAYHANDREQUEST,
+    output_type=_PLAYHANDRESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
     name='AddAIPlayer',
     full_name='grpc.testing.Shengji.AddAIPlayer',
-    index=8,
+    index=3,
     containing_service=None,
     input_type=_ADDAIPLAYERREQUEST,
     output_type=_ADDAIPLAYERRESPONSE,

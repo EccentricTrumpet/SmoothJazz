@@ -87,179 +87,171 @@ export namespace CreateGameRequest {
   }
 }
 
-export class JoinGameRequest extends jspb.Message {
+export class PlayHandRequest extends jspb.Message {
   getPlayerId(): string;
   setPlayerId(value: string): void;
 
   getGameId(): string;
   setGameId(value: string): void;
 
+  getIntention(): PlayHandRequest.IntentionMap[keyof PlayHandRequest.IntentionMap];
+  setIntention(value: PlayHandRequest.IntentionMap[keyof PlayHandRequest.IntentionMap]): void;
+
+  hasHand(): boolean;
+  clearHand(): void;
+  getHand(): Hand | undefined;
+  setHand(value?: Hand): void;
+
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): JoinGameRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: JoinGameRequest): JoinGameRequest.AsObject;
+  toObject(includeInstance?: boolean): PlayHandRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: PlayHandRequest): PlayHandRequest.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: JoinGameRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): JoinGameRequest;
-  static deserializeBinaryFromReader(message: JoinGameRequest, reader: jspb.BinaryReader): JoinGameRequest;
+  static serializeBinaryToWriter(message: PlayHandRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PlayHandRequest;
+  static deserializeBinaryFromReader(message: PlayHandRequest, reader: jspb.BinaryReader): PlayHandRequest;
 }
 
-export namespace JoinGameRequest {
+export namespace PlayHandRequest {
   export type AsObject = {
     playerId: string,
     gameId: string,
+    intention: PlayHandRequest.IntentionMap[keyof PlayHandRequest.IntentionMap],
+    hand?: Hand.AsObject,
+  }
+
+  export interface IntentionMap {
+    CLAIM_TRUMP: 0;
+    PLAY_HAND: 1;
+    HIDE_KITTY: 2;
+  }
+
+  export const Intention: IntentionMap;
+}
+
+export class PlayHandResponse extends jspb.Message {
+  getSuccess(): boolean;
+  setSuccess(value: boolean): void;
+
+  getErrorMessage(): string;
+  setErrorMessage(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PlayHandResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: PlayHandResponse): PlayHandResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: PlayHandResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PlayHandResponse;
+  static deserializeBinaryFromReader(message: PlayHandResponse, reader: jspb.BinaryReader): PlayHandResponse;
+}
+
+export namespace PlayHandResponse {
+  export type AsObject = {
+    success: boolean,
+    errorMessage: string,
   }
 }
 
-export class LeaveGameRequest extends jspb.Message {
+export class PlayerState extends jspb.Message {
   getPlayerId(): string;
   setPlayerId(value: string): void;
 
-  getGameId(): string;
-  setGameId(value: string): void;
+  hasCardsOnHand(): boolean;
+  clearCardsOnHand(): void;
+  getCardsOnHand(): Hand | undefined;
+  setCardsOnHand(value?: Hand): void;
+
+  hasDiscardPile(): boolean;
+  clearDiscardPile(): void;
+  getDiscardPile(): Hand | undefined;
+  setDiscardPile(value?: Hand): void;
+
+  getScore(): number;
+  setScore(value: number): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): LeaveGameRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: LeaveGameRequest): LeaveGameRequest.AsObject;
+  toObject(includeInstance?: boolean): PlayerState.AsObject;
+  static toObject(includeInstance: boolean, msg: PlayerState): PlayerState.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: LeaveGameRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): LeaveGameRequest;
-  static deserializeBinaryFromReader(message: LeaveGameRequest, reader: jspb.BinaryReader): LeaveGameRequest;
+  static serializeBinaryToWriter(message: PlayerState, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PlayerState;
+  static deserializeBinaryFromReader(message: PlayerState, reader: jspb.BinaryReader): PlayerState;
 }
 
-export namespace LeaveGameRequest {
+export namespace PlayerState {
   export type AsObject = {
     playerId: string,
-    gameId: string,
+    cardsOnHand?: Hand.AsObject,
+    discardPile?: Hand.AsObject,
+    score: number,
   }
 }
 
-export class PauseGameRequest extends jspb.Message {
-  getPlayerId(): string;
-  setPlayerId(value: string): void;
-
+export class Game extends jspb.Message {
   getGameId(): string;
   setGameId(value: string): void;
 
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PauseGameRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: PauseGameRequest): PauseGameRequest.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: PauseGameRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PauseGameRequest;
-  static deserializeBinaryFromReader(message: PauseGameRequest, reader: jspb.BinaryReader): PauseGameRequest;
-}
+  getCreatorPlayerId(): string;
+  setCreatorPlayerId(value: string): void;
 
-export namespace PauseGameRequest {
-  export type AsObject = {
-    playerId: string,
-    gameId: string,
-  }
-}
+  getDealerPlayerId(): string;
+  setDealerPlayerId(value: string): void;
 
-export class ResumeGameRequest extends jspb.Message {
-  getPlayerId(): string;
-  setPlayerId(value: string): void;
+  getNextTurnPlayerId(): string;
+  setNextTurnPlayerId(value: string): void;
 
-  getGameId(): string;
-  setGameId(value: string): void;
+  getCurrentRoundWinnerPlayerId(): string;
+  setCurrentRoundWinnerPlayerId(value: string): void;
 
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ResumeGameRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: ResumeGameRequest): ResumeGameRequest.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: ResumeGameRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ResumeGameRequest;
-  static deserializeBinaryFromReader(message: ResumeGameRequest, reader: jspb.BinaryReader): ResumeGameRequest;
-}
+  clearPlayerStatesList(): void;
+  getPlayerStatesList(): Array<PlayerState>;
+  setPlayerStatesList(value: Array<PlayerState>): void;
+  addPlayerStates(value?: PlayerState, index?: number): PlayerState;
 
-export namespace ResumeGameRequest {
-  export type AsObject = {
-    playerId: string,
-    gameId: string,
-  }
-}
+  hasKitty(): boolean;
+  clearKitty(): void;
+  getKitty(): Hand | undefined;
+  setKitty(value?: Hand): void;
 
-export class StartGameRequest extends jspb.Message {
-  getPlayerId(): string;
-  setPlayerId(value: string): void;
+  getTrumpSuit(): Card.SuitMap[keyof Card.SuitMap];
+  setTrumpSuit(value: Card.SuitMap[keyof Card.SuitMap]): void;
 
-  getGameId(): string;
-  setGameId(value: string): void;
-
-  clearOrderedPlayerIdsList(): void;
-  getOrderedPlayerIdsList(): Array<string>;
-  setOrderedPlayerIdsList(value: Array<string>): void;
-  addOrderedPlayerIds(value: string, index?: number): string;
+  getTrumpNum(): Card.NumMap[keyof Card.NumMap];
+  setTrumpNum(value: Card.NumMap[keyof Card.NumMap]): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StartGameRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: StartGameRequest): StartGameRequest.AsObject;
+  toObject(includeInstance?: boolean): Game.AsObject;
+  static toObject(includeInstance: boolean, msg: Game): Game.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: StartGameRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StartGameRequest;
-  static deserializeBinaryFromReader(message: StartGameRequest, reader: jspb.BinaryReader): StartGameRequest;
+  static serializeBinaryToWriter(message: Game, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Game;
+  static deserializeBinaryFromReader(message: Game, reader: jspb.BinaryReader): Game;
 }
 
-export namespace StartGameRequest {
+export namespace Game {
   export type AsObject = {
-    playerId: string,
     gameId: string,
-    orderedPlayerIdsList: Array<string>,
-  }
-}
-
-export class PlayGameRequest extends jspb.Message {
-  getPlayerId(): string;
-  setPlayerId(value: string): void;
-
-  getGameId(): string;
-  setGameId(value: string): void;
-
-  clearHandList(): void;
-  getHandList(): Array<Card>;
-  setHandList(value: Array<Card>): void;
-  addHand(value?: Card, index?: number): Card;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PlayGameRequest.AsObject;
-  static toObject(includeInstance: boolean, msg: PlayGameRequest): PlayGameRequest.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: PlayGameRequest, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PlayGameRequest;
-  static deserializeBinaryFromReader(message: PlayGameRequest, reader: jspb.BinaryReader): PlayGameRequest;
-}
-
-export namespace PlayGameRequest {
-  export type AsObject = {
-    playerId: string,
-    gameId: string,
-    handList: Array<Card.AsObject>,
+    creatorPlayerId: string,
+    dealerPlayerId: string,
+    nextTurnPlayerId: string,
+    currentRoundWinnerPlayerId: string,
+    playerStatesList: Array<PlayerState.AsObject>,
+    kitty?: Hand.AsObject,
+    trumpSuit: Card.SuitMap[keyof Card.SuitMap],
+    trumpNum: Card.NumMap[keyof Card.NumMap],
   }
 }
 
 export class Card extends jspb.Message {
-  hasCard(): boolean;
-  clearCard(): void;
-  getCard(): Card.RegularCard | undefined;
-  setCard(value?: Card.RegularCard): void;
+  getSuit(): Card.SuitMap[keyof Card.SuitMap];
+  setSuit(value: Card.SuitMap[keyof Card.SuitMap]): void;
 
-  hasIsSmallJoker(): boolean;
-  clearIsSmallJoker(): void;
-  getIsSmallJoker(): boolean;
-  setIsSmallJoker(value: boolean): void;
+  getNum(): Card.NumMap[keyof Card.NumMap];
+  setNum(value: Card.NumMap[keyof Card.NumMap]): void;
 
-  hasIsBigJoker(): boolean;
-  clearIsBigJoker(): void;
-  getIsBigJoker(): boolean;
-  setIsBigJoker(value: boolean): void;
-
-  getActualcardCase(): Card.ActualcardCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Card.AsObject;
   static toObject(includeInstance: boolean, msg: Card): Card.AsObject;
@@ -272,47 +264,24 @@ export class Card extends jspb.Message {
 
 export namespace Card {
   export type AsObject = {
-    card?: Card.RegularCard.AsObject,
-    isSmallJoker: boolean,
-    isBigJoker: boolean,
-  }
-
-  export class RegularCard extends jspb.Message {
-    getSuit(): Card.SuitMap[keyof Card.SuitMap];
-    setSuit(value: Card.SuitMap[keyof Card.SuitMap]): void;
-
-    getNum(): Card.NumMap[keyof Card.NumMap];
-    setNum(value: Card.NumMap[keyof Card.NumMap]): void;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): RegularCard.AsObject;
-    static toObject(includeInstance: boolean, msg: RegularCard): RegularCard.AsObject;
-    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-    static serializeBinaryToWriter(message: RegularCard, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): RegularCard;
-    static deserializeBinaryFromReader(message: RegularCard, reader: jspb.BinaryReader): RegularCard;
-  }
-
-  export namespace RegularCard {
-    export type AsObject = {
-      suit: Card.SuitMap[keyof Card.SuitMap],
-      num: Card.NumMap[keyof Card.NumMap],
-    }
+    suit: Card.SuitMap[keyof Card.SuitMap],
+    num: Card.NumMap[keyof Card.NumMap],
   }
 
   export interface SuitMap {
-    UNDEFINED: 0;
+    SUIT_UNDEFINED: 0;
     HEATS: 1;
     SPADES: 2;
     CLUBS: 3;
     DIAMONDS: 4;
+    SMALL_JOKER: 5;
+    BIG_JOKER: 6;
   }
 
   export const Suit: SuitMap;
 
   export interface NumMap {
-    ACE: 0;
+    NUM_UNDEFINED: 0;
     TWO: 1;
     THREE: 2;
     FOUR: 3;
@@ -325,16 +294,10 @@ export namespace Card {
     JACK: 10;
     QUEEN: 11;
     KING: 12;
+    ACE: 13;
   }
 
   export const Num: NumMap;
-
-  export enum ActualcardCase {
-    ACTUALCARD_NOT_SET = 0,
-    CARD = 1,
-    IS_SMALL_JOKER = 2,
-    IS_BIG_JOKER = 3,
-  }
 }
 
 export class Hand extends jspb.Message {
@@ -357,107 +320,5 @@ export namespace Hand {
   export type AsObject = {
     cardsList: Array<Card.AsObject>,
   }
-}
-
-export class Game extends jspb.Message {
-  getGameId(): string;
-  setGameId(value: string): void;
-
-  getCreatorPlayerId(): string;
-  setCreatorPlayerId(value: string): void;
-
-  clearPlayerIdsList(): void;
-  getPlayerIdsList(): Array<string>;
-  setPlayerIdsList(value: Array<string>): void;
-  addPlayerIds(value: string, index?: number): string;
-
-  getTeammateId(): string;
-  setTeammateId(value: string): void;
-
-  hasData(): boolean;
-  clearData(): void;
-  getData(): GameData | undefined;
-  setData(value?: GameData): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): Game.AsObject;
-  static toObject(includeInstance: boolean, msg: Game): Game.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: Game, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): Game;
-  static deserializeBinaryFromReader(message: Game, reader: jspb.BinaryReader): Game;
-}
-
-export namespace Game {
-  export type AsObject = {
-    gameId: string,
-    creatorPlayerId: string,
-    playerIdsList: Array<string>,
-    teammateId: string,
-    data?: GameData.AsObject,
-  }
-}
-
-export class GameData extends jspb.Message {
-  getState(): GameData.GameStateMap[keyof GameData.GameStateMap];
-  setState(value: GameData.GameStateMap[keyof GameData.GameStateMap]): void;
-
-  getWaitingForPlayerId(): string;
-  setWaitingForPlayerId(value: string): void;
-
-  getGameActionCount(): number;
-  setGameActionCount(value: number): void;
-
-  getTrumpSuit(): Card.SuitMap[keyof Card.SuitMap];
-  setTrumpSuit(value: Card.SuitMap[keyof Card.SuitMap]): void;
-
-  getTrumpNum(): Card.NumMap[keyof Card.NumMap];
-  setTrumpNum(value: Card.NumMap[keyof Card.NumMap]): void;
-
-  hasMyHandCards(): boolean;
-  clearMyHandCards(): void;
-  getMyHandCards(): Hand | undefined;
-  setMyHandCards(value?: Hand): void;
-
-  getCardsOnTableMap(): jspb.Map<string, Hand>;
-  clearCardsOnTableMap(): void;
-  getCurrentScoresMap(): jspb.Map<string, number>;
-  clearCurrentScoresMap(): void;
-  getCumulativeScoresMap(): jspb.Map<string, number>;
-  clearCumulativeScoresMap(): void;
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GameData.AsObject;
-  static toObject(includeInstance: boolean, msg: GameData): GameData.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: GameData, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GameData;
-  static deserializeBinaryFromReader(message: GameData, reader: jspb.BinaryReader): GameData;
-}
-
-export namespace GameData {
-  export type AsObject = {
-    state: GameData.GameStateMap[keyof GameData.GameStateMap],
-    waitingForPlayerId: string,
-    gameActionCount: number,
-    trumpSuit: Card.SuitMap[keyof Card.SuitMap],
-    trumpNum: Card.NumMap[keyof Card.NumMap],
-    myHandCards?: Hand.AsObject,
-    cardsOnTableMap: Array<[string, Hand.AsObject]>,
-    currentScoresMap: Array<[string, number]>,
-    cumulativeScoresMap: Array<[string, number]>,
-  }
-
-  export interface GameStateMap {
-    UNDEFINED: 0;
-    NOT_ENOUGH_PLAYERS: 1;
-    NOT_STARTED: 2;
-    STARTED: 3;
-    PAUSED: 4;
-    ENDED: 5;
-  }
-
-  export const GameState: GameStateMap;
 }
 

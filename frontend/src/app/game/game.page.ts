@@ -161,6 +161,7 @@ export class GamePage implements AfterViewChecked {
     });
   }
   enterRoom(player_name: string, game_id: any) {
+    var gameStarted = false;
     const enterRoomRequest = new EnterRoomRequest();
     enterRoomRequest.setPlayerId(player_name);
     enterRoomRequest.setGameId(game_id);
@@ -173,8 +174,9 @@ export class GamePage implements AfterViewChecked {
         const playerIdsStr = "Players:" + message.toObject()['playerIdsList'];
         this.renderer.setProperty(this.playerInfo.nativeElement, 'innerHTML', playerIdsStr);
 
-        if (message.toObject()['data']['state'] == 3) {
+        if (gameStarted == false && message.getPlayerStatesList().length == 4) {
           console.log("game is starting!")
+          gameStarted = true;
           new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
         }
       },
