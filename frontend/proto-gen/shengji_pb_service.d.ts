@@ -13,51 +13,6 @@ type ShengjiCreateGame = {
   readonly responseType: typeof shengji_pb.Game;
 };
 
-type ShengjiStartGame = {
-  readonly methodName: string;
-  readonly service: typeof Shengji;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof shengji_pb.StartGameRequest;
-  readonly responseType: typeof shengji_pb.Game;
-};
-
-type ShengjiPauseGame = {
-  readonly methodName: string;
-  readonly service: typeof Shengji;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof shengji_pb.PauseGameRequest;
-  readonly responseType: typeof shengji_pb.Game;
-};
-
-type ShengjiResumeGame = {
-  readonly methodName: string;
-  readonly service: typeof Shengji;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof shengji_pb.PauseGameRequest;
-  readonly responseType: typeof shengji_pb.Game;
-};
-
-type ShengjiJoinGame = {
-  readonly methodName: string;
-  readonly service: typeof Shengji;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof shengji_pb.JoinGameRequest;
-  readonly responseType: typeof shengji_pb.Game;
-};
-
-type ShengjiLeaveGame = {
-  readonly methodName: string;
-  readonly service: typeof Shengji;
-  readonly requestStream: false;
-  readonly responseStream: false;
-  readonly requestType: typeof shengji_pb.LeaveGameRequest;
-  readonly responseType: typeof shengji_pb.Game;
-};
-
 type ShengjiEnterRoom = {
   readonly methodName: string;
   readonly service: typeof Shengji;
@@ -67,13 +22,13 @@ type ShengjiEnterRoom = {
   readonly responseType: typeof shengji_pb.Game;
 };
 
-type ShengjiPlayGame = {
+type ShengjiPlayHand = {
   readonly methodName: string;
   readonly service: typeof Shengji;
   readonly requestStream: false;
   readonly responseStream: false;
-  readonly requestType: typeof shengji_pb.PlayGameRequest;
-  readonly responseType: typeof shengji_pb.Game;
+  readonly requestType: typeof shengji_pb.PlayHandRequest;
+  readonly responseType: typeof shengji_pb.PlayHandResponse;
 };
 
 type ShengjiAddAIPlayer = {
@@ -88,13 +43,8 @@ type ShengjiAddAIPlayer = {
 export class Shengji {
   static readonly serviceName: string;
   static readonly CreateGame: ShengjiCreateGame;
-  static readonly StartGame: ShengjiStartGame;
-  static readonly PauseGame: ShengjiPauseGame;
-  static readonly ResumeGame: ShengjiResumeGame;
-  static readonly JoinGame: ShengjiJoinGame;
-  static readonly LeaveGame: ShengjiLeaveGame;
   static readonly EnterRoom: ShengjiEnterRoom;
-  static readonly PlayGame: ShengjiPlayGame;
+  static readonly PlayHand: ShengjiPlayHand;
   static readonly AddAIPlayer: ShengjiAddAIPlayer;
 }
 
@@ -139,60 +89,15 @@ export class ShengjiClient {
     requestMessage: shengji_pb.CreateGameRequest,
     callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
   ): UnaryResponse;
-  startGame(
-    requestMessage: shengji_pb.StartGameRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  startGame(
-    requestMessage: shengji_pb.StartGameRequest,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  pauseGame(
-    requestMessage: shengji_pb.PauseGameRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  pauseGame(
-    requestMessage: shengji_pb.PauseGameRequest,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  resumeGame(
-    requestMessage: shengji_pb.PauseGameRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  resumeGame(
-    requestMessage: shengji_pb.PauseGameRequest,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  joinGame(
-    requestMessage: shengji_pb.JoinGameRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  joinGame(
-    requestMessage: shengji_pb.JoinGameRequest,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  leaveGame(
-    requestMessage: shengji_pb.LeaveGameRequest,
-    metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
-  leaveGame(
-    requestMessage: shengji_pb.LeaveGameRequest,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
-  ): UnaryResponse;
   enterRoom(requestMessage: shengji_pb.EnterRoomRequest, metadata?: grpc.Metadata): ResponseStream<shengji_pb.Game>;
-  playGame(
-    requestMessage: shengji_pb.PlayGameRequest,
+  playHand(
+    requestMessage: shengji_pb.PlayHandRequest,
     metadata: grpc.Metadata,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
+    callback: (error: ServiceError|null, responseMessage: shengji_pb.PlayHandResponse|null) => void
   ): UnaryResponse;
-  playGame(
-    requestMessage: shengji_pb.PlayGameRequest,
-    callback: (error: ServiceError|null, responseMessage: shengji_pb.Game|null) => void
+  playHand(
+    requestMessage: shengji_pb.PlayHandRequest,
+    callback: (error: ServiceError|null, responseMessage: shengji_pb.PlayHandResponse|null) => void
   ): UnaryResponse;
   addAIPlayer(
     requestMessage: shengji_pb.AddAIPlayerRequest,

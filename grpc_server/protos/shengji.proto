@@ -60,6 +60,9 @@ message PlayHandResponse{
 
 // Player-specific state
 message PlayerState {
+  // ID of the player
+  string player_id = 4;
+
   // Cards you have on your hand
   Hand cards_on_hand = 1;
 
@@ -82,17 +85,20 @@ message Game {
   string dealer_player_id = 3;
 
   // Player who needs to play a hand.
+  // Either "ANYONE" or a specific user id.
+  //
+  // ANYONE: Anyone can claim trump
+  // specific user id: Only that user can play (hide kitty or play a hand)
   string next_turn_player_id = 4;
-
-  // Player seat assignment, dictates play order and teams.
-  repeated string player_seat_assignment = 10;
 
   // Player who wins the current round.
   string current_round_winner_player_id = 5;
 
   // All player states. Private states will be redacted by the server (e.g.
-  // other players' hand cards)
-  map<string, PlayerState> player_states = 6;
+  // other players' hand cards).
+  // Order of player_states == play order.
+  // The first player is guaranteed to be the caller.
+  repeated PlayerState player_states = 6;
 
   // Kitty/hidden hand. This is only visible to the dealer.
   Hand kitty = 7;
