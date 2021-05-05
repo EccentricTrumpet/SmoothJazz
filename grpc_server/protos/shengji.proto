@@ -61,16 +61,19 @@ message PlayHandResponse{
 // Player-specific state
 message PlayerState {
   // ID of the player
-  string player_id = 4;
+  string player_id = 1;
 
   // Cards you have on your hand
-  Hand cards_on_hand = 1;
+  Hand cards_on_hand = 2;
 
-  // Cards you have in your discard pile
-  Hand discard_pile = 2;
+  // Cards you have in your winning pile
+  Hand winning_pile = 3;
+
+  // Cards played in the current ongoing round
+  Hand current_round_trick = 4;
 
   // You current score
-  int32 score = 3;
+  int32 score = 5;
 }
 
 message Game {
@@ -109,6 +112,10 @@ message Game {
 
   // Trump number.
   Card.Num trump_num = 9; 
+
+  // Number of cards left in the deck. It should start with N (number of
+  // decks) * 54 to start with, and become 0 once the dealing phase finishes.
+  int32 deck_card_count = 10;
 }
 
 message Card {

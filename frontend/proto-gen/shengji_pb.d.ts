@@ -162,10 +162,15 @@ export class PlayerState extends jspb.Message {
   getCardsOnHand(): Hand | undefined;
   setCardsOnHand(value?: Hand): void;
 
-  hasDiscardPile(): boolean;
-  clearDiscardPile(): void;
-  getDiscardPile(): Hand | undefined;
-  setDiscardPile(value?: Hand): void;
+  hasWinningPile(): boolean;
+  clearWinningPile(): void;
+  getWinningPile(): Hand | undefined;
+  setWinningPile(value?: Hand): void;
+
+  hasCurrentRoundTrick(): boolean;
+  clearCurrentRoundTrick(): void;
+  getCurrentRoundTrick(): Hand | undefined;
+  setCurrentRoundTrick(value?: Hand): void;
 
   getScore(): number;
   setScore(value: number): void;
@@ -184,7 +189,8 @@ export namespace PlayerState {
   export type AsObject = {
     playerId: string,
     cardsOnHand?: Hand.AsObject,
-    discardPile?: Hand.AsObject,
+    winningPile?: Hand.AsObject,
+    currentRoundTrick?: Hand.AsObject,
     score: number,
   }
 }
@@ -221,6 +227,9 @@ export class Game extends jspb.Message {
   getTrumpNum(): Card.NumMap[keyof Card.NumMap];
   setTrumpNum(value: Card.NumMap[keyof Card.NumMap]): void;
 
+  getDeckCardCount(): number;
+  setDeckCardCount(value: number): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Game.AsObject;
   static toObject(includeInstance: boolean, msg: Game): Game.AsObject;
@@ -242,6 +251,7 @@ export namespace Game {
     kitty?: Hand.AsObject,
     trumpSuit: Card.SuitMap[keyof Card.SuitMap],
     trumpNum: Card.NumMap[keyof Card.NumMap],
+    deckCardCount: number,
   }
 }
 
