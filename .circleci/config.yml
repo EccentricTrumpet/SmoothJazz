@@ -3,13 +3,13 @@ jobs:
   test-backend:
     working_directory: ~/repo/backend
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.8
     resource_class: small
     steps:
       - checkout:
           path: ~/repo
       - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
       - restore_cache:  # ensure this step occurs *before* installing dependencies
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run:
@@ -21,8 +21,8 @@ jobs:
           paths:
             - ".venv"
             - "/usr/local/bin"
-            - "/usr/local/lib/python3.7/site-packages"
-      - run: python test.py -v
+            - "/usr/local/lib/python3.8/site-packages"
+      - run: python game_state_test.py -v
   test-frontend:
     working_directory: ~/repo/frontend
     docker:
