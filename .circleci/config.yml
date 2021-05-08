@@ -22,7 +22,7 @@ jobs:
             - ".venv"
             - "/usr/local/bin"
             - "/usr/local/lib/python3.7/site-packages"
-      - run: python test.py -v
+      - run: python game_state_test.py -v
   test-frontend:
     working_directory: ~/repo/frontend
     docker:

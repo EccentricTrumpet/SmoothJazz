@@ -44,7 +44,7 @@ Requirements
 
 ```console
 $ cd backend
-$ python test.py
+$ python *test.py
 ```
 
 ## Frontend
