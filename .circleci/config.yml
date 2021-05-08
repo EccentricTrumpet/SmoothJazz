@@ -10,10 +10,6 @@ jobs:
           path: ~/repo
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - run:  # Run this to get the Pipfile.lock for the first time.
-          command: |
-            sudo pip install pipenv
-            pipenv install
       - restore_cache:  # ensure this step occurs *before* installing dependencies
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run:
