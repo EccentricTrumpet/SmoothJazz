@@ -8,6 +8,12 @@ Local testing:
 2. start a client that creates a game, then listens for game update: python3 streaming_client.py
 3. start a client that updates the game: python3 backend/updating_client.py
 
+## Using docker
+
+1. Build docker image: docker build -t backend:v1
+2. Run docker image: docker run -it --rm -p 50051:50051 backend:v1 pipenv run python server.py
+3. Exit: {ctl-c}
+
 # Reverse Proxy
 Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 1. Download grpcwebproxy binary from https://github.com/improbable-eng/grpc-web/releases
@@ -19,15 +25,21 @@ Alternative installation to build from binary:
 
 # Frontend
 To start frontend ionic app locally:
-0. cd frontend/
-1. sudo apt-get install -y npm
-2. npm install -g @ionic/cli
-3. In the frontend folder, run `npm install`
-4. In the frontend folder, run `ionic serve`
+1. cd frontend/
+2. sudo apt-get install -y npm
+3. npm install -g @ionic/cli
+4. In the frontend folder, run `npm install`
+5. In the frontend folder, run `ionic serve`
 NOTE: It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
 
 To compile new versions of the generated .d.ts file for the protobuf definition:
 protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:frontend/proto-gen --ts_out=service=grpc-web:frontend/proto-gen -I ./backend/protos/ ./backend/protos/shengji.proto
+
+## Using docker
+
+1. Build docker image: docker build -t frontend:v1
+2. Run docker image: docker run --rm -it -p 8100:8100 frontend:v1 ionic serve --external
+3. Exit: docker ps; docker stop {CONTAINER_ID}
 
 # To start all servers locally
 Run `./local_test.sh start` and navigate to http://localhost:8100 in browser
