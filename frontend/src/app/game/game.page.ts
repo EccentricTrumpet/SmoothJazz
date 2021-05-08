@@ -171,7 +171,7 @@ export class GamePage implements AfterViewChecked {
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
 
-        const playerIdsStr = "Players:" + message.toObject()['playerIdsList'];
+        const playerIdsStr = "Players:" + message.getPlayerStatesList()
         this.renderer.setProperty(this.playerInfo.nativeElement, 'innerHTML', playerIdsStr);
 
         if (gameStarted == false && message.getPlayerStatesList().length == 4) {
