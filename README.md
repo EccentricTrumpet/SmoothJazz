@@ -29,7 +29,7 @@ Alternative installation to build from binary:
 
 1. `cd proxy`
 2. Build docker image: `docker build -t proxy:v1`
-3. Run docker image: `docker run -it --rm -p 8080:8080 proxy:v1 ./proxy  --backend_addr=host.docker.internal:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
+3. Run docker image: `docker run -it --rm -p 8080:8080 proxy:v1 ./proxy --backend_addr=host.docker.internal:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
 4. Exit: `{ctl-c}`
 
 # Frontend
@@ -52,10 +52,16 @@ protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_ou
 3. Exit: `docker ps; docker stop {CONTAINER_ID}`
 
 # To start all servers locally
-Run `./local_test.sh start` and navigate to http://localhost:8100 in browser
+1. Start: `./local_test.sh start`
+2. navigate to http://localhost:8100
+3. Stop: `./local_test.sh stop`
 
-# To stop all servers
-Run `./local_test.sh stop`
+## Using docker compose
+
+1. Start: `docker compose up`
+2. navigate to http://localhost:8100
+3. Stop: `{ctl-c}`
+4. Cleanup: `docker compose down`
 
 # Testing
 
