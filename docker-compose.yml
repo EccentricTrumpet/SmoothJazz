@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  backend:
+    build: ./backend
+    command: pipenv run python server.py
+  proxy:
+    build: ./proxy
+    ports:
+      - "8080:8080"
+    command: ./proxy --backend_addr=backend:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h
+  frontend:
+    build: ./frontend
+    ports:
+      - "8100:8100"
+    command: ionic serve --external
