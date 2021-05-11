@@ -47,7 +47,39 @@ class ShengjiTest(unittest.TestCase):
             self.assertEqual(streaming_result[1].creator_player_id, req.player_id)
             self.assertEqual(len(streaming_result[1].player_states), 2)
 
-    # TODO(aaron): Add unit tests for 4 real players
+    def test_deal_cards(self):
+        sj = Shengji()
+        req = shengji_pb2.CreateGameRequest()
+        req.player_id = "test_creation_id"
+        game = sj.CreateGame(req, None)
+
+        enter_room_req = shengji_pb2.EnterRoomRequest()
+        enter_room_req.game_id = game.game_id
+        enter_room_req.player_id = req.player_id
+
+        with futures.ThreadPoolExecutor(max_workers=1) as pool:
+            add_ai_req = shengji_pb2.AddAIPlayerRequest()
+            add_ai_req.game_id = game.game_id
+
+            # Add the human player last (so we can trigger card dealing)
+            f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
+
+            # Add three API players
+            sj.AddAIPlayer(add_ai_req, None)
+            sj.AddAIPlayer(add_ai_req, None)
+            sj.AddAIPlayer(add_ai_req, None)
+
+            # Sleep 3 secs to deal cards
+            time.sleep(3)
+            sj.TerminateGame(game.game_id)
+
+            streaming_result = f.result()
+
+            self.assertEqual(streaming_result[1].game_id, game.game_id)
+            self.assertEqual(streaming_result[1].creator_player_id, req.player_id)
+
+            self.assertEqual(len(streaming_result[-1].player_states), 4)
+            self.assertEqual(len(streaming_result[-1].player_states[0].cards_on_hand.cards), 25)
 
 if __name__ == '__main__':
     logging.basicConfig(
