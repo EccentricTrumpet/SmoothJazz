@@ -1,17 +1,3 @@
-# Copyright 2020 The gRPC Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use self file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -23,34 +9,44 @@ from google.protobuf.json_format import MessageToJson
 
 import shengji_pb2
 import shengji_pb2_grpc
+from game_state import *
 
 class Shengji(shengji_pb2_grpc.ShengjiServicer):
     # game_state_lock protects all shared game states
     game_state_lock = threading.RLock()
     game_watchers = dict()
-    game = dict()
+    games = dict()
     game_id = 0
 
     def __init__(self):
         pass
 
-    def CreateGame(self, request, context):
+    def CreateGame(self,
+            request: shengji_pb2.CreateGameRequest,
+            context: grpc.ServicerContext
+            ) -> shengji_pb2.Game:
         self.game_state_lock.acquire()
 
         game_id = str(self.game_id)
-        self.game[game_id] = shengji_pb2.Game() 
+        self.games[game_id] = shengji_pb2.Game() 
         self.game_id += 1
-        self.game[game_id].game_id = game_id
-        self.game[game_id].creator_player_id = request.player_id
+        self.games[game_id].game_id = game_id
+        self.games[game_id].creator_player_id = request.player_id
 
         # Creates a game watcher
         self.game_watchers[game_id] = threading.Condition()
 
         logging.info("Received a CreateGame request from player_id [%s], created a game with id [%s]", request.player_id, game_id)
 
-        game = self.game[game_id]
+        game = self.games[game_id]
         self.game_state_lock.release()
         return game
+
+    def TerminateGame(self, game_id: str):
+        logging.info("Terminating game: %s", game_id)
+        del self.games[game_id]
+        with self.game_watchers[game_id]:
+            self.game_watchers[game_id].notify_all()
 
     def PlayHand(self, request, context):
         logging.info("Received a PlayGame request from player_id [%s], game_id [%s]", request.player_id, request.game_id)
@@ -60,10 +56,10 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         self.game_state_lock.acquire()
 
         try:
-            self.game[game_id]
+            self.games[game_id]
         except:
             logging.info("Not found: game_id [%s]", request.game_id)
-        game = self.game[game_id]
+        game = self.games[game_id]
 
         self.game_state_lock.release()
 
@@ -77,7 +73,7 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         self.game_state_lock.acquire()
         player_state = shengji_pb2.PlayerState()
         player_state.player_id = player_id 
-        self.game[game_id].player_states.append(player_state)
+        self.games[game_id].player_states.append(player_state)
         with self.game_watchers[game_id]:
             self.game_watchers[game_id].notify_all()
         self.game_state_lock.release()
@@ -104,17 +100,19 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         with self.game_watchers[request.game_id]:
             self.game_watchers[request.game_id].notify_all()
         self.game_state_lock.acquire()
-        game = self.game[request.game_id]
+        game = self.games[request.game_id]
         self.game_state_lock.release()
         yield game
 
-        while True:
+        while request.game_id in self.games:
             with self.game_watchers[request.game_id]:
                 logging.info("Waiting for game update [%s]", self.game_watchers[request.game_id])
                 self.game_watchers[request.game_id].wait()
                 logging.info("Streaming game update...")
+                if request.game_id not in self.games:
+                    break
                 self.game_state_lock.acquire()
-                game = self.game[request.game_id]
+                game = self.games[request.game_id]
                 self.game_state_lock.release()
             yield game
 
