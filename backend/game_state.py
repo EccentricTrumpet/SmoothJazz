@@ -19,17 +19,16 @@ class Game:
     hands_on_table = []
     """
     States:
-
         Player < 4
     NOT_ENOUGH_PLAYER
         Player == 4
     WAITING_TO_START
         Game started
     WAITING_FOR_PLAYER_<id>
-            Game ended, next game pending
-        WAITING_TO_START
-            Game ended, one of the teams won
-        GAME_ENDED
+        Game ended, next game pending
+    WAITING_TO_START
+        Game ended, one of the teams won
+    GAME_ENDED
     """
 
     def __init__(self, player_id):
