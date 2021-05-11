@@ -28,7 +28,7 @@ spec:
         - name: frontend
           image: smoothjazz.azurecr.io/frontend:v1
           command: [ "ionic" ]
-          args: [ "serve", "--external" ]
+          args: [ "serve", "--external", "--prod" ]
           ports:
             - containerPort: 8100
 ---
