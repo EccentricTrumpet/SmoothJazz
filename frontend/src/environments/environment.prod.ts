@@ -1,3 +1,4 @@
 export const environment = {
-  production: true
+  production: true,
+  grpcUrl: "http://smoothjazz.centralus.cloudapp.azure.com:8080"
 };
