@@ -1,3 +1,7 @@
+# Public URL
+
+http://smoothjazz.centralus.cloudapp.azure.com
+
 # Backend
 Installation:
 pip3 install grpcio
@@ -106,3 +110,4 @@ $ ng test
 ## Kubernetes deployment
 
 1. `kubectl apply -f kubernetes.yml`
+
