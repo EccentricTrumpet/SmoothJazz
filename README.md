@@ -86,3 +86,23 @@ Requirements
 $ cd frontend
 $ ng test
 ```
+# Deployment
+
+## Prerequisites
+
+1. Azure CLI
+2. Kubectl: `az aks install-cli`
+
+## Tag and push docker images
+
+0. `az login`
+1. `docker tag backend:v1 smoothjazz.azurecr.io/backend:v1`
+2. `docker tag proxy:v1 smoothjazz.azurecr.io/proxy:v1`
+3. `docker tag frontend:v1 smoothjazz.azurecr.io/frontend:v1`
+4. `docker push smoothjazz.azurecr.io/backend:v1`
+5. `docker push smoothjazz.azurecr.io/proxy:v1`
+6. `docker push smoothjazz.azurecr.io/frontend:v1`
+
+## Kubernetes deployment
+
+1. `kubectl apply -f kubernetes.yml`
