@@ -1,4 +1,5 @@
 import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@angular/core';
+import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
 import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game} from "proto-gen/shengji_pb";
@@ -20,8 +21,6 @@ export class GamePage implements AfterViewChecked {
   nativeElement: any;
   gameId = 'None';
   started = false;
-  // TODO(Aaron): Make this a commandline flag instead of setting it statically here.
-  backend_host = "http://localhost:8080";
   createGame = true;
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
@@ -131,7 +130,7 @@ export class GamePage implements AfterViewChecked {
     console.log('Adding AI Player for: '+this.gameId);
     grpc.unary(Shengji.AddAIPlayer, {
       request: createAIRequest,
-      host: this.backend_host,
+      host: environment.grpcUrl,
       onEnd: res => {
         const { status, statusMessage, headers, message, trailers } = res;
         if (status === grpc.Code.OK && message) {
@@ -146,7 +145,7 @@ export class GamePage implements AfterViewChecked {
     createGameRequest.setPlayerId(player_name);
     grpc.unary(Shengji.CreateGame, {
       request: createGameRequest,
-      host: this.backend_host,
+      host: environment.grpcUrl,
       onEnd: res => {
         const { status, statusMessage, headers, message, trailers } = res;
         if (status === grpc.Code.OK && message) {
@@ -167,7 +166,7 @@ export class GamePage implements AfterViewChecked {
     enterRoomRequest.setGameId(game_id);
     grpc.invoke(Shengji.EnterRoom, {
       request: enterRoomRequest,
-      host: this.backend_host,
+      host: environment.grpcUrl,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
 
