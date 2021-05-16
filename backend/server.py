@@ -15,9 +15,8 @@ from game_state import *
 def DealCards(game_id):
     keep_going = True
     while keep_going:
-        Shengji.game_state_lock.acquire()
-        keep_going = Shengji.games[game_id].DealCard()
-        Shengji.game_state_lock.release()
+        with Shengji.game_state_lock:
+            keep_going = Shengji.games[game_id].DealCard()
 
         Shengji.NotifyGameStateChange(game_id)
 
@@ -32,6 +31,8 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
     #      corresponding game state is mutated.
     game_watchers = dict()
 
+    # Dict that holds game states. game_state_lock must be held prior accessing
+    # this dict.
     # KEY: game_id
     # VAL: game object
     games = dict()
@@ -44,6 +45,7 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
     def __init__(self):
         pass
 
+    # Notifies that game state has changed. 
     @classmethod
     def NotifyGameStateChange(cls, game_id):
         logging.info("Notifying changes")
@@ -57,14 +59,13 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
 
         game_id = str(Shengji.game_id)
 
-        Shengji.game_state_lock.acquire()
-        Shengji.game_id += 1
-        Shengji.games[game_id] = Game(request.player_id, game_id)
+        with Shengji.game_state_lock:
+            Shengji.game_id += 1
+            Shengji.games[game_id] = Game(request.player_id, game_id)
 
-        # Creates a game watcher
-        Shengji.game_watchers[game_id] = threading.Condition()
-        game = Shengji.games[game_id].ToApiGame()
-        Shengji.game_state_lock.release()
+            # Creates a game watcher
+            Shengji.game_watchers[game_id] = threading.Condition()
+            game = Shengji.games[game_id].ToApiGame()
 
         logging.info("Received a CreateGame request from player_id [%s], created a game with id [%s]", request.player_id, game_id)
         return game
@@ -76,29 +77,24 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         Shengji.NotifyGameStateChange(game_id)
 
     def PlayHand(self, request, context):
-        Shengji.game_state_lock.acquire()
-
         logging.info("Received a PlayGame request from player_id [%s], game_id [%s]", request.player_id, request.game_id)
-        game_id = request.game_id
-        player_id = request.player_id
+        with Shengji.game_state_lock:
+            game_id = request.game_id
+            player_id = request.player_id
 
-        try:
-            self.games[game_id]
-        except:
-            logging.info("Not found: game_id [%s]", request.game_id)
-        game = self.games[game_id]
-
-        self.game_state_lock.release()
+            try:
+                self.games[game_id]
+            except:
+                logging.info("Not found: game_id [%s]", request.game_id)
+            game = self.games[game_id]
 
         # Notifies all watchers of state change
         Shengji.NotifyGameStateChange(request.game_id)
-
         return game
 
     def _addPlayer(self, game_id, player_id):
-        Shengji.game_state_lock.acquire()
-        Shengji.games[game_id].AddPlayer(player_id)
-        Shengji.game_state_lock.release()
+        with Shengji.game_state_lock:
+                Shengji.games[game_id].AddPlayer(player_id)
 
         Shengji.NotifyGameStateChange(game_id)
 
@@ -127,9 +123,8 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         self._addPlayer(request.game_id, request.player_id)
 
         # Send out the initial game
-        Shengji.game_state_lock.acquire()
-        game = Shengji.games[request.game_id]
-        Shengji.game_state_lock.release()
+        with Shengji.game_state_lock:
+            game = Shengji.games[request.game_id]
         yield game.ToApiGame()
 
         # wait for notification
@@ -141,9 +136,8 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
                 logging.info("Player [%s] got game update", request.player_id)
                 if request.game_id not in Shengji.games:
                     break
-                Shengji.game_state_lock.acquire()
-                game = Shengji.games[request.game_id]
-                Shengji.game_state_lock.release()
+                with Shengji.game_state_lock:
+                    game = Shengji.games[request.game_id]
             yield game.ToApiGame()
 
         logging.info("Call finished [%s]", request.game_id)
