@@ -1,3 +1,4 @@
+import logging
 import random
 
 import shengji_pb2
@@ -52,7 +53,7 @@ class Game:
         self.player_ids.append(player_id)
 
         # Game is automatically started here
-        print(self.player_ids)
+        logging.info(self.player_ids)
 
 
     def StartGame(self, player_id, first_player_id):
@@ -85,7 +86,7 @@ class Game:
         else:
             self.players[self.player_ids[self.next_player_index]].AddCard(self.deck_cards[0])
             self.next_player_index = (self.next_player_index + 1) % 4
-            print("Dealt card " + str(self.deck_cards[0]))
+            logging.info("Dealt card " + str(self.deck_cards[0]))
             del self.deck_cards[0]
             return True
 
@@ -510,11 +511,12 @@ class Hand:
         return self.type + ": " + ",".join([str(c) for c in self.cards])
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s")
     game = Game("1", 1)
     game.AddPlayer("1")
     game.AddPlayer("2")
     game.AddPlayer("3")
     game.AddPlayer("4")
     while game.DealCard():
-        print(game.ToApiGame())
-        pass
+        logging.info(game.ToApiGame())

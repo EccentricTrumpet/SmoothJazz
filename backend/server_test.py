@@ -6,6 +6,7 @@ import logging
 import sys
 import time
 
+# TODO(aaron): Add unit tests for 4 real players
 class ShengjiTest(unittest.TestCase):
 
     def test_create_game(self):
@@ -20,7 +21,6 @@ class ShengjiTest(unittest.TestCase):
     def _generator_wrap(self, functor, *args):
         return list(functor(*args))
 
-    # TODO(aaron): Make this work for three AIs
     def test_streaming_with_one_ai(self):
         sj = Shengji()
         req = shengji_pb2.CreateGameRequest()
@@ -47,6 +47,7 @@ class ShengjiTest(unittest.TestCase):
             self.assertEqual(streaming_result[1].creator_player_id, req.player_id)
             self.assertEqual(len(streaming_result[1].player_states), 2)
 
+    
     def test_deal_cards(self):
         sj = Shengji()
         req = shengji_pb2.CreateGameRequest()
@@ -64,7 +65,7 @@ class ShengjiTest(unittest.TestCase):
             # Add the human player last (so we can trigger card dealing)
             f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
 
-            # Add three API players
+            # Add three AI players
             sj.AddAIPlayer(add_ai_req, None)
             sj.AddAIPlayer(add_ai_req, None)
             sj.AddAIPlayer(add_ai_req, None)
