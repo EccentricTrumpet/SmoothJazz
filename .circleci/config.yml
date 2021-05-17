@@ -43,11 +43,11 @@ jobs:
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
 
 workflows:
-  ci-tests:
+  build:
     jobs:
       - test-backend
       - test-frontend
-      - azure/build-and-push-image:
+      - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
           registry-name: smoothjazz
@@ -56,7 +56,7 @@ workflows:
           # filters:
           #   branches:
           #     only: main
-      - azure/build-and-push-image:
+      - azure-acr/build-and-push-image:
           path: ./proxy
           login-server-name: smoothjazz.azurecr.io
           registry-name: smoothjazz
@@ -65,7 +65,7 @@ workflows:
           # filters:
           #   branches:
           #     only: main
-      - azure/build-and-push-image:
+      - azure-acr/build-and-push-image:
           path: ./frontend
           login-server-name: smoothjazz.azurecr.io
           registry-name: smoothjazz
