@@ -42,6 +42,9 @@ jobs:
             - "node_modules"
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
   push-docker-images:
+    machine:
+      image: ubuntu-1604:201903-01
+    resource_class: small
     steps:
       - azure-acr/build-and-push-image:
           path: ./backend
