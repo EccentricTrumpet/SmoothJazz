@@ -81,7 +81,8 @@ workflows:
           cluster-name: smoothjazzapp
           container-image-updates: 'backend=smoothjazz.azurecr.io/backend:$CIRCLE_BUILD_NUM proxy=smoothjazz.azurecr.io/proxy:$CIRCLE_BUILD_NUM frontend=smoothjazz.azurecr.io/frontend:$CIRCLE_BUILD_NUM'
           record: true
-          resource-name: deployment/nginx-deployment
+          resource-group: RhythmicBass
+          resource-name: deployment/smoothjazzapp
           show-kubectl-command: true
           requires:
             - push-docker-images
