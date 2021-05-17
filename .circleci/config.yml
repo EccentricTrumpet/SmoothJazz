@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   azure-acr: circleci/azure-acr@0.2.0
+  azure-aks: circleci/azure-aks@0.2.1
 jobs:
   test-backend:
     working_directory: ~/repo/backend
@@ -73,6 +74,17 @@ workflows:
           requires:
             - test-backend
             - test-frontend
+          # filters:
+          #   branches:
+          #     only: main
+      - azure-aks/update-container-image:
+          cluster-name: smoothjazzapp
+          container-image-updates: 'backend=smoothjazz.azurecr.io/backend:$CIRCLE_BUILD_NUM proxy=smoothjazz.azurecr.io/proxy:$CIRCLE_BUILD_NUM frontend=smoothjazz.azurecr.io/frontend:$CIRCLE_BUILD_NUM'
+          record: true
+          resource-name: deployment/nginx-deployment
+          show-kubectl-command: true
+          requires:
+            - push-docker-images
           # filters:
           #   branches:
           #     only: main
