@@ -2090,7 +2090,7 @@ proto.grpc.testing.Card.serializeBinaryToWriter = function(message, writer) {
  */
 proto.grpc.testing.Card.Suit = {
   SUIT_UNDEFINED: 0,
-  HEATS: 1,
+  HEARTS: 1,
   SPADES: 2,
   CLUBS: 3,
   DIAMONDS: 4,
