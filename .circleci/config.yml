@@ -1,4 +1,7 @@
 version: 2.1
+orbs:
+  azure-acr: circleci/azure-acr@0.2.0
+  azure-aks: circleci/azure-aks@0.2.1
 jobs:
   test-backend:
     working_directory: ~/repo/backend
@@ -39,9 +42,50 @@ jobs:
           paths:
             - "node_modules"
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
+  push-docker-images:
+    machine:
+      image: ubuntu-1604:201903-01
+    steps:
+      - azure-acr/build-and-push-image:
+          path: ./backend
+          login-server-name: smoothjazz.azurecr.io
+          registry-name: smoothjazz
+          repo: backend
+          tag: $CIRCLE_BUILD_NUM
+      - azure-acr/build-and-push-image:
+          path: ./proxy
+          login-server-name: smoothjazz.azurecr.io
+          registry-name: smoothjazz
+          repo: proxy
+          tag: $CIRCLE_BUILD_NUM
+      - azure-acr/build-and-push-image:
+          path: ./frontend
+          login-server-name: smoothjazz.azurecr.io
+          registry-name: smoothjazz
+          repo: frontend
+          tag: $CIRCLE_BUILD_NUM
 
 workflows:
-  ci-tests:
+  build:
     jobs:
       - test-backend
       - test-frontend
+      - push-docker-images:
+          requires:
+            - test-backend
+            - test-frontend
+          filters:
+            branches:
+              only: main
+      - azure-aks/update-container-image:
+          cluster-name: smoothjazzapp
+          container-image-updates: 'backend=smoothjazz.azurecr.io/backend:$CIRCLE_BUILD_NUM proxy=smoothjazz.azurecr.io/proxy:$CIRCLE_BUILD_NUM frontend=smoothjazz.azurecr.io/frontend:$CIRCLE_BUILD_NUM'
+          record: true
+          resource-group: RhythmicBass
+          resource-name: deployment/smoothjazzapp
+          show-kubectl-command: true
+          requires:
+            - push-docker-images
+          filters:
+            branches:
+              only: main
