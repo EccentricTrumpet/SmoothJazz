@@ -74,9 +74,6 @@ workflows:
           requires:
             - test-backend
             - test-frontend
-          filters:
-            branches:
-              only: main
       - azure-aks/update-container-image:
           cluster-name: smoothjazzapp
           container-image-updates: 'backend=smoothjazz.azurecr.io/backend:$CIRCLE_BUILD_NUM proxy=smoothjazz.azurecr.io/proxy:$CIRCLE_BUILD_NUM frontend=smoothjazz.azurecr.io/frontend:$CIRCLE_BUILD_NUM'
@@ -86,6 +83,4 @@ workflows:
           show-kubectl-command: true
           requires:
             - push-docker-images
-          filters:
-            branches:
-              only: main
+

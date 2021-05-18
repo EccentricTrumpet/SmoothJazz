@@ -56,7 +56,7 @@ export class GamePage implements AfterViewChecked {
   async roomCreationPrompt() {
     const alert = await this.alertController.create({
       // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
-      header: 'Please Enter Your Name:',
+      header: 'John Please Enter Your Name:',
       inputs: [
         {
           name: 'player_name',
