@@ -81,6 +81,9 @@ workflows:
           requires:
             - test-backend
             - test-frontend
+          filters:
+            branches:
+              only: main
       - azure-aks/update-container-image:
           cluster-name: smoothjazzapp
           container-image-updates: >-
@@ -93,4 +96,6 @@ workflows:
           show-kubectl-command: true
           requires:
             - push-docker-images
-
+          filters:
+            branches:
+              only: main
