@@ -42,10 +42,9 @@ class ShengjiTest(unittest.TestCase):
 
             streaming_result = f.result()
 
-            self.assertEqual(len(streaming_result), 2)
-            self.assertEqual(streaming_result[1].game_id, game.game_id)
-            self.assertEqual(streaming_result[1].creator_player_id, req.player_id)
-            self.assertEqual(len(streaming_result[1].player_states), 2)
+            self.assertEqual(streaming_result[-1].game_id, game.game_id)
+            self.assertEqual(streaming_result[-1].creator_player_id, req.player_id)
+            self.assertEqual(len(streaming_result[-1].player_states), 2)
 
     
     def test_deal_cards(self):
