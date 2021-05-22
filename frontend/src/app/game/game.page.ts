@@ -17,11 +17,11 @@ declare var cards:any;
 export class GamePage implements AfterViewChecked {
 @ViewChild('cardTable') tableElement: ElementRef;
 @ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
-@ViewChild('playerInfo', { static: false }) playerInfo: ElementRef;
   nativeElement: any;
   gameId = 'None';
   started = false;
   createGame = true;
+  playerInfos = [];
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
     if (this.router.getCurrentNavigation().extras.state) {
@@ -169,9 +169,17 @@ export class GamePage implements AfterViewChecked {
       host: environment.grpcUrl,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
+        this.playerInfos = message.getPlayerStatesList();
 
-        const playerIdsStr = "Players:" + message.getPlayerStatesList()
-        this.renderer.setProperty(this.playerInfo.nativeElement, 'innerHTML', playerIdsStr);
+        // TODO(Aaron): As it turns out, the callback isn't invoked for every RPC response from the server. More debugging is needed.
+        if (gameStarted) {
+        console.log("Player cards: ",
+                    message.getPlayerStatesList()[0].getCardsOnHand().getCardsList().length,
+                    message.getPlayerStatesList()[1].getCardsOnHand().getCardsList().length,
+                    message.getPlayerStatesList()[2].getCardsOnHand().getCardsList().length,
+                    message.getPlayerStatesList()[3].getCardsOnHand().getCardsList().length,
+                   );
+        }
 
         if (gameStarted == false && message.getPlayerStatesList().length == 4) {
           console.log("game is starting!")

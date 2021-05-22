@@ -3,6 +3,9 @@
     <!-- TODO(Aaron): Make this available for room owner only. -->
     <ion-button color="primary" shape="round" size="small" id="addAIButton">Add AI Player</ion-button>
     <br/><div #gameInfo id="game-info"></div>
-    <br/><div #playerInfo id="player-info"></div>
+    <!-- TODO(Aaron): Proper CSS for this so that they go with player location. -->
+    <div *ngFor="let playerInfo of playerInfos">
+       <span>{{playerInfo.getPlayerId()}}</span>
+    </div>
   </div>
 </ion-content>
