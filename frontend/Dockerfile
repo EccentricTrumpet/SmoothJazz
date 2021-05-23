@@ -3,11 +3,10 @@ FROM smoothjazz.azurecr.io/frontend-builder:node15-alpine as builder
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json ./
-RUN npm ci --production
+COPY . /app
+RUN [[ -d node_modules ]] || npm ci --production
 
 # Build app
-COPY . /app
 RUN npm run build -- --configuration production,ci
 
 # Build hosting image
