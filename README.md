@@ -52,7 +52,7 @@ protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_ou
 
 1. `cd frontend`
 1. Build docker image: `docker build -t frontend:v1 .`
-2. Run docker image: `docker run --rm -it -p 8100:8100 frontend:v1 ionic serve --external`
+2. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
 3. Exit: `docker ps; docker stop {CONTAINER_ID}`
 
 # To start all servers locally

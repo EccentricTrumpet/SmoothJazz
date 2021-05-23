@@ -1,7 +1,16 @@
-FROM node:15-alpine
+FROM node:15-alpine as builder
 
 WORKDIR /app
-COPY . /app
 
-RUN npm install -g ionic
-RUN npm install
+# Install dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --production
+
+# Build app
+COPY . /app
+RUN npm run build --prod
+
+# Build hosting image
+FROM nginx:1.15.8-alpine
+
+COPY --from=builder /app/www/ /usr/share/nginx/html
