@@ -2,8 +2,6 @@ version: 2.1
 
 orbs:
   azure-acr: circleci/azure-acr@0.2.0
-  azure-cli: circleci/azure-cli@1.1.0
-  docker: circleci/docker@1.5.0
   kubernetes: circleci/kubernetes@0.4.0
 
 jobs:
@@ -48,9 +46,9 @@ jobs:
             - "node_modules"
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
   deploy-aks:
-    executor: azure-cli/azure-docker
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
-      - docker/install-docker
       - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
