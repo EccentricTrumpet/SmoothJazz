@@ -15,7 +15,7 @@ Local testing:
 ## Using docker
 
 1. `cd backend`
-2. Build docker image: `docker build -t backend:v1`
+2. Build docker image: `docker build -t backend:v1 .`
 3. Run docker image: `docker run -it --rm -p 50051:50051 backend:v1 pipenv run python server.py`
 4. Exit: `{ctl-c}` twice
 
@@ -32,7 +32,7 @@ Alternative installation to build from binary:
 ## Using docker
 
 1. `cd proxy`
-2. Build docker image: `docker build -t proxy:v1`
+2. Build docker image: `docker build -t proxy:v1 .`
 3. Run docker image: `docker run -it --rm -p 8080:8080 proxy:v1 ./proxy --backend_addr=host.docker.internal:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
 4. Exit: `{ctl-c}`
 
@@ -51,7 +51,7 @@ protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_ou
 ## Using docker
 
 1. `cd frontend`
-1. Build docker image: `docker build -t frontend:v1`
+1. Build docker image: `docker build -t frontend:v1 .`
 2. Run docker image: `docker run --rm -it -p 8100:8100 frontend:v1 ionic serve --external`
 3. Exit: `docker ps; docker stop {CONTAINER_ID}`
 
