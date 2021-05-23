@@ -49,6 +49,8 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     steps:
+      # Enable buildkit
+      - run: export DOCKER_BUILDKIT=1
       # Build backend
       - azure-acr/build-and-push-image:
           path: ./backend
