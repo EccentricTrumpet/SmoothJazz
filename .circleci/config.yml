@@ -65,10 +65,10 @@ jobs:
           tag: ci-<< pipeline.number >>
       # Build frontend
       - restore_cache:
-          key: frontend-docker-npm-{{ checksum "package-lock.json" }}
+          key: frontend-docker-npm-{{ checksum "frontend/package-lock.json" }}
       - run: "cd ./frontend && [[ -d ./frontend/node_modules ]] || npm ci"
       - save_cache:
-          key: frontend-docker-npm-{{ checksum "package-lock.json" }}
+          key: frontend-docker-npm-{{ checksum "frontend/package-lock.json" }}
           paths:
             - "frontend/node_modules"
       - azure-acr/build-and-push-image:
