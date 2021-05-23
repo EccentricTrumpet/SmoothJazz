@@ -44,7 +44,7 @@ jobs:
           path: ~/repo
       - restore_cache:
           key: frontend-npm-{{ checksum "package-lock.json" }}
-      - run: npm ci
+      - run: "[[ -d node_modules ]] || npm ci"
       - save_cache:
           key: frontend-npm-{{ checksum "package-lock.json" }}
           paths:
