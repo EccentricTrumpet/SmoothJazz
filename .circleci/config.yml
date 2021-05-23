@@ -24,7 +24,7 @@ jobs:
           key: backend-pipenv-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
-            sudo pip install pipenv
+            export PIPENV_VENV_IN_PROJECT="enabled"
             pipenv sync
       - save_cache:
           key: backend-pipenv-{{ checksum "Pipfile.lock" }}
