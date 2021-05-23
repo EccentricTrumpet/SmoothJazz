@@ -64,15 +64,19 @@ jobs:
           repo: proxy
           tag: ci-<< pipeline.number >>
       # Build frontend
-      - run: cd ./frontend
       - restore_cache:
-          key: frontend-npm-{{ checksum "package-lock.json" }}
+          key: frontend-docker-npm-{{ checksum "package-lock.json" }}
+      - run: "cd ./frontend && [[ -d ./frontend/node_modules ]] || npm ci"
+      - save_cache:
+          key: frontend-docker-npm-{{ checksum "package-lock.json" }}
+          paths:
+            - "frontend/node_modules"
       - azure-acr/build-and-push-image:
+          path: ./proxy
           login-server-name: smoothjazz.azurecr.io
           registry-name: smoothjazz
           repo: frontend
           tag: ci-<< pipeline.number >>
-      - run: cd ..
       # Update aks deployment
       - kubernetes/install
       - run: az aks get-credentials --name smoothjazzapp --resource-group RhythmicBass
