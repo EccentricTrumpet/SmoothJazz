@@ -43,10 +43,10 @@ jobs:
       - checkout:
           path: ~/repo
       - restore_cache:
-          key: my-project-{{ .Branch }}-{{ checksum "package-lock.json" }}
-      - run: npm install
+          key: frontend-npm-{{ checksum "package-lock.json" }}
+      - run: npm ci
       - save_cache:
-          key: my-project-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: frontend-npm-{{ checksum "package-lock.json" }}
           paths:
             - "node_modules"
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
