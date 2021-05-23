@@ -51,9 +51,10 @@ protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_ou
 ## Using docker
 
 1. `cd frontend`
-1. Build docker image: `docker build -t frontend:v1 .`
-2. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
-3. Exit: `docker ps; docker stop {CONTAINER_ID}`
+2. `npm install`
+3. Build docker image: `docker build -t frontend:v1 .`
+4. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
+5. Exit: `docker ps; docker stop {CONTAINER_ID}`
 
 # To start all servers locally
 1. Start: `./local_test.sh start`

@@ -77,7 +77,6 @@ jobs:
           registry-name: smoothjazz
           repo: frontend
           tag: ci-<< pipeline.number >>
-          extra-build-args: --compress
       # Update aks deployment
       - kubernetes/install
       - run: az aks get-credentials --name smoothjazzapp --resource-group RhythmicBass
