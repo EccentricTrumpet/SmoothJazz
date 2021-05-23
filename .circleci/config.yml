@@ -64,6 +64,7 @@ jobs:
           repo: proxy
           tag: ci-<< pipeline.number >>
       # Build frontend
+      - run: docker version
       - restore_cache:
           key: frontend-docker-npm-{{ checksum "frontend/package-lock.json" }}
       - run: "cd ./frontend && [[ -d node_modules ]] || npm ci"
