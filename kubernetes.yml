@@ -19,6 +19,8 @@ spec:
           image: smoothjazz.azurecr.io/backend:v1
           command: [ "pipenv" ]
           args: [ "run", "python", "server.py" ]
+          ports:
+            - containerPort: 50051
         - name: proxy
           image: smoothjazz.azurecr.io/proxy:v1
           command: [ "./proxy" ]
@@ -39,6 +41,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
+  - name: backend
+    port: 50051
   - name: proxy
     port: 8080
   - name: frontend

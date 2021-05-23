@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   azure-acr: circleci/azure-acr@0.2.0
-  azure-aks: circleci/azure-aks@0.2.1
+  kubernetes: circleci/kubernetes@0.4.0
 
 parameters:
   image-tag:
@@ -50,7 +50,7 @@ jobs:
           paths:
             - "node_modules"
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
-  push-docker-images:
+  deploy-aks:
     machine:
       image: ubuntu-1604:201903-01
     steps:
@@ -72,31 +72,26 @@ jobs:
           registry-name: smoothjazz
           repo: frontend
           tag: << pipeline.parameters.image-tag >>
+      - kubernetes/install
+      - run: az aks get-credentials --name smoothjazzapp --resource-group RhythmicBass
+      - kubernetes/update-container-image:
+          resource-name: deployment/smoothjazzapp
+          container-image-updates: >-
+            backend=smoothjazz.azurecr.io/backend:<< pipeline.parameters.image-tag >>
+            proxy=smoothjazz.azurecr.io/proxy:<< pipeline.parameters.image-tag >>
+            frontend=smoothjazz.azurecr.io/frontend:<< pipeline.parameters.image-tag >>
+          record: true
+          show-kubectl-command: true
 
 workflows:
   build:
     jobs:
       - test-backend
       - test-frontend
-      - push-docker-images:
+      - deploy-aks:
           requires:
             - test-backend
             - test-frontend
-          # filters:
-          #   branches:
-          #     only: main
-      - azure-aks/update-container-image:
-          cluster-name: smoothjazzapp
-          container-image-updates: >-
-            backend=smoothjazz.azurecr.io/backend:<< pipeline.parameters.image-tag >>
-            proxy=smoothjazz.azurecr.io/proxy:<< pipeline.parameters.image-tag >>
-            frontend=smoothjazz.azurecr.io/frontend:<< pipeline.parameters.image-tag >>
-          record: true
-          resource-group: RhythmicBass
-          resource-name: deployment/smoothjazzapp
-          show-kubectl-command: true
-          requires:
-            - push-docker-images
           # filters:
           #   branches:
           #     only: main
