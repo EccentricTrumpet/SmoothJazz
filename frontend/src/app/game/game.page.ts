@@ -5,7 +5,6 @@ import {Shengji} from "proto-gen/shengji_pb_service";
 import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
-import * as $ from "jquery";
 declare var cards:any;
 
 @Component({
@@ -35,14 +34,6 @@ export class GamePage implements AfterViewChecked {
     }
   }
 
-  ngAfterViewInit() {
-    var that = this;
-    $('#addAIButton').on("click", function() {
-      console.log("Adding new AI player!");
-      that.addAIPlayer();
-    });
-  }
-
   // TODO(Aaron): Check if this can be replaced by ionViewDidEnter
   ngAfterViewChecked() {
     if (!this.started) {
@@ -53,6 +44,7 @@ export class GamePage implements AfterViewChecked {
       this.nativeElement = this.tableElement.nativeElement;
     }
   }
+
   async roomCreationPrompt() {
     const alert = await this.alertController.create({
       // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',

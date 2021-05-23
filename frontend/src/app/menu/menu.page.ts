@@ -13,7 +13,7 @@ export class MenuPage implements OnInit {
   ngOnInit() {
   }
 
-  creteGame() {
+  createGame() {
     console.log("Creating new game!");
     let navigationExtras: NavigationExtras = {
       state: {

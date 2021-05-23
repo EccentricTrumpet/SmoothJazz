@@ -1,7 +1,9 @@
 <ion-content id="main-content">
   <div #cardTable id="card-table">
     <!-- TODO(Aaron): Make this available for room owner only. -->
-    <ion-button color="primary" shape="round" size="small" id="addAIButton">Add AI Player</ion-button>
+    <ion-button color="primary" shape="round" size="small" id="addAIButton" (click) = "addAIPlayer()">
+      Add AI Player
+    </ion-button>
     <br/><div #gameInfo id="game-info"></div>
     <br/><div #playerInfo id="player-info"></div>
   </div>
