@@ -17,13 +17,13 @@ jobs:
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
       - restore_cache:  # ensure this step occurs *before* installing dependencies
-          key: backend-pipenv-{{ checksum "Pipfile.lock" }}
+          key: backend-pipenv-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
             export PIPENV_VENV_IN_PROJECT="enabled"
             pipenv sync
       - save_cache:
-          key: backend-pipenv-{{ checksum "Pipfile.lock" }}
+          key: backend-pipenv-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
           paths:
             - ".venv"
             - "/usr/local/bin"
@@ -68,10 +68,10 @@ jobs:
           tag: ci-<< pipeline.number >>
       # Build frontend
       - restore_cache:
-          key: frontend-docker-npm-{{ checksum "frontend/package-lock.json" }}
-      - run: "cd ./frontend && [[ -d node_modules ]] || npm ci"
+          key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+      - run: "cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts"
       - save_cache:
-          key: frontend-docker-npm-{{ checksum "frontend/package-lock.json" }}
+          key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
           paths:
             - "frontend/node_modules"
       - azure-acr/build-and-push-image:
