@@ -47,7 +47,6 @@ jobs:
     docker:
       - image: circleci/node:10
     steps:
-      - checkout
       # Install docker with buildkit support
       - setup_remote_docker:
           version: 20.10.2
