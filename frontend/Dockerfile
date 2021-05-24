@@ -1,6 +1,5 @@
 
-# this allows us to use the new Dockerfile syntax
-# syntax = docker/dockerfile:1.0-experimental
+# syntax=docker/dockerfile:experimental
 
 FROM node:15-alpine as builder
 
