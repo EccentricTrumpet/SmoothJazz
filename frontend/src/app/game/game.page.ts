@@ -2,7 +2,7 @@ import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game, Card as CardPB, PlayerState} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as $ from "jquery";
@@ -22,6 +22,7 @@ export class GamePage implements AfterViewChecked {
   started = false;
   createGame = true;
   playerInfos = [];
+  frontendGameInstance: FrontendGame;
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
     if (this.router.getCurrentNavigation().extras.state) {
@@ -171,20 +172,21 @@ export class GamePage implements AfterViewChecked {
         console.log("Current game state: ", message.toObject());
         this.playerInfos = message.getPlayerStatesList();
 
-        // TODO(Aaron): As it turns out, the callback isn't invoked for every RPC response from the server. More debugging is needed.
-        if (gameStarted) {
+
+        if (gameStarted == false && message.getPlayerStatesList().length == 4) {
+          console.log("game is starting!")
+          gameStarted = true;
+          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
+        } else if (gameStarted && message.getPlayerStatesList()[0].getCardsOnHand() && message.getPlayerStatesList()[1].getCardsOnHand() && message.getPlayerStatesList()[2].getCardsOnHand() && message.getPlayerStatesList()[3].getCardsOnHand()) {
+        // We don't get a response for every card dealt, log here
+        // for debugging purpose.
         console.log("Player cards: ",
                     message.getPlayerStatesList()[0].getCardsOnHand().getCardsList().length,
                     message.getPlayerStatesList()[1].getCardsOnHand().getCardsList().length,
                     message.getPlayerStatesList()[2].getCardsOnHand().getCardsList().length,
                     message.getPlayerStatesList()[3].getCardsOnHand().getCardsList().length,
                    );
-        }
-
-        if (gameStarted == false && message.getPlayerStatesList().length == 4) {
-          console.log("game is starting!")
-          gameStarted = true;
-          new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
+          this.frontendGameInstance.showAnimation(message.getPlayerStatesList());
         }
       },
       onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
@@ -223,7 +225,20 @@ enum DeclaredTrump {
   Jokers
 }
 
-// global utilities, is this an antipattern?
+// global utilities, is this an antipattern? Probably!
+// Convert a Card protobuf definition to cardUI definition in cards.js
+const protoToCardUI = function(cardProto: CardPB) : any {
+  switch(cardProto.getSuit()) {
+    case CardPB.Suit.SMALL_JOKER: return new cards.Card('bj', 0, "#card-table");
+    case CardPB.Suit.BIG_JOKER: return new cards.Card('rj', 0, "#card-table");
+    case CardPB.Suit.HEARTS: return new cards.Card('h', cardProto.getNum()+1, "#card-table");
+    case CardPB.Suit.SPADES: return new cards.Card('s', cardProto.getNum()+1, "#card-table");
+    case CardPB.Suit.CLUBS: return new cards.Card('c', cardProto.getNum()+1, "#card-table");
+    case CardPB.Suit.DIAMONDS: return new cards.Card('d', cardProto.getNum()+1, "#card-table");
+    default: throw Error("Cannot process proto: " + cardProto);
+  }
+}
+
 // create a Card representation of the UI representation from javascript
 const toCard = function(cardUI: any) : Card {
   switch(cardUI.suit) {
@@ -788,7 +803,7 @@ class Player {
   }
 
   render(options?: any) {
-    this.handUI.sort((a, b) => this.game.cardRanking.getUIRank(toCard(a)) - this.game.cardRanking.getUIRank(toCard(b)));
+    // this.handUI.sort((a, b) => this.game.cardRanking.getUIRank(toCard(a)) - this.game.cardRanking.getUIRank(toCard(b)));
     this.handUI.render(options);
   }
 
@@ -890,13 +905,32 @@ class FrontendGame {
 
     // Create trick pile
     this.trickPile = new TrickPile(this.players, this.cardRanking, width/2, height/2);
-
-    // Add listener
-    let that = this;
-    this.deckUI.click(() => that.draw(that.currentPlayer));
   }
 
-  // mocking RPC
+  showAnimation(playerStates: PlayerState[]) {
+    for (var i = 0; i < playerStates.length; i++) {
+      let ps = playerStates[i];
+      let cards = ps.getCardsOnHand().getCardsList();
+      if (cards.length == this.players[i].handUI.length) {
+        console.log("Skipping update for player: "+i);
+        continue;
+      }
+      for (var j = this.players[i].handUI.length; j < cards.length; j++) {
+        let card = cards[j];
+        console.log("Dealing card: "+card+" to player"+i+"; Deck: "+this.deckUI.length);
+        // A very hacky way to move the card from deck to player's hand.
+        // this.deckUI.render() is computation intensive!
+        let cardUI = protoToCardUI(card);
+        this.deckUI.removeTopCard();
+        this.deckUI.addCard(cardUI);
+        this.deckUI.render({immediate: true});
+        this.players[i].handUI.addCard(cardUI);
+        this.players[i].render({speed: 50});
+      }
+    }
+  }
+
+  // mocking RPC: TO BE DELETED
   draw(playerIndex: number) : Card[] {
     if (this.gameStage === GameStage.Deal) {
       if (playerIndex === this.currentPlayer) {

@@ -17,6 +17,9 @@ def DealCards(game_id):
     while keep_going:
         with Shengji.game_state_lock:
             keep_going = Shengji.games[game_id].DealCard()
+            # Sleep a bit so that hopefully, the game state hasn't changed much
+            # since last update.
+            time.sleep(0.2)
 
         Shengji.NotifyGameStateChange(game_id)
 

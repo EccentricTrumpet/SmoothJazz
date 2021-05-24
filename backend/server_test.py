@@ -46,7 +46,6 @@ class ShengjiTest(unittest.TestCase):
             self.assertEqual(streaming_result[-1].creator_player_id, req.player_id)
             self.assertEqual(len(streaming_result[-1].player_states), 2)
 
-    
     def test_deal_cards(self):
         sj = Shengji()
         req = shengji_pb2.CreateGameRequest()
