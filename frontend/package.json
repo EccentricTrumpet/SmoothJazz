@@ -4,6 +4,7 @@
   "author": "Ionic Framework",
   "homepage": "https://ionicframework.com/",
   "scripts": {
+    "postinstall": "ngcc --tsconfig tsconfig.json",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
