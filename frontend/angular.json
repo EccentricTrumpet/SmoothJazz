@@ -49,10 +49,10 @@
               "outputHashing": "none",
               "sourceMap": false,
               "namedChunks": false,
-              "aot": false,
+              "aot": true,
               "extractLicenses": false,
               "vendorChunk": false,
-              "buildOptimizer": false
+              "buildOptimizer": true
             },
             "ci": {
               "progress": false
@@ -104,6 +104,7 @@
           },
           "configurations": {
             "ci": {
+              "sourceMap": false,
               "progress": false,
               "watch": false
             }
