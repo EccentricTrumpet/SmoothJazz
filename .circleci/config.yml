@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   azure-acr: circleci/azure-acr@0.2.0
+  docker: circleci/docker@1.5.0
   kubernetes: circleci/kubernetes@0.4.0
 
 jobs:
@@ -49,8 +50,9 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      # Enable buildkit
-      - run: export DOCKER_BUILDKIT=1
+      # Install docker with buildkit support
+      - docker/install-docker:
+          version: v20.10.6
       # Build backend
       - azure-acr/build-and-push-image:
           path: ./backend
@@ -66,7 +68,6 @@ jobs:
           repo: proxy
           tag: ci-<< pipeline.number >>
       # Build frontend
-      - run: docker version
       - restore_cache:
           key: frontend-docker-npm-{{ checksum "frontend/package-lock.json" }}
       - run: "cd ./frontend && [[ -d node_modules ]] || npm ci"

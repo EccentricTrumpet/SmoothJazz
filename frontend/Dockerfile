@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:experimental
 FROM node:15-alpine as builder
 
+# Copy over everything in build context except node_modules
 WORKDIR /app
 COPY proto-gen /app/proto-gen
 COPY resources /app/resources
