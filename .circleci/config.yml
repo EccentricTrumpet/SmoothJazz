@@ -17,13 +17,13 @@ jobs:
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
       - restore_cache:  # ensure this step occurs *before* installing dependencies
-          key: backend-pipenv2-{{ checksum "Pipfile.lock" }}
+          key: backend-pipenv-{{ checksum "Pipfile.lock" }}
       - run:
           command: |
             export PIPENV_VENV_IN_PROJECT="enabled"
             pipenv sync
       - save_cache:
-          key: backend-pipenv2-{{ checksum "Pipfile.lock" }}
+          key: backend-pipenv-{{ checksum "Pipfile.lock" }}
           paths:
             - ".venv"
             - "/usr/local/bin"
@@ -39,10 +39,10 @@ jobs:
       - checkout:
           path: ~/repo
       - restore_cache:
-          key: frontend-npm-{{ checksum "package-lock.json" }}
+          key: frontend-npm-{{ checksum "package.json" }}-{{ checksum "package-lock.json" }}
       - run: "[[ -d node_modules ]] || npm ci"
       - save_cache:
-          key: frontend-npm-{{ checksum "package-lock.json" }}
+          key: frontend-npm-{{ checksum "package.json" }}-{{ checksum "package-lock.json" }}
           paths:
             - "node_modules"
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
