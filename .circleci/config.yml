@@ -64,7 +64,7 @@ jobs:
             - "frontend/node_modules"
       - run: ls frontend
       - azure-acr/build-and-push-image:
-          path: ./frontend
+          path: frontend
           login-server-name: smoothjazz.azurecr.io
           registry-name: smoothjazz
           repo: frontend
