@@ -18,10 +18,7 @@ jobs:
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
       - restore_cache:  # ensure this step occurs *before* installing dependencies
           key: backend-pipenv-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
-      - run:
-          command: |
-            export PIPENV_VENV_IN_PROJECT="enabled"
-            pipenv sync
+      - run: PIPENV_VENV_IN_PROJECT=enabled pipenv sync
       - save_cache:
           key: backend-pipenv-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -55,13 +52,6 @@ jobs:
       - setup_remote_docker:
           version: 20.10.2
       # Build frontend
-      - restore_cache:
-          key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
-      - run: cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts
-      - save_cache:
-          key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
-          paths:
-            - "frontend/node_modules"
       - azure-acr/build-and-push-image:
           path: frontend
           login-server-name: smoothjazz.azurecr.io
@@ -75,13 +65,13 @@ jobs:
           registry-name: smoothjazz
           repo: proxy
           tag: ci-<< pipeline.number >>
-      # # Build backend
-      # - azure-acr/build-and-push-image:
-      #     path: ./backend
-      #     login-server-name: smoothjazz.azurecr.io
-      #     registry-name: smoothjazz
-      #     repo: backend
-      #     tag: ci-<< pipeline.number >>
+      # Build backend
+      - azure-acr/build-and-push-image:
+          path: ./backend
+          login-server-name: smoothjazz.azurecr.io
+          registry-name: smoothjazz
+          repo: backend
+          tag: ci-<< pipeline.number >>
       # Update aks deployment
       - kubernetes/install
       - run: az aks get-credentials --name smoothjazzapp --resource-group RhythmicBass
@@ -97,13 +87,12 @@ jobs:
 workflows:
   build:
     jobs:
-      # - test-backend
-      # - test-frontend
-      - deploy-aks
-      # - deploy-aks:
-      #     requires:
-      #       - test-backend
-      #       - test-frontend
-      #     filters:
-      #       branches:
-      #         only: main
+      - test-backend
+      - test-frontend
+      - deploy-aks:
+          requires:
+            - test-backend
+            - test-frontend
+          # filters:
+          #   branches:
+          #     only: main

@@ -1,10 +1,13 @@
-FROM node:15-alpine as builder
+FROM node:15 as builder
 
-# Copy files
 WORKDIR /app
-COPY . /app
+
+# Install dependenci# Install dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --production
 
 # Build app
+COPY . /app
 RUN npm run build -- --configuration production,ci
 
 # Build hosting image
