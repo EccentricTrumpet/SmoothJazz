@@ -62,7 +62,6 @@ jobs:
           key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
           paths:
             - "frontend/node_modules"
-      - run: ls frontend
       - azure-acr/build-and-push-image:
           path: frontend
           login-server-name: smoothjazz.azurecr.io
