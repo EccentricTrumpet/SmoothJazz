@@ -101,6 +101,6 @@ workflows:
           requires:
             - test-backend
             - test-frontend
-          # filters:
-          #   branches:
-          #     only: main
+          filters:
+            branches:
+              only: main
