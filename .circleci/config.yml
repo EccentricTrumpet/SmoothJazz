@@ -54,20 +54,20 @@ jobs:
       - setup_remote_docker:
           version: 20.10.2
       - run: docker version
-      # Build backend
-      - azure-acr/build-and-push-image:
-          path: ./backend
-          login-server-name: smoothjazz.azurecr.io
-          registry-name: smoothjazz
-          repo: backend
-          tag: ci-<< pipeline.number >>
-      # # Build proxy
+      # # Build backend
       # - azure-acr/build-and-push-image:
-      #     path: ./proxy
+      #     path: ./backend
       #     login-server-name: smoothjazz.azurecr.io
       #     registry-name: smoothjazz
-      #     repo: proxy
+      #     repo: backend
       #     tag: ci-<< pipeline.number >>
+      # Build proxy
+      - azure-acr/build-and-push-image:
+          path: ./proxy
+          login-server-name: smoothjazz.azurecr.io
+          registry-name: smoothjazz
+          repo: proxy
+          tag: ci-<< pipeline.number >>
       # Build frontend
       - restore_cache:
           key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
@@ -76,6 +76,7 @@ jobs:
           key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
           paths:
             - "frontend/node_modules"
+      - run: pwd
       - azure-acr/build-and-push-image:
           path: ./frontend
           login-server-name: smoothjazz.azurecr.io
