@@ -48,18 +48,19 @@ jobs:
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
   deploy-aks:
     docker:
-      - image: docker:20.10.6
+      - image: cimg/base:2021.04
     steps:
       # Enable buildkit support
+      - setup_remote_docker:
+          version: 20.10.2
       - run: docker version
-      - run: export DOCKER_BUILDKIT=1
-      # # Build backend
-      # - azure-acr/build-and-push-image:
-      #     path: ./backend
-      #     login-server-name: smoothjazz.azurecr.io
-      #     registry-name: smoothjazz
-      #     repo: backend
-      #     tag: ci-<< pipeline.number >>
+      # Build backend
+      - azure-acr/build-and-push-image:
+          path: ./backend
+          login-server-name: smoothjazz.azurecr.io
+          registry-name: smoothjazz
+          repo: backend
+          tag: ci-<< pipeline.number >>
       # # Build proxy
       # - azure-acr/build-and-push-image:
       #     path: ./proxy
