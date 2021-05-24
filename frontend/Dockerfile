@@ -1,6 +1,3 @@
-
-# syntax=docker/dockerfile:experimental
-
 FROM node:15-alpine as builder
 
 # Copy over everything in build context except node_modules
