@@ -1,3 +1,7 @@
+
+# this allows us to use the new Dockerfile syntax
+# syntax = docker/dockerfile:1.0-experimental
+
 FROM node:15-alpine as builder
 
 # Copy over everything in build context except node_modules

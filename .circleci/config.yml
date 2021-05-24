@@ -50,9 +50,8 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     steps:
-      # Install docker with buildkit support
-      - docker/install-docker:
-          version: v20.10.6
+      # Enable buildkit support
+      - run: export DOCKER_BUILDKIT=1
       # Build backend
       - azure-acr/build-and-push-image:
           path: ./backend
