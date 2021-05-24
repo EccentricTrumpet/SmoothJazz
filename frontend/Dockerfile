@@ -8,8 +8,7 @@ COPY scripts /app/scripts
 COPY src /app/src
 COPY .browserslistrc *.json /app/
 
-# Install angular CLI
-RUN npm install -g @angular/cli
+RUN ls
 
 # Build app
 RUN --mount=type=bind,source=node_modules,target=/app/node_modules npm run build -- --configuration production,ci
