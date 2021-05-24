@@ -4,7 +4,7 @@
   "author": "Ionic Framework",
   "homepage": "https://ionicframework.com/",
   "scripts": {
-    "postinstall": "ngcc --tsconfig tsconfig.json",
+    "postinstall": "ngcc --tsconfig tsconfig.json --properties es2015",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
