@@ -51,21 +51,22 @@ jobs:
       image: ubuntu-1604:201903-01
     steps:
       # Enable buildkit support
+      - run: docker version
       - run: export DOCKER_BUILDKIT=1
-      # Build backend
-      - azure-acr/build-and-push-image:
-          path: ./backend
-          login-server-name: smoothjazz.azurecr.io
-          registry-name: smoothjazz
-          repo: backend
-          tag: ci-<< pipeline.number >>
-      # Build proxy
-      - azure-acr/build-and-push-image:
-          path: ./proxy
-          login-server-name: smoothjazz.azurecr.io
-          registry-name: smoothjazz
-          repo: proxy
-          tag: ci-<< pipeline.number >>
+      # # Build backend
+      # - azure-acr/build-and-push-image:
+      #     path: ./backend
+      #     login-server-name: smoothjazz.azurecr.io
+      #     registry-name: smoothjazz
+      #     repo: backend
+      #     tag: ci-<< pipeline.number >>
+      # # Build proxy
+      # - azure-acr/build-and-push-image:
+      #     path: ./proxy
+      #     login-server-name: smoothjazz.azurecr.io
+      #     registry-name: smoothjazz
+      #     repo: proxy
+      #     tag: ci-<< pipeline.number >>
       # Build frontend
       - restore_cache:
           key: frontend-docker-npm-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
@@ -95,12 +96,13 @@ jobs:
 workflows:
   build:
     jobs:
-      - test-backend
-      - test-frontend
-      - deploy-aks:
-          requires:
-            - test-backend
-            - test-frontend
-          # filters:
-          #   branches:
-          #     only: main
+      # - test-backend
+      # - test-frontend
+      - deploy-aks
+      # - deploy-aks:
+      #     requires:
+      #       - test-backend
+      #       - test-frontend
+      #     filters:
+      #       branches:
+      #         only: main
