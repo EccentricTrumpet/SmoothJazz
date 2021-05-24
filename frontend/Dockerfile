@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install dependenci# Install dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --production
+RUN npm ci --production --no-fund --ignore-scripts --no-optional --no-audit
 
 # Build app
 COPY . /app

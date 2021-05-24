@@ -7,7 +7,7 @@
     "postinstall": "ngcc --tsconfig tsconfig.json --properties es2015",
     "ng": "ng",
     "start": "ng serve",
-    "build": "ls && ng build",
+    "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"
