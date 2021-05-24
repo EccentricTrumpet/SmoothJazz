@@ -48,7 +48,7 @@ jobs:
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
   deploy-aks:
     docker:
-      - image: cimg/base:2021.04
+      - image: circleci/node:10
     steps:
       - checkout
       # Install docker with buildkit support
