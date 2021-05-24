@@ -47,8 +47,8 @@ jobs:
             - "node_modules"
       - run: npm run test -- --no-watch --no-progress --browsers=ChromeHeadlessCI
   deploy-aks:
-    machine:
-      image: ubuntu-1604:201903-01
+    docker:
+      - image: docker:20.10.6
     steps:
       # Enable buildkit support
       - run: docker version
