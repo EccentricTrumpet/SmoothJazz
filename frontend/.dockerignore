@@ -1,4 +1,11 @@
+e2e
+myapp
 node_modules
+proto-gen
+resources
+scripts
+src
+.*
+*.json
 Dockerfile
-/e2e
-/www
+

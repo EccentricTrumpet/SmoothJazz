@@ -47,10 +47,19 @@ jobs:
     docker:
       - image: circleci/node:10
     steps:
+      - checkout
       # Install docker with buildkit support
       - setup_remote_docker:
           version: 20.10.2
       # Build frontend
+      - restore_cache:
+          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+      - run: cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts
+      - save_cache:
+          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+          paths:
+            - "frontend/node_modules"
+      - run: cd ./frontend && npm run build -- --configuration production,ci
       - azure-acr/build-and-push-image:
           path: frontend
           login-server-name: smoothjazz.azurecr.io
@@ -92,6 +101,6 @@ workflows:
           requires:
             - test-backend
             - test-frontend
-          filters:
-            branches:
-              only: main
+          # filters:
+          #   branches:
+          #     only: main

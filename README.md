@@ -38,11 +38,11 @@ Alternative installation to build from binary:
 
 # Frontend
 To start frontend ionic app locally:
-1. cd frontend/
+1. `cd frontend`
 2. sudo apt-get install -y npm
 3. npm install -g @ionic/cli
-4. In the frontend folder, run `npm install`
-5. In the frontend folder, run `ionic serve`
+4. `npm install`
+5. `ionic serve`
 NOTE: It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
 
 To compile new versions of the generated .d.ts file for the protobuf definition:
@@ -52,9 +52,10 @@ protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_ou
 
 1. `cd frontend`
 2. `npm install`
-3. Build docker image: `docker build -t frontend:v1 .`
-4. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
-5. Exit: `docker ps; docker stop {CONTAINER_ID}`
+3. `npm run build`
+4. Build docker image: `docker build -t frontend:v1 .`
+5. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
+6. Exit: `docker ps; docker stop {CONTAINER_ID}`
 
 # To start all servers locally
 1. Start: `./local_test.sh start`
