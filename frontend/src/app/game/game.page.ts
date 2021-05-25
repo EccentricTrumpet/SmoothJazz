@@ -225,17 +225,24 @@ enum DeclaredTrump {
   Jokers
 }
 
-// global utilities, is this an antipattern? Probably!
 // Convert a Card protobuf definition to cardUI definition in cards.js
-const protoToCardUI = function(cardProto: CardPB) : any {
+const getCardUISuitFromProto = function(cardProto: CardPB) : any {
   switch(cardProto.getSuit()) {
-    case CardPB.Suit.SMALL_JOKER: return new cards.Card('bj', 0, "#card-table");
-    case CardPB.Suit.BIG_JOKER: return new cards.Card('rj', 0, "#card-table");
-    case CardPB.Suit.HEARTS: return new cards.Card('h', cardProto.getNum()+1, "#card-table");
-    case CardPB.Suit.SPADES: return new cards.Card('s', cardProto.getNum()+1, "#card-table");
-    case CardPB.Suit.CLUBS: return new cards.Card('c', cardProto.getNum()+1, "#card-table");
-    case CardPB.Suit.DIAMONDS: return new cards.Card('d', cardProto.getNum()+1, "#card-table");
+    case CardPB.Suit.SMALL_JOKER: return 'bj';
+    case CardPB.Suit.BIG_JOKER: return 'rj';
+    case CardPB.Suit.HEARTS: return 'h';
+    case CardPB.Suit.SPADES: return 's';
+    case CardPB.Suit.CLUBS: return 'c';
+    case CardPB.Suit.DIAMONDS: return 'd';
     default: throw Error("Cannot process proto: " + cardProto);
+  }
+}
+
+const getCardUIRankFromProto = function(cardProto: CardPB) : any {
+  switch(cardProto.getSuit()) {
+    case CardPB.Suit.SMALL_JOKER: return 0;
+    case CardPB.Suit.BIG_JOKER: return 0;
+    default: return cardProto.getNum() + 1;
   }
 }
 
@@ -803,7 +810,7 @@ class Player {
   }
 
   render(options?: any) {
-    // this.handUI.sort((a, b) => this.game.cardRanking.getUIRank(toCard(a)) - this.game.cardRanking.getUIRank(toCard(b)));
+    this.handUI.sort((a, b) => this.game.cardRanking.getUIRank(toCard(a)) - this.game.cardRanking.getUIRank(toCard(b)));
     this.handUI.render(options);
   }
 
@@ -886,7 +893,6 @@ class FrontendGame {
     cards.init({table: "#card-table", loop: 2, cardSize: cardSize});
     this.deckUI = new cards.Deck({x:width/2, y:height/2});
     this.deckUI.addCards(cards.all);
-    cards.shuffle(this.deckUI);
     this.deckUI.render({immediate: true});
 
     // Create players. Note that x and y coordinates are the central
@@ -918,13 +924,12 @@ class FrontendGame {
       for (var j = this.players[i].handUI.length; j < cards.length; j++) {
         let card = cards[j];
         console.log("Dealing card: "+card+" to player"+i+"; Deck: "+this.deckUI.length);
-        // A very hacky way to move the card from deck to player's hand.
-        // this.deckUI.render() is computation intensive!
-        let cardUI = protoToCardUI(card);
-        this.deckUI.removeTopCard();
-        this.deckUI.addCard(cardUI);
-        this.deckUI.render({immediate: true});
-        this.players[i].handUI.addCard(cardUI);
+        // This is somewhat hacky where we manually change suit and rank
+        // for the last card to be the one returned from backend, but it
+        // works...
+        this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
+        this.deckUI[this.deckUI.length-1].rank = getCardUIRankFromProto(card);
+        this.players[i].handUI.addCard(this.deckUI.topCard());
         this.players[i].render({speed: 50});
       }
     }

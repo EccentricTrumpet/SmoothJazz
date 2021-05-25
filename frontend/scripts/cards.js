@@ -195,10 +195,6 @@ var cards = (function() {
       return false;
     },
 
-    removeTopCard: function() {
-      this.splice(this.length-1, 1);
-    },
-
     init: function(options) {
       options = options || {};
       this.x = options.x || $(opt.table).width() / 2;
