@@ -1,7 +1,3 @@
-FROM node:15-alpine
+FROM nginx:1.15.8-alpine
 
-WORKDIR /app
-COPY . /app
-
-RUN npm install -g ionic
-RUN npm install
+COPY www /usr/share/nginx/html
