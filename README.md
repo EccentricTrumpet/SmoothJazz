@@ -1,6 +1,6 @@
 # Public URL
 
-http://smoothjazz.centralus.cloudapp.azure.com
+http://smoothjazz.ddns.net
 
 # Backend
 Installation:

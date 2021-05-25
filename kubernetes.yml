@@ -35,8 +35,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    service.beta.kubernetes.io/azure-dns-label-name: smoothjazz
   name: smoothjazzservice
 spec:
   type: LoadBalancer
