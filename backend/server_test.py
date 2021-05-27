@@ -10,7 +10,7 @@ import time
 class ShengjiTest(unittest.TestCase):
 
     def test_create_game(self):
-        sj = Shengji()
+        sj = Shengji(delay=0)
         req = shengji_pb2.CreateGameRequest()
         req.player_id = "test_creation_id"
         game = sj.CreateGame(req, None)
@@ -22,7 +22,7 @@ class ShengjiTest(unittest.TestCase):
         return list(functor(*args))
 
     def test_streaming_with_one_ai(self):
-        sj = Shengji()
+        sj = Shengji(delay=0)
         req = shengji_pb2.CreateGameRequest()
         req.player_id = "test_creation_id"
         game = sj.CreateGame(req, None)
@@ -46,9 +46,8 @@ class ShengjiTest(unittest.TestCase):
             self.assertEqual(streaming_result[-1].creator_player_id, req.player_id)
             self.assertEqual(len(streaming_result[-1].player_states), 2)
 
-    
     def test_deal_cards(self):
-        sj = Shengji()
+        sj = Shengji(delay=0)
         req = shengji_pb2.CreateGameRequest()
         req.player_id = "test_creation_id"
         game = sj.CreateGame(req, None)

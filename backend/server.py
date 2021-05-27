@@ -12,11 +12,14 @@ import shengji_pb2
 import shengji_pb2_grpc
 from game_state import *
 
-def DealCards(game_id):
+def DealCards(game_id, delay):
     keep_going = True
     while keep_going:
         with Shengji.game_state_lock:
             keep_going = Shengji.games[game_id].DealCard()
+            # Sleep a bit so that hopefully, the game state hasn't changed much
+            # since last update.
+            time.sleep(delay)
 
         Shengji.NotifyGameStateChange(game_id)
 
@@ -42,7 +45,8 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
     global_executor = ThreadPoolExecutor()
 
 
-    def __init__(self):
+    def __init__(self, delay=0.3):
+        self.delay = delay
         pass
 
     # Notifies that game state has changed. 
@@ -101,7 +105,7 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         # start the game by having an executor deal cards
         if len(Shengji.games[game_id].player_ids) == 4:
             logging.info("Dealing cards...")
-            Shengji.global_executor.submit(DealCards, (game_id))
+            Shengji.global_executor.submit(DealCards, game_id, self.delay)
 
 
     def AddAIPlayer(self,

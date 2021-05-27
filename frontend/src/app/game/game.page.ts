@@ -2,7 +2,7 @@ import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game, Card as CardPB, PlayerState} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 declare var cards:any;
@@ -16,11 +16,12 @@ declare var cards:any;
 export class GamePage implements AfterViewChecked {
 @ViewChild('cardTable') tableElement: ElementRef;
 @ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
-@ViewChild('playerInfo', { static: false }) playerInfo: ElementRef;
   nativeElement: any;
   gameId = 'None';
   started = false;
   createGame = true;
+  playerInfos = [];
+  frontendGameInstance: FrontendGame;
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
     if (this.router.getCurrentNavigation().extras.state) {
@@ -161,14 +162,23 @@ export class GamePage implements AfterViewChecked {
       host: environment.grpcUrl,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
+        this.playerInfos = message.getPlayerStatesList();
 
-        const playerIdsStr = "Players:" + message.getPlayerStatesList()
-        this.renderer.setProperty(this.playerInfo.nativeElement, 'innerHTML', playerIdsStr);
 
         if (gameStarted == false && message.getPlayerStatesList().length == 4) {
           console.log("game is starting!")
           gameStarted = true;
-          new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
+          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
+        } else if (gameStarted && message.getPlayerStatesList()[0].getCardsOnHand() && message.getPlayerStatesList()[1].getCardsOnHand() && message.getPlayerStatesList()[2].getCardsOnHand() && message.getPlayerStatesList()[3].getCardsOnHand()) {
+        // We don't get a response for every card dealt, log here
+        // for debugging purpose.
+        console.log("Player cards: ",
+                    message.getPlayerStatesList()[0].getCardsOnHand().getCardsList().length,
+                    message.getPlayerStatesList()[1].getCardsOnHand().getCardsList().length,
+                    message.getPlayerStatesList()[2].getCardsOnHand().getCardsList().length,
+                    message.getPlayerStatesList()[3].getCardsOnHand().getCardsList().length,
+                   );
+          this.frontendGameInstance.showAnimation(message.getPlayerStatesList());
         }
       },
       onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
@@ -207,7 +217,27 @@ enum DeclaredTrump {
   Jokers
 }
 
-// global utilities, is this an antipattern?
+// Convert a Card protobuf definition to cardUI definition in cards.js
+const getCardUISuitFromProto = function(cardProto: CardPB) : any {
+  switch(cardProto.getSuit()) {
+    case CardPB.Suit.SMALL_JOKER: return 'bj';
+    case CardPB.Suit.BIG_JOKER: return 'rj';
+    case CardPB.Suit.HEARTS: return 'h';
+    case CardPB.Suit.SPADES: return 's';
+    case CardPB.Suit.CLUBS: return 'c';
+    case CardPB.Suit.DIAMONDS: return 'd';
+    default: throw Error("Cannot process proto: " + cardProto);
+  }
+}
+
+const getCardUIRankFromProto = function(cardProto: CardPB) : any {
+  switch(cardProto.getSuit()) {
+    case CardPB.Suit.SMALL_JOKER: return 0;
+    case CardPB.Suit.BIG_JOKER: return 0;
+    default: return cardProto.getNum() + 1;
+  }
+}
+
 // create a Card representation of the UI representation from javascript
 const toCard = function(cardUI: any) : Card {
   switch(cardUI.suit) {
@@ -855,7 +885,6 @@ class FrontendGame {
     cards.init({table: "#card-table", loop: 2, cardSize: cardSize});
     this.deckUI = new cards.Deck({x:width/2, y:height/2});
     this.deckUI.addCards(cards.all);
-    cards.shuffle(this.deckUI);
     this.deckUI.render({immediate: true});
 
     // Create players. Note that x and y coordinates are the central
@@ -874,13 +903,31 @@ class FrontendGame {
 
     // Create trick pile
     this.trickPile = new TrickPile(this.players, this.cardRanking, width/2, height/2);
-
-    // Add listener
-    let that = this;
-    this.deckUI.click(() => that.draw(that.currentPlayer));
   }
 
-  // mocking RPC
+  showAnimation(playerStates: PlayerState[]) {
+    for (var i = 0; i < playerStates.length; i++) {
+      let ps = playerStates[i];
+      let cards = ps.getCardsOnHand().getCardsList();
+      if (cards.length == this.players[i].handUI.length) {
+        console.log("Skipping update for player: "+i);
+        continue;
+      }
+      for (var j = this.players[i].handUI.length; j < cards.length; j++) {
+        let card = cards[j];
+        console.log("Dealing card: "+card+" to player"+i+"; Deck: "+this.deckUI.length);
+        // This is somewhat hacky where we manually change suit and rank
+        // for the last card to be the one returned from backend, but it
+        // works...
+        this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
+        this.deckUI[this.deckUI.length-1].rank = getCardUIRankFromProto(card);
+        this.players[i].handUI.addCard(this.deckUI.topCard());
+        this.players[i].render({speed: 50});
+      }
+    }
+  }
+
+  // mocking RPC: TO BE DELETED
   draw(playerIndex: number) : Card[] {
     if (this.gameStage === GameStage.Deal) {
       if (playerIndex === this.currentPlayer) {
