@@ -217,6 +217,7 @@ enum DeclaredTrump {
   Jokers
 }
 
+// Global utilities.
 // Convert a Card protobuf definition to cardUI definition in cards.js
 const getCardUISuitFromProto = function(cardProto: CardPB) : any {
   switch(cardProto.getSuit()) {
@@ -916,9 +917,9 @@ class FrontendGame {
       for (var j = this.players[i].handUI.length; j < cards.length; j++) {
         let card = cards[j];
         console.log("Dealing card: "+card+" to player"+i+"; Deck: "+this.deckUI.length);
-        // This is somewhat hacky where we manually change suit and rank
-        // for the last card to be the one returned from backend, but it
-        // works...
+        // Manually alter the suit and rank for the last placeholder card to be
+        // the one returned from backend. This is done as we don't know what
+        // cards are in the deck initially.
         this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
         this.deckUI[this.deckUI.length-1].rank = getCardUIRankFromProto(card);
         this.players[i].handUI.addCard(this.deckUI.topCard());
