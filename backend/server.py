@@ -80,8 +80,11 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         del Shengji.games[game_id]
         Shengji.NotifyGameStateChange(game_id)
 
-    def PlayHand(self, request, context):
-        logging.info("Received a PlayGame request from player_id [%s], game_id [%s]", request.player_id, request.game_id)
+    def PlayHand(self,
+            request: shengji_pb2.PlayHandRequest,
+            context: grpc.ServicerContext) -> shengji_pb2.PlayHandResponse:
+        logging.info("Received a PlayGame request [%s] from player_id [%s], game_id [%s]",
+                request.hand, request.player_id, request.game_id)
         with Shengji.game_state_lock:
             game_id = request.game_id
             player_id = request.player_id
@@ -90,11 +93,12 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
                 self.games[game_id]
             except:
                 logging.info("Not found: game_id [%s]", request.game_id)
-            game = self.games[game_id]
+            # TODO: Play card and notify all players
+            # game = self.games[game_id]
 
         # Notifies all watchers of state change
         Shengji.NotifyGameStateChange(request.game_id)
-        return game
+        return shengji_pb2.PlayHandResponse()
 
     def _addPlayer(self, game_id, player_id):
         with Shengji.game_state_lock:
@@ -120,8 +124,8 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         return ai_player
 
     def EnterRoom(self,
-                   request: shengji_pb2.EnterRoomRequest,
-                   context: grpc.ServicerContext
+                  request: shengji_pb2.EnterRoomRequest,
+                  context: grpc.ServicerContext
                   ) -> Iterable[shengji_pb2.Game]:
         logging.info("Received a EnterRoom request: %s", request)
         self._addPlayer(request.game_id, request.player_id)

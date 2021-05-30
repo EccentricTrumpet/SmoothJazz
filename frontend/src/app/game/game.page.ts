@@ -2,7 +2,7 @@ import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, AddAIPlayerResponse, Game, Card as CardPB, PlayerState} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandPB, Card as CardPB, PlayerState} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 declare var cards:any;
@@ -22,6 +22,7 @@ export class GamePage implements AfterViewChecked {
   createGame = true;
   playerInfos = [];
   frontendGameInstance: FrontendGame;
+  playerId = "None";
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
     if (this.router.getCurrentNavigation().extras.state) {
@@ -71,6 +72,7 @@ export class GamePage implements AfterViewChecked {
           text: 'Ok',
           handler: (inputData) => {
             console.log('Player entered: '+JSON.stringify(inputData));
+            this.playerId = inputData.player_name;
             this.startGame(inputData.player_name);
           }
         }
@@ -110,6 +112,7 @@ export class GamePage implements AfterViewChecked {
           handler: (inputData) => {
             console.log('Player entered: '+JSON.stringify(inputData));
             this.gameId = inputData.game_id;
+            this.playerId = inputData.player_name;
             this.enterRoom(inputData.player_name, inputData.game_id);
           }
         }
@@ -121,6 +124,7 @@ export class GamePage implements AfterViewChecked {
     const createAIRequest = new AddAIPlayerRequest();
     createAIRequest.setGameId(this.gameId);
     console.log('Adding AI Player for: '+this.gameId);
+    const playHandReq = new PlayHandRequest();
     grpc.unary(Shengji.AddAIPlayer, {
       request: createAIRequest,
       host: environment.grpcUrl,
@@ -164,11 +168,10 @@ export class GamePage implements AfterViewChecked {
         console.log("Current game state: ", message.toObject());
         this.playerInfos = message.getPlayerStatesList();
 
-
         if (gameStarted == false && message.getPlayerStatesList().length == 4) {
           console.log("game is starting!")
           gameStarted = true;
-          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
+          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
         } else if (gameStarted && message.getPlayerStatesList()[0].getCardsOnHand() && message.getPlayerStatesList()[1].getCardsOnHand() && message.getPlayerStatesList()[2].getCardsOnHand() && message.getPlayerStatesList()[3].getCardsOnHand()) {
         // We don't get a response for every card dealt, log here
         // for debugging purpose.
@@ -237,6 +240,29 @@ const getCardUIRankFromProto = function(cardProto: CardPB) : any {
     case CardPB.Suit.BIG_JOKER: return 0;
     default: return cardProto.getNum() + 1;
   }
+}
+
+const getCardProtoSuit = function(cardUI: any) : any {
+  switch(cardUI.suit) {
+    case "rj": return CardPB.Suit.BIG_JOKER;
+    case "bj": return CardPB.Suit.SMALL_JOKER;
+    case "s": return CardPB.Suit.SPADES;
+    case "h": return CardPB.Suit.HEARTS;
+    case "c": return CardPB.Suit.CLUBS;
+    case "d": return CardPB.Suit.DIAMONDS;
+    default: throw Error("Cannot process card ui: " + cardUI);
+  }
+}
+
+const getCardProtoNum = function(cardUI: any) : any {
+  return Math.max(cardUI.rank - 1, 0);
+}
+
+const toCardProto = function(cardUI: any) : CardPB {
+  const cardProto = new CardPB();
+  cardProto.setSuit(getCardProtoSuit(cardUI));
+  cardProto.setNum(getCardProtoNum(cardUI));
+  return cardProto;
 }
 
 // create a Card representation of the UI representation from javascript
@@ -827,20 +853,37 @@ class Player {
       // Ignore if right clicked an unselected card
       if (!this.selectedCardUIs.has(cardUI)) return;
 
-      let cards = Array.from(this.selectedCardUIs.values()).map(ui => toCard(ui));
-      cards.forEach(c => console.log(this.index + " submitting: " + c));
+      // Set all proto field for the PlayHandRequest.
+      const playHandReq = new PlayHandRequest();
+      playHandReq.setPlayerId(this.game.playerId);
+      playHandReq.setGameId(this.game.gameId);
+      // TODO(Aaron): Set the real intention somehow...
+      playHandReq.setIntention(PlayHandRequest.Intention.CLAIM_TRUMP);
+      const handToPlay = new HandPB();
+      let cardsProto = Array.from(this.selectedCardUIs.values()).map(ui => toCardProto(ui));
+      handToPlay.setCardsList(cardsProto);
+      playHandReq.setHand(handToPlay);
 
-      if (this.game.play(this.index, cards))
-      {
-        this.selectedCardUIs.forEach(ui => { ui.el[0].style.outline = "" })
-        this.selectedCardUIs.clear();
-      }
+      console.log("Sending playhandRequest: ", playHandReq.toObject());
+      grpc.unary(Shengji.PlayHand, {
+        request: playHandReq,
+        host: environment.grpcUrl,
+        onEnd: res => {
+          const { status, statusMessage, headers, message, trailers } = res;
+          if (status === grpc.Code.OK && message) {
+            console.log("PlayHand Response: ", message.toObject());
+            this.selectedCardUIs.forEach(ui => { ui.el[0].style.outline = "" })
+            this.selectedCardUIs.clear();
+          }
+        }
+      });
     }
   }
 }
 
 class FrontendGame {
   // Game metadata
+  gameId;
   cardsInKitty = 8;
   gameStage = GameStage.Deal;
   trickPile : TrickPile;
@@ -851,6 +894,7 @@ class FrontendGame {
   cardRanking = new CardRanking(this.trumpRank);
 
   // Player metadata
+  playerId;
   players : Player[];
   currentPlayer = 0;
   kittyPlayer = 0;
@@ -861,7 +905,10 @@ class FrontendGame {
   deckUI;
   kittyUI;
 
-  constructor(height: number, width: number) {
+  constructor(height: number, width: number, playerId: string, gameId: string) {
+    this.playerId = playerId;
+    this.gameId = gameId;
+
     // Initialize with two decks
     this.cardMargin = height / 300;
     this.labelHeight = height / 40;
