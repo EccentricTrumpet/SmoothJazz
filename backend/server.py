@@ -99,10 +99,15 @@ class SJServicer(ShengjiServicer):
         # Notifies all watchers of state change
         return PlayHandResponse()
 
+    def TerminateGame(self, game_id):
+        game = self._getGame(game_id)
+        game.CompletePlayerStreams()
+        del self._games[game_id]
+
     def _getGame(self, game_id) -> SJGame:
         game = self._games.get(game_id, None)
         if game is None:
-            raise RuntimeError(f'Cannot join non-existent game: {game_id}')
+            raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')
         return game
 
 async def serve(address: str):

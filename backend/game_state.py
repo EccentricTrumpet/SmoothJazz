@@ -1,7 +1,7 @@
 import logging
 import random
 import time
-from threading import Semaphore
+from threading import RLock, Semaphore
 from collections import deque
 from typing import Iterable
 from shengji_pb2 import *
@@ -71,6 +71,7 @@ class SJGame:
         self._delay = delay
         self.state = "NOT_ENOUGH_PLAYER"
         self._players = dict()
+        self._players_lock = RLock()
         self.metadata = None
         self.state = None
         self.next_player_index = 0
@@ -83,27 +84,37 @@ class SJGame:
         random.shuffle(self.deck_cards)
 
     def AddPlayer(self, player_id, notify) -> SJPlayer:
-        if player_id in self._players.keys() or len(self._players) == 4:
-            return None
-        player = SJPlayer(player_id, notify)
-        self._players[player_id] = player
+        with self._players_lock:
+            if player_id in self._players.keys() or len(self._players) == 4:
+                return None
+            player = SJPlayer(player_id, notify)
+            self._players[player_id] = player
 
-        self.UpdatePlayers()
+            self.UpdatePlayers()
 
-        if len(self._players) == 4:
-            self.state = 'NOT_STARTED'
+            if len(self._players) == 4:
+                self.state = 'NOT_STARTED'
 
         return player
 
     def UpdatePlayers(self):
-        for player in self._players.values():
+        with self._players_lock:
+            players = self._players.values()
+        for player in players:
             player.QueueUpdate(self.ToApiGame())
+
+    def CompletePlayerStreams(self):
+        with self._players_lock:
+            players = self._players.values()
+        for player in players:
+            player.CompleteUpdateStream()
 
     # Returns true if a card was dealt.
     def DealCards(self):
         self.state = "DEALING_CARDS"
         time.sleep(1.0)
-        players = list(self._players.values())
+        with self._players_lock:
+            players = list(self._players.values())
 
         while (len(self.deck_cards) > 8):
             player = players[self.next_player_index]
@@ -146,7 +157,6 @@ class SJGame:
         self.action_count += 1
         return True
 
-
     def ToApiGame(self):
         game = Game()
         game.game_id = str(self.game_id)
@@ -154,7 +164,10 @@ class SJGame:
 
         # TODO: Use the real dealer
         game.dealer_player_id = "UNIMPLEMENTED"
-        for player in self._players.values():
+
+        with self._players_lock:
+            players = self._players.values()
+        for player in players:
             game.player_states.append(player.ToApiPlayerState())
 
         # TODO: Populate kitty
