@@ -46,6 +46,7 @@ jobs:
   deploy-aks:
     docker:
       - image: circleci/node:10
+    resource_class: small
     steps:
       - checkout
       # Install docker with buildkit support
@@ -101,6 +102,6 @@ workflows:
           requires:
             - test-backend
             - test-frontend
-          filters:
-            branches:
-              only: main
+          # filters:
+          #   branches:
+          #     only: main
