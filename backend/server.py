@@ -17,17 +17,6 @@ from game_state import *
 import grpc
 from google.protobuf.json_format import MessageToJson
 
-def DealCards(game_id, delay):
-    keep_going = True
-    while keep_going:
-        with SJServicer.game_state_lock:
-            keep_going = SJServicer.games[game_id].DealCard()
-            # Sleep a bit so that hopefully, the game state hasn't changed much
-            # since last update.
-            time.sleep(delay)
-
-        SJServicer.NotifyGameStateChange(game_id)
-
 class SJServicer(ShengjiServicer):
     # Dict that holds game states.
     _games: Dict[str, SJGame] = dict()
