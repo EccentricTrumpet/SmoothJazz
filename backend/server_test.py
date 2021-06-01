@@ -61,16 +61,18 @@ class ShengjiTest(unittest.TestCase):
             add_ai_req = shengji_pb2.AddAIPlayerRequest()
             add_ai_req.game_id = game.game_id
 
-            # Add the human player last (so we can trigger card dealing)
-            f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
-
             # Add three AI players
             sj.AddAIPlayer(add_ai_req, None)
             sj.AddAIPlayer(add_ai_req, None)
             sj.AddAIPlayer(add_ai_req, None)
 
-            # Sleep 3 secs to deal cards
-            time.sleep(3)
+            # Add the human player last so we can control how many streaming
+            # results it recieves.
+            f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
+
+            # Sleep for half a second so that human player is actually created.
+            time.sleep(0.5)
+            # Terminate the game immediately after dealing cards.
             sj.TerminateGame(game.game_id)
 
             streaming_result = f.result()
@@ -80,6 +82,11 @@ class ShengjiTest(unittest.TestCase):
 
             self.assertEqual(len(streaming_result[-1].player_states), 4)
             self.assertEqual(len(streaming_result[-1].player_states[0].cards_on_hand.cards), 25)
+
+            # Expected number of game state updates is
+            # 1 for human player joining game
+            # 100 for dealing cards
+            self.assertEqual(len(streaming_result), 101)
 
 if __name__ == '__main__':
     logging.basicConfig(

@@ -12,24 +12,26 @@ import shengji_pb2
 import shengji_pb2_grpc
 from game_state import *
 
+from multiqueue import MultiQueue
+
 def DealCards(game_id):
     keep_going = True
-    while keep_going:
+    while True:
         with Shengji.game_state_lock:
             keep_going = Shengji.games[game_id].DealCard()
-
-        Shengji.NotifyGameStateChange(game_id)
+            if not keep_going:
+                break
+            Shengji.NotifyGameStateChange(game_id)
 
 
 class Shengji(shengji_pb2_grpc.ShengjiServicer):
     # game_state_lock protects all shared game states
     game_state_lock = threading.RLock()
 
-    # game_watchers is a dict where
+    # game_update_queues is a dict where
     # KEY: game_id
-    # VAL: a condition variable that recieves notifications whenever the
-    #      corresponding game state is mutated.
-    game_watchers = dict()
+    # VAL: a mult-consumer game update queue
+    game_update_queues = dict()
 
     # Dict that holds game states. game_state_lock must be held prior accessing
     # this dict.
@@ -46,11 +48,11 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
         pass
 
     # Notifies that game state has changed. 
+    # game_state_lock must be held before entering this method
     @classmethod
     def NotifyGameStateChange(cls, game_id):
-        logging.info("Notifying changes")
-        with cls.game_watchers[game_id]:
-            cls.game_watchers[game_id].notify_all()
+        logging.info("Notifying changes to game %s" % game_id)
+        Shengji.game_update_queues[game_id].Put(Shengji.games[game_id].ToApiGame())
 
     def CreateGame(self,
             request: shengji_pb2.CreateGameRequest,
@@ -63,8 +65,7 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
             Shengji.game_id += 1
             Shengji.games[game_id] = Game(request.player_id, game_id)
 
-            # Creates a game watcher
-            Shengji.game_watchers[game_id] = threading.Condition()
+            Shengji.game_update_queues[game_id] = MultiQueue()
             game = Shengji.games[game_id].ToApiGame()
 
         logging.info("Received a CreateGame request from player_id [%s], created a game with id [%s]", request.player_id, game_id)
@@ -72,9 +73,11 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
 
 
     def TerminateGame(self, game_id: str):
-        logging.info("Terminating game: %s", game_id)
-        del Shengji.games[game_id]
-        Shengji.NotifyGameStateChange(game_id)
+        with Shengji.game_state_lock:
+            # First wait until all consumers have consumed all updates
+            logging.info("Terminating game %s: waiting for consumers to finish eating", game_id)
+            Shengji.game_update_queues[game_id].Join()
+            del Shengji.games[game_id]
 
     def PlayHand(self, request, context):
         logging.info("Received a PlayGame request from player_id [%s], game_id [%s]", request.player_id, request.game_id)
@@ -88,15 +91,15 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
                 logging.info("Not found: game_id [%s]", request.game_id)
             game = self.games[game_id]
 
-        # Notifies all watchers of state change
-        Shengji.NotifyGameStateChange(request.game_id)
+            # Notifies all watchers of state change
+            Shengji.NotifyGameStateChange(request.game_id)
+
         return game
 
     def _addPlayer(self, game_id, player_id):
         with Shengji.game_state_lock:
-                Shengji.games[game_id].AddPlayer(player_id)
-
-        Shengji.NotifyGameStateChange(game_id)
+            Shengji.games[game_id].AddPlayer(player_id)
+            Shengji.NotifyGameStateChange(game_id)
 
         # start the game by having an executor deal cards
         if len(Shengji.games[game_id].player_ids) == 4:
@@ -120,25 +123,20 @@ class Shengji(shengji_pb2_grpc.ShengjiServicer):
                    context: grpc.ServicerContext
                   ) -> Iterable[shengji_pb2.Game]:
         logging.info("Received a EnterRoom request: %s", request)
+        subscriber_id = None
+        multiqueue = None
+        with Shengji.game_state_lock:
+            multiqueue = Shengji.game_update_queues[request.game_id]
+            subscriber_id = multiqueue.Subscribe()
         self._addPlayer(request.game_id, request.player_id)
 
-        # Send out the initial game
-        with Shengji.game_state_lock:
-            game = Shengji.games[request.game_id]
-        yield game.ToApiGame()
-
         # wait for notification
-        while request.game_id in Shengji.games:
-            with Shengji.game_watchers[request.game_id]:
-                logging.info("Player [%s] is waiting for game update [%s]", request.player_id, Shengji.game_watchers[request.game_id])
-                Shengji.game_watchers[request.game_id].wait()
-
-                logging.info("Player [%s] got game update", request.player_id)
-                if request.game_id not in Shengji.games:
-                    break
-                with Shengji.game_state_lock:
-                    game = Shengji.games[request.game_id]
-            yield game.ToApiGame()
+        while True:
+            game = multiqueue.Poll(subscriber_id)
+            if game is None:
+                break
+            logging.info("Player [%s] got game update", request.player_id)
+            yield game
 
         logging.info("Call finished [%s]", request.game_id)
 
