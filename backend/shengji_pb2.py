@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"%\n\x12\x41\x64\x64\x41IPlayerRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"*\n\x13\x41\x64\x64\x41IPlayerResponse\x12\x13\n\x0bplayer_name\x18\x01 \x01(\t\"6\n\x10\x45nterRoomRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x11\n\tplayer_id\x18\x02 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"\xd0\x01\n\x0fPlayHandRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12:\n\tintention\x18\x03 \x01(\x0e\x32\'.grpc.testing.PlayHandRequest.Intention\x12 \n\x04hand\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\";\n\tIntention\x12\x0f\n\x0b\x43LAIM_TRUMP\x10\x00\x12\r\n\tPLAY_HAND\x10\x01\x12\x0e\n\nHIDE_KITTY\x10\x02\":\n\x10PlayHandResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x15\n\rerror_message\x18\x02 \x01(\t\"\xb5\x01\n\x0bPlayerState\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12)\n\rcards_on_hand\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand\x12(\n\x0cwinning_pile\x18\x03 \x01(\x0b\x32\x12.grpc.testing.Hand\x12/\n\x13\x63urrent_round_trick\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\x12\r\n\x05score\x18\x05 \x01(\x05\"\xd7\x02\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x18\n\x10\x64\x65\x61ler_player_id\x18\x03 \x01(\t\x12\x1b\n\x13next_turn_player_id\x18\x04 \x01(\t\x12&\n\x1e\x63urrent_round_winner_player_id\x18\x05 \x01(\t\x12\x30\n\rplayer_states\x18\x06 \x03(\x0b\x32\x19.grpc.testing.PlayerState\x12!\n\x05kitty\x18\x07 \x01(\x0b\x32\x12.grpc.testing.Hand\x12+\n\ntrump_suit\x18\x08 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12)\n\ttrump_num\x18\t \x01(\x0e\x32\x16.grpc.testing.Card.Num\x12\x17\n\x0f\x64\x65\x63k_card_count\x18\n \x01(\x05\"\xdc\x02\n\x04\x43\x61rd\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12#\n\x03num\x18\x02 \x01(\x0e\x32\x16.grpc.testing.Card.Num\"k\n\x04Suit\x12\x12\n\x0eSUIT_UNDEFINED\x10\x00\x12\n\n\x06HEARTS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\x12\x0f\n\x0bSMALL_JOKER\x10\x05\x12\r\n\tBIG_JOKER\x10\x06\"\x9a\x01\n\x03Num\x12\x11\n\rNUM_UNDEFINED\x10\x00\x12\x07\n\x03TWO\x10\x01\x12\t\n\x05THREE\x10\x02\x12\x08\n\x04\x46OUR\x10\x03\x12\x08\n\x04\x46IVE\x10\x04\x12\x07\n\x03SIX\x10\x05\x12\t\n\x05SEVEN\x10\x06\x12\t\n\x05\x45IGHT\x10\x07\x12\x08\n\x04NINE\x10\x08\x12\x07\n\x03TEN\x10\t\x12\x08\n\x04JACK\x10\n\x12\t\n\x05QUEEN\x10\x0b\x12\x08\n\x04KING\x10\x0c\x12\x07\n\x03\x41\x43\x45\x10\r\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card2\xae\x02\n\x07Shengji\x12\x41\n\nCreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12\x41\n\tEnterRoom\x12\x1e.grpc.testing.EnterRoomRequest\x1a\x12.grpc.testing.Game0\x01\x12I\n\x08PlayHand\x12\x1d.grpc.testing.PlayHandRequest\x1a\x1e.grpc.testing.PlayHandResponse\x12R\n\x0b\x41\x64\x64\x41IPlayer\x12 .grpc.testing.AddAIPlayerRequest\x1a!.grpc.testing.AddAIPlayerResponseb\x06proto3'
+  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"%\n\x12\x41\x64\x64\x41IPlayerRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"*\n\x13\x41\x64\x64\x41IPlayerResponse\x12\x13\n\x0bplayer_name\x18\x01 \x01(\t\"6\n\x10\x45nterRoomRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x11\n\tplayer_id\x18\x02 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"\xd0\x01\n\x0fPlayHandRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12:\n\tintention\x18\x03 \x01(\x0e\x32\'.grpc.testing.PlayHandRequest.Intention\x12 \n\x04hand\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\";\n\tIntention\x12\x0f\n\x0b\x43LAIM_TRUMP\x10\x00\x12\r\n\tPLAY_HAND\x10\x01\x12\x0e\n\nHIDE_KITTY\x10\x02\":\n\x10PlayHandResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x15\n\rerror_message\x18\x02 \x01(\t\"\xb0\x01\n\x06Player\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12)\n\rcards_on_hand\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand\x12(\n\x0cwinning_pile\x18\x03 \x01(\x0b\x32\x12.grpc.testing.Hand\x12/\n\x13\x63urrent_round_trick\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\x12\r\n\x05score\x18\x05 \x01(\x05\"\xcc\x02\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x18\n\x10\x64\x65\x61ler_player_id\x18\x03 \x01(\t\x12\x1b\n\x13next_turn_player_id\x18\x04 \x01(\t\x12&\n\x1e\x63urrent_round_winner_player_id\x18\x05 \x01(\t\x12%\n\x07players\x18\x06 \x03(\x0b\x32\x14.grpc.testing.Player\x12!\n\x05kitty\x18\x07 \x01(\x0b\x32\x12.grpc.testing.Hand\x12+\n\ntrump_suit\x18\x08 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12)\n\ttrump_num\x18\t \x01(\x0e\x32\x16.grpc.testing.Card.Num\x12\x17\n\x0f\x64\x65\x63k_card_count\x18\n \x01(\x05\"\xdc\x02\n\x04\x43\x61rd\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12#\n\x03num\x18\x02 \x01(\x0e\x32\x16.grpc.testing.Card.Num\"k\n\x04Suit\x12\x12\n\x0eSUIT_UNDEFINED\x10\x00\x12\n\n\x06HEARTS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\x12\x0f\n\x0bSMALL_JOKER\x10\x05\x12\r\n\tBIG_JOKER\x10\x06\"\x9a\x01\n\x03Num\x12\x11\n\rNUM_UNDEFINED\x10\x00\x12\x07\n\x03TWO\x10\x01\x12\t\n\x05THREE\x10\x02\x12\x08\n\x04\x46OUR\x10\x03\x12\x08\n\x04\x46IVE\x10\x04\x12\x07\n\x03SIX\x10\x05\x12\t\n\x05SEVEN\x10\x06\x12\t\n\x05\x45IGHT\x10\x07\x12\x08\n\x04NINE\x10\x08\x12\x07\n\x03TEN\x10\t\x12\x08\n\x04JACK\x10\n\x12\t\n\x05QUEEN\x10\x0b\x12\x08\n\x04KING\x10\x0c\x12\x07\n\x03\x41\x43\x45\x10\r\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card2\xae\x02\n\x07Shengji\x12\x41\n\nCreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12\x41\n\tEnterRoom\x12\x1e.grpc.testing.EnterRoomRequest\x1a\x12.grpc.testing.Game0\x01\x12I\n\x08PlayHand\x12\x1d.grpc.testing.PlayHandRequest\x1a\x1e.grpc.testing.PlayHandResponse\x12R\n\x0b\x41\x64\x64\x41IPlayer\x12 .grpc.testing.AddAIPlayerRequest\x1a!.grpc.testing.AddAIPlayerResponseb\x06proto3'
 )
 
 
@@ -99,8 +99,8 @@ _CARD_SUIT = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1096,
-  serialized_end=1203,
+  serialized_start=1080,
+  serialized_end=1187,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_SUIT)
 
@@ -184,8 +184,8 @@ _CARD_NUM = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1206,
-  serialized_end=1360,
+  serialized_start=1190,
+  serialized_end=1344,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_NUM)
 
@@ -418,44 +418,44 @@ _PLAYHANDRESPONSE = _descriptor.Descriptor(
 )
 
 
-_PLAYERSTATE = _descriptor.Descriptor(
-  name='PlayerState',
-  full_name='grpc.testing.PlayerState',
+_PLAYER = _descriptor.Descriptor(
+  name='Player',
+  full_name='grpc.testing.Player',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='player_id', full_name='grpc.testing.PlayerState.player_id', index=0,
+      name='player_id', full_name='grpc.testing.Player.player_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='cards_on_hand', full_name='grpc.testing.PlayerState.cards_on_hand', index=1,
+      name='cards_on_hand', full_name='grpc.testing.Player.cards_on_hand', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='winning_pile', full_name='grpc.testing.PlayerState.winning_pile', index=2,
+      name='winning_pile', full_name='grpc.testing.Player.winning_pile', index=2,
       number=3, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='current_round_trick', full_name='grpc.testing.PlayerState.current_round_trick', index=3,
+      name='current_round_trick', full_name='grpc.testing.Player.current_round_trick', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='score', full_name='grpc.testing.PlayerState.score', index=4,
+      name='score', full_name='grpc.testing.Player.score', index=4,
       number=5, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -474,7 +474,7 @@ _PLAYERSTATE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=482,
-  serialized_end=663,
+  serialized_end=658,
 )
 
 
@@ -522,7 +522,7 @@ _GAME = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='player_states', full_name='grpc.testing.Game.player_states', index=5,
+      name='players', full_name='grpc.testing.Game.players', index=5,
       number=6, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -568,8 +568,8 @@ _GAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=666,
-  serialized_end=1009,
+  serialized_start=661,
+  serialized_end=993,
 )
 
 
@@ -609,8 +609,8 @@ _CARD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1012,
-  serialized_end=1360,
+  serialized_start=996,
+  serialized_end=1344,
 )
 
 
@@ -641,17 +641,17 @@ _HAND = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1362,
-  serialized_end=1403,
+  serialized_start=1346,
+  serialized_end=1387,
 )
 
 _PLAYHANDREQUEST.fields_by_name['intention'].enum_type = _PLAYHANDREQUEST_INTENTION
 _PLAYHANDREQUEST.fields_by_name['hand'].message_type = _HAND
 _PLAYHANDREQUEST_INTENTION.containing_type = _PLAYHANDREQUEST
-_PLAYERSTATE.fields_by_name['cards_on_hand'].message_type = _HAND
-_PLAYERSTATE.fields_by_name['winning_pile'].message_type = _HAND
-_PLAYERSTATE.fields_by_name['current_round_trick'].message_type = _HAND
-_GAME.fields_by_name['player_states'].message_type = _PLAYERSTATE
+_PLAYER.fields_by_name['cards_on_hand'].message_type = _HAND
+_PLAYER.fields_by_name['winning_pile'].message_type = _HAND
+_PLAYER.fields_by_name['current_round_trick'].message_type = _HAND
+_GAME.fields_by_name['players'].message_type = _PLAYER
 _GAME.fields_by_name['kitty'].message_type = _HAND
 _GAME.fields_by_name['trump_suit'].enum_type = _CARD_SUIT
 _GAME.fields_by_name['trump_num'].enum_type = _CARD_NUM
@@ -666,7 +666,7 @@ DESCRIPTOR.message_types_by_name['EnterRoomRequest'] = _ENTERROOMREQUEST
 DESCRIPTOR.message_types_by_name['CreateGameRequest'] = _CREATEGAMEREQUEST
 DESCRIPTOR.message_types_by_name['PlayHandRequest'] = _PLAYHANDREQUEST
 DESCRIPTOR.message_types_by_name['PlayHandResponse'] = _PLAYHANDRESPONSE
-DESCRIPTOR.message_types_by_name['PlayerState'] = _PLAYERSTATE
+DESCRIPTOR.message_types_by_name['Player'] = _PLAYER
 DESCRIPTOR.message_types_by_name['Game'] = _GAME
 DESCRIPTOR.message_types_by_name['Card'] = _CARD
 DESCRIPTOR.message_types_by_name['Hand'] = _HAND
@@ -714,12 +714,12 @@ PlayHandResponse = _reflection.GeneratedProtocolMessageType('PlayHandResponse', 
   })
 _sym_db.RegisterMessage(PlayHandResponse)
 
-PlayerState = _reflection.GeneratedProtocolMessageType('PlayerState', (_message.Message,), {
-  'DESCRIPTOR' : _PLAYERSTATE,
+Player = _reflection.GeneratedProtocolMessageType('Player', (_message.Message,), {
+  'DESCRIPTOR' : _PLAYER,
   '__module__' : 'shengji_pb2'
-  # @@protoc_insertion_point(class_scope:grpc.testing.PlayerState)
+  # @@protoc_insertion_point(class_scope:grpc.testing.Player)
   })
-_sym_db.RegisterMessage(PlayerState)
+_sym_db.RegisterMessage(Player)
 
 Game = _reflection.GeneratedProtocolMessageType('Game', (_message.Message,), {
   'DESCRIPTOR' : _GAME,
@@ -751,8 +751,8 @@ _SHENGJI = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1406,
-  serialized_end=1708,
+  serialized_start=1390,
+  serialized_end=1692,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateGame',

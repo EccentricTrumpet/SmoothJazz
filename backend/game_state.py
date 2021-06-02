@@ -4,9 +4,12 @@ import time
 from threading import RLock, Semaphore
 from collections import deque
 from typing import Iterable
-from shengji_pb2 import *
+from shengji_pb2 import (
+    Card as CardProto,
+    Game as GameProto,
+    Player as PlayerProto)
 
-class SJPlayer:
+class Player:
     def __init__(self, player_id, notify):
         self._notify = notify
         self._game_queue = deque()
@@ -17,16 +20,15 @@ class SJPlayer:
     def AddCard(self, card):
         self.cards_on_hand.append(card)
 
-    def ToApiPlayerState(self):
-        player_state = PlayerState()
-        player_state.player_id = self.player_id
+    def ToPlayerProto(self):
+        player_proto = PlayerProto()
+        player_proto.player_id = self.player_id
         for card in self.cards_on_hand:
-            player_state.cards_on_hand.cards.append(card.ToApiCard())
-        return player_state
+            player_proto.cards_on_hand.cards.append(card.ToCardProto())
+        return player_proto
 
-    def QueueUpdate(self, game: Game):
+    def QueueUpdate(self, game: GameProto):
         if self._notify:
-            logging.info(f'updating player: {self.player_id}')
             self._game_queue.append(game)
             self._game_queue_sem.release()
 
@@ -34,13 +36,12 @@ class SJPlayer:
         self._notify = False
         self._game_queue_sem.release()
 
-    def UpdateStream(self) -> Iterable[Game]:
+    def UpdateStream(self) -> Iterable[GameProto]:
         while True:
             self._game_queue_sem.acquire()
             if self._notify == False:
                 break
             game_state = self._game_queue.popleft()
-            logging.info(f'sending update for player: {self.player_id} with reason {game_state.dealer_player_id}')
             yield game_state
 
 """
@@ -51,7 +52,7 @@ Card class: Models a poker card
 CardCollection: Organizes cards into useful structures
 Hand: A playable hand of cards.
 """
-class SJGame:
+class Game:
     """
     States:
         Player < 4
@@ -82,14 +83,14 @@ class SJGame:
         self.hands_on_table = []
 
         # shuffle two decks of cards
-        self.deck_cards = [SJCard(x) for x in range(54)] + [SJCard(x) for x in range(54)]
+        self.deck_cards = [Card(x) for x in range(54)] + [Card(x) for x in range(54)]
         random.shuffle(self.deck_cards)
 
-    def AddPlayer(self, player_id, notify) -> SJPlayer:
+    def AddPlayer(self, player_id, notify) -> Player:
         with self._players_lock:
             if player_id in self._players.keys() or len(self._players) == 4:
                 return None
-            player = SJPlayer(player_id, notify)
+            player = Player(player_id, notify)
             self._players[player_id] = player
 
             self.UpdatePlayers()
@@ -103,7 +104,7 @@ class SJGame:
         with self._players_lock:
             players = self._players.values()
         for player in players:
-            player.QueueUpdate(self.ToApiGame())
+            player.QueueUpdate(self.ToGameProto())
 
     def CompletePlayerStreams(self):
         with self._players_lock:
@@ -159,8 +160,8 @@ class SJGame:
         self.action_count += 1
         return True
 
-    def ToApiGame(self):
-        game = Game()
+    def ToGameProto(self):
+        game = GameProto()
         game.game_id = str(self.game_id)
         game.creator_player_id = str(self.creator_id)
 
@@ -170,14 +171,14 @@ class SJGame:
         with self._players_lock:
             players = self._players.values()
         for player in players:
-            game.player_states.append(player.ToApiPlayerState())
+            game.players.append(player.ToPlayerProto())
 
         # TODO: Populate kitty
 
         game.deck_card_count = len(self.deck_cards)
         return game
 
-class SJCard:
+class Card:
     index = None
     suit = None
     """ Modeled the following way to Hand.type detection easier
@@ -207,50 +208,50 @@ class SJCard:
     def __hash__(self):
         return self.index
 
-    def ToApiCard(self):
-        card = Card()
+    def ToCardProto(self):
+        card = CardProto()
         if self.is_small_joker:
-            card.suit = Card.Suit.SMALL_JOKER
+            card.suit = CardProto.Suit.SMALL_JOKER
             return card
         if self.is_big_joker:
-            card.suit = Card.Suit.BIG_JOKER
+            card.suit = CardProto.Suit.BIG_JOKER
             return card
 
         if self.GetSuit() == "HEARTS":
-            card.suit = Card.Suit.HEARTS
+            card.suit = CardProto.Suit.HEARTS
         if self.GetSuit() == "CLUBS":
-            card.suit = Card.Suit.CLUBS
+            card.suit = CardProto.Suit.CLUBS
         if self.GetSuit() == "DIAMONDS":
-            card.suit = Card.Suit.DIAMONDS
+            card.suit = CardProto.Suit.DIAMONDS
         if self.GetSuit() == "SPADES":
-            card.suit = Card.Suit.SPADES
+            card.suit = CardProto.Suit.SPADES
 
         if self.GetNum() == 0:
-            card.num = Card.Num.ACE
+            card.num = CardProto.Num.ACE
         if self.GetNum() == 1:
-            card.num = Card.Num.TWO
+            card.num = CardProto.Num.TWO
         if self.GetNum() == 2:
-            card.num = Card.Num.THREE
+            card.num = CardProto.Num.THREE
         if self.GetNum() == 3:
-            card.num = Card.Num.FOUR
+            card.num = CardProto.Num.FOUR
         if self.GetNum() == 4:
-            card.num = Card.Num.FIVE
+            card.num = CardProto.Num.FIVE
         if self.GetNum() == 5:
-            card.num = Card.Num.SIX
+            card.num = CardProto.Num.SIX
         if self.GetNum() == 6:
-            card.num = Card.Num.SEVEN
+            card.num = CardProto.Num.SEVEN
         if self.GetNum() == 7:
-            card.num = Card.Num.EIGHT
+            card.num = CardProto.Num.EIGHT
         if self.GetNum() == 8:
-            card.num = Card.Num.NINE
+            card.num = CardProto.Num.NINE
         if self.GetNum() == 9:
-            card.num = Card.Num.TEN
+            card.num = CardProto.Num.TEN
         if self.GetNum() == 10:
-            card.num = Card.Num.JACK
+            card.num = CardProto.Num.JACK
         if self.GetNum() == 11:
-            card.num = Card.Num.QUEEN
+            card.num = CardProto.Num.QUEEN
         if self.GetNum() == 12:
-            card.num = Card.Num.KING
+            card.num = CardProto.Num.KING
         return card
 
 
@@ -433,15 +434,13 @@ class CardCollection:
         string = ""
         for c in self.cards.keys():
             if self.cards[c] > 0:
-                string += ", " + str(Card(c)) + "x" + str(self.cards[c])
+                string += ", " + str(CardProto(c)) + "x" + str(self.cards[c])
 
         return string
 
 """ A hand represents a valid shengji move, which consists of one of the following
 1- A single card of any kind
 2- A pair of cards of the same suit
-3- Three-of-a-kind
-4- Four-of-a-kind (bomb)
 5- Straight within the same suit with more than 3 cards
 6- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
 """
@@ -459,29 +458,6 @@ class Hand:
                 return False
         return True
 
-    # four of a kinds == bomb
-    # pair of jokers == bomb
-    def IsBomb(self):
-        return self.type == "FOAK" or (self.type == "PAIR" and self.cards[0].IsJoker())
-
-    def IsStraight(self, cards):
-        if len(cards) < 3:
-            return False
-        min_card = cards[0].GetNum()
-        max_card = cards[0].GetNum()
-        suit = cards[0].GetSuit()
-        seen_nums = []
-
-        for card in cards:
-            if card.GetSuit() != suit:
-                return False
-            if card.GetNum() in seen_nums:
-                return False
-            seen_nums.append(card.GetNum())
-            min_card = min(min_card, card.GetNum())
-            max_card = max(max_card, card.GetNum())
-        return (max_card - min_card) == len(cards) - 1
-
     def IsDoubleStraight(self, cards):
         grouped_cards = dict()
         for card in cards:
@@ -496,7 +472,7 @@ class Hand:
                 count = grouped_cards[index]
             if count != grouped_cards[index]:
                 return False
-        return self.IsStraight([Card(c) for c in grouped_cards.keys()])
+        return self.IsStraight([CardProto(c) for c in grouped_cards.keys()])
 
 
     def DetectType(self):
@@ -514,15 +490,6 @@ class Hand:
         elif len(self.cards) >= 4 and self.IsDoubleStraight(self.cards):
             type = "DOUBLE_STRAIGHT"
         return type
-
-    # Converts to API card representation
-    def ToApiCard(self, api_card):
-        pass
-
-    # Converts from API card representation
-    @classmethod
-    def FromApiCard(cls, api_card):
-        pass
 
     def __str__(self):
         return self.type + ": " + ",".join([str(c) for c in self.cards])

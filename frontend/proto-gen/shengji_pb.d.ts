@@ -153,7 +153,7 @@ export namespace PlayHandResponse {
   }
 }
 
-export class PlayerState extends jspb.Message {
+export class Player extends jspb.Message {
   getPlayerId(): string;
   setPlayerId(value: string): void;
 
@@ -176,16 +176,16 @@ export class PlayerState extends jspb.Message {
   setScore(value: number): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PlayerState.AsObject;
-  static toObject(includeInstance: boolean, msg: PlayerState): PlayerState.AsObject;
+  toObject(includeInstance?: boolean): Player.AsObject;
+  static toObject(includeInstance: boolean, msg: Player): Player.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: PlayerState, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PlayerState;
-  static deserializeBinaryFromReader(message: PlayerState, reader: jspb.BinaryReader): PlayerState;
+  static serializeBinaryToWriter(message: Player, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Player;
+  static deserializeBinaryFromReader(message: Player, reader: jspb.BinaryReader): Player;
 }
 
-export namespace PlayerState {
+export namespace Player {
   export type AsObject = {
     playerId: string,
     cardsOnHand?: Hand.AsObject,
@@ -211,10 +211,10 @@ export class Game extends jspb.Message {
   getCurrentRoundWinnerPlayerId(): string;
   setCurrentRoundWinnerPlayerId(value: string): void;
 
-  clearPlayerStatesList(): void;
-  getPlayerStatesList(): Array<PlayerState>;
-  setPlayerStatesList(value: Array<PlayerState>): void;
-  addPlayerStates(value?: PlayerState, index?: number): PlayerState;
+  clearPlayersList(): void;
+  getPlayersList(): Array<Player>;
+  setPlayersList(value: Array<Player>): void;
+  addPlayers(value?: Player, index?: number): Player;
 
   hasKitty(): boolean;
   clearKitty(): void;
@@ -247,7 +247,7 @@ export namespace Game {
     dealerPlayerId: string,
     nextTurnPlayerId: string,
     currentRoundWinnerPlayerId: string,
-    playerStatesList: Array<PlayerState.AsObject>,
+    playersList: Array<Player.AsObject>,
     kitty?: Hand.AsObject,
     trumpSuit: Card.SuitMap[keyof Card.SuitMap],
     trumpNum: Card.NumMap[keyof Card.NumMap],

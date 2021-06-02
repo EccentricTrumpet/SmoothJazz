@@ -2,7 +2,7 @@ import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandPB, Card as CardPB, PlayerState} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandPB, Card as CardPB, Player as PlayerProto} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 declare var cards:any;
@@ -166,9 +166,10 @@ export class GamePage implements AfterViewChecked {
       host: environment.grpcUrl,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
-        this.playerInfos = message.getPlayerStatesList();
+        let players = message.getPlayersList();
+        this.playerInfos = players;
 
-        if (gameStarted == false && message.getPlayerStatesList().length == 4) {
+        if (gameStarted == false && players.length == 4) {
           console.log("game is starting!")
           gameStarted = true;
           this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
@@ -176,12 +177,12 @@ export class GamePage implements AfterViewChecked {
           // We don't get a response for every card dealt, log here
           // for debugging purpose.
           console.log("Player cards: ",
-            message.getPlayerStatesList()[0].getCardsOnHand()?.getCardsList().length ?? 0,
-            message.getPlayerStatesList()[1].getCardsOnHand()?.getCardsList().length ?? 0,
-            message.getPlayerStatesList()[2].getCardsOnHand()?.getCardsList().length ?? 0,
-            message.getPlayerStatesList()[3].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[0].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[1].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[2].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[3].getCardsOnHand()?.getCardsList().length ?? 0,
           );
-          this.frontendGameInstance.showAnimation(message.getPlayerStatesList());
+          this.frontendGameInstance.showAnimation(players);
         }
       },
       onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
@@ -953,9 +954,9 @@ class FrontendGame {
     this.trickPile = new TrickPile(this.players, this.cardRanking, width/2, height/2);
   }
 
-  showAnimation(playerStates: PlayerState[]) {
-    for (var i = 0; i < playerStates.length; i++) {
-      let ps = playerStates[i];
+  showAnimation(players: PlayerProto[]) {
+    for (var i = 0; i < players.length; i++) {
+      let ps = players[i];
       let cards = ps.getCardsOnHand()?.getCardsList();
 
       if (cards == null || cards.length == this.players[i].handUI.length) {

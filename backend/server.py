@@ -1,48 +1,55 @@
 import asyncio
-from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 import random
 import threading
-from typing import Iterable, Dict
+from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import count
-from shengji_pb2 import *
-from shengji_pb2_grpc import *
+from game_state import Game
+from typing import (
+    Iterable,
+    Dict)
+from shengji_pb2_grpc import (
+    ShengjiServicer,
+    add_ShengjiServicer_to_server)
+from shengji_pb2 import (
+    AddAIPlayerRequest,
+    AddAIPlayerResponse,
+    CreateGameRequest,
+    EnterRoomRequest,
+    PlayHandRequest,
+    PlayHandResponse,
+    Game as GameProto)
+from grpc import (
+    ServicerContext,
+    aio)
 
-# Import from files in directory
-from game_state import *
-
-# Import warnings
-import grpc
-from google.protobuf.json_format import MessageToJson
-
-class SJServicer(ShengjiServicer):
-    # Dict that holds game states.
-    _games: Dict[str, SJGame] = dict()
-
-    # game_id is a monotonically increasing number
-    _game_id = count()
-
+class SJService(ShengjiServicer):
     def __init__(self, delay=0.3):
+        # delay for dealing cards
         self._delay = delay
+        # Dict that holds game states.
+        self._games: Dict[str, Game] = dict()
+        # game_id is a monotonically increasing number
+        self._game_id = count()
 
     def CreateGame(self,
             request: CreateGameRequest,
-            context: grpc.ServicerContext
-            ) -> Game:
+            context: ServicerContext
+            ) -> GameProto:
 
         logging.info(f'Received a CreateGame request from player_id: {request.player_id}')
 
         game_id = str(next(self._game_id))
-        game = SJGame(request.player_id, game_id, self._delay)
+        game = Game(request.player_id, game_id, self._delay)
         self._games[game_id] = game
 
         logging.info(f'Created game with id: {game_id}')
 
-        return game.ToApiGame()
+        return game.ToGameProto()
 
     def AddAIPlayer(self,
                    request: AddAIPlayerRequest,
-                   context: grpc.ServicerContext
+                   context: ServicerContext
                    ) -> AddAIPlayerResponse:
         ai_name = 'Computer' + str(random.randrange(10000))
         logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
@@ -62,7 +69,7 @@ class SJServicer(ShengjiServicer):
 
     def EnterRoom(self,
                   request: EnterRoomRequest,
-                  context: grpc.ServicerContext
+                  context: ServicerContext
                   ) -> Iterable[Game]:
         logging.info("Received a EnterRoom request: %s", request)
 
@@ -77,10 +84,10 @@ class SJServicer(ShengjiServicer):
 
     def PlayHand(self,
             request: PlayHandRequest,
-            context: grpc.ServicerContext) -> PlayHandResponse:
+            context: ServicerContext) -> PlayHandResponse:
         logging.info("Received a PlayGame request [%s] from player_id [%s], game_id [%s]",
                 request.hand, request.player_id, request.game_id)
-        with SJServicer.game_state_lock:
+        with SJService.game_state_lock:
             game_id = request.game_id
             player_id = request.player_id
 
@@ -99,17 +106,17 @@ class SJServicer(ShengjiServicer):
         game.CompletePlayerStreams()
         del self._games[game_id]
 
-    def _getGame(self, game_id) -> SJGame:
+    def _getGame(self, game_id) -> Game:
         game = self._games.get(game_id, None)
         if game is None:
             raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')
         return game
 
 async def serve(address: str):
-    server = grpc.aio.server(ThreadPoolExecutor(max_workers=100))
+    server = aio.server(ThreadPoolExecutor(max_workers=100))
     # A new executor for tasks that exist beyond RPC context. (e.g. dealing
     # cards)
-    add_ShengjiServicer_to_server(SJServicer(), server)
+    add_ShengjiServicer_to_server(SJService(), server)
     server.add_insecure_port(address)
     await server.start()
     logging.info("Server serving at %s", address)

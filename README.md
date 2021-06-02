@@ -23,7 +23,7 @@ Local testing:
 Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 1. `cd proxy`
 2. Download file: `./getProxy.sh`
-3. Start proxy: `proxy  --backend_addr=localhost:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
+3. Start proxy: `./proxy  --backend_addr=localhost:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
 
 Alternative installation to build from binary:
 1. Install golang
