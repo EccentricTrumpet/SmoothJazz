@@ -37,9 +37,11 @@ class SJPlayer:
     def UpdateStream(self) -> Iterable[Game]:
         while True:
             self._game_queue_sem.acquire()
-            logging.info(f'sending update for player: {self.player_id}')
-            if self._notify == False: break
-            yield self._game_queue.popleft()
+            if self._notify == False:
+                break
+            game_state = self._game_queue.popleft()
+            logging.info(f'sending update for player: {self.player_id} with reason {game_state.dealer_player_id}')
+            yield game_state
 
 """
 Game: All state of the game is stored in this class
@@ -112,7 +114,7 @@ class SJGame:
     # Returns true if a card was dealt.
     def DealCards(self):
         self.state = "DEALING_CARDS"
-        time.sleep(1.0)
+        time.sleep(self._delay)
         with self._players_lock:
             players = list(self._players.values())
 
@@ -120,9 +122,9 @@ class SJGame:
             player = players[self.next_player_index]
             player.AddCard(self.deck_cards[0])
             logging.info(f'Dealt card {self.deck_cards[0]} to {player.player_id}')
-            self.UpdatePlayers()
             self.next_player_index = (self.next_player_index + 1) % 4
             del self.deck_cards[0]
+            self.UpdatePlayers()
             time.sleep(self._delay)
 
         self.state = "CARDS_DEALT"

@@ -1,9 +1,7 @@
 import asyncio
-from concurrent.futures import thread
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 import random
-import time
 import threading
 from typing import Iterable, Dict
 from itertools import count
@@ -73,9 +71,6 @@ class SJServicer(ShengjiServicer):
 
         if game.state == 'NOT_STARTED':
             thread = threading.Thread(target=game.DealCards(), args=())
-
-        # Send out the initial game
-        yield game.ToApiGame()
 
         for update in player.UpdateStream():
             yield update
