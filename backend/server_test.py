@@ -10,7 +10,7 @@ import time
 class ShengjiTest(unittest.TestCase):
 
     def test_create_game(self):
-        sj = Shengji(delay=0)
+        sj = SJServicer(delay=0)
         req = shengji_pb2.CreateGameRequest()
         req.player_id = "test_creation_id"
         game = sj.CreateGame(req, None)
@@ -22,7 +22,7 @@ class ShengjiTest(unittest.TestCase):
         return list(functor(*args))
 
     def test_streaming_with_one_ai(self):
-        sj = Shengji(delay=0)
+        sj = SJServicer(delay=0)
         req = shengji_pb2.CreateGameRequest()
         req.player_id = "test_creation_id"
         game = sj.CreateGame(req, None)
@@ -47,7 +47,7 @@ class ShengjiTest(unittest.TestCase):
             self.assertEqual(len(streaming_result[-1].player_states), 2)
 
     def test_deal_cards(self):
-        sj = Shengji(delay=0)
+        sj = SJServicer(delay=0)
         req = shengji_pb2.CreateGameRequest()
         req.player_id = "test_creation_id"
         game = sj.CreateGame(req, None)
@@ -60,13 +60,13 @@ class ShengjiTest(unittest.TestCase):
             add_ai_req = shengji_pb2.AddAIPlayerRequest()
             add_ai_req.game_id = game.game_id
 
-            # Add the human player last (so we can trigger card dealing)
-            f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
-
             # Add three AI players
             sj.AddAIPlayer(add_ai_req, None)
             sj.AddAIPlayer(add_ai_req, None)
             sj.AddAIPlayer(add_ai_req, None)
+
+            # Add the human player last (so we can trigger card dealing)
+            f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
 
             # Sleep 3 secs to deal cards
             time.sleep(3)
@@ -79,6 +79,11 @@ class ShengjiTest(unittest.TestCase):
 
             self.assertEqual(len(streaming_result[-1].player_states), 4)
             self.assertEqual(len(streaming_result[-1].player_states[0].cards_on_hand.cards), 25)
+
+            # Expected number of game state updates is
+            # 1 for human player joining game
+            # 100 for dealing cards
+            self.assertEqual(len(streaming_result), 101)
 
 if __name__ == '__main__':
     logging.basicConfig(

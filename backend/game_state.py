@@ -1,7 +1,47 @@
 import logging
 import random
+import time
+from threading import RLock, Semaphore
+from collections import deque
+from typing import Iterable
+from shengji_pb2 import *
 
-import shengji_pb2
+class SJPlayer:
+    def __init__(self, player_id, notify):
+        self._notify = notify
+        self._game_queue = deque()
+        self._game_queue_sem = Semaphore(0)
+        self.player_id = player_id
+        self.cards_on_hand = []
+
+    def AddCard(self, card):
+        self.cards_on_hand.append(card)
+
+    def ToApiPlayerState(self):
+        player_state = PlayerState()
+        player_state.player_id = self.player_id
+        for card in self.cards_on_hand:
+            player_state.cards_on_hand.cards.append(card.ToApiCard())
+        return player_state
+
+    def QueueUpdate(self, game: Game):
+        if self._notify:
+            logging.info(f'updating player: {self.player_id}')
+            self._game_queue.append(game)
+            self._game_queue_sem.release()
+
+    def CompleteUpdateStream(self):
+        self._notify = False
+        self._game_queue_sem.release()
+
+    def UpdateStream(self) -> Iterable[Game]:
+        while True:
+            self._game_queue_sem.acquire()
+            if self._notify == False:
+                break
+            game_state = self._game_queue.popleft()
+            logging.info(f'sending update for player: {self.player_id} with reason {game_state.dealer_player_id}')
+            yield game_state
 
 """
 Game: All state of the game is stored in this class
@@ -11,13 +51,13 @@ Card class: Models a poker card
 CardCollection: Organizes cards into useful structures
 Hand: A playable hand of cards.
 """
-class Game:
+class SJGame:
     """
     States:
         Player < 4
     NOT_ENOUGH_PLAYER
         Player == 4
-    NOT_STARTED 
+    NOT_STARTED
         Game started
     WAITING_FOR_PLAYER_<id>
         Game ended, next game pending
@@ -26,12 +66,14 @@ class Game:
     GAME_ENDED
     """
 
-    def __init__(self, creator_id, game_id):
+    # API: why do we need creator_id?
+    def __init__(self, creator_id, game_id, delay):
         self.game_id = game_id
         self.creator_id = creator_id
+        self._delay = delay
         self.state = "NOT_ENOUGH_PLAYER"
-        self.players = dict()
-        self.player_ids = []
+        self._players = dict()
+        self._players_lock = RLock()
         self.metadata = None
         self.state = None
         self.next_player_index = 0
@@ -40,56 +82,52 @@ class Game:
         self.hands_on_table = []
 
         # shuffle two decks of cards
-        self.deck_cards = [Card(x) for x in range(54)] + [Card(x) for x in range(54)]
+        self.deck_cards = [SJCard(x) for x in range(54)] + [SJCard(x) for x in range(54)]
         random.shuffle(self.deck_cards)
 
+    def AddPlayer(self, player_id, notify) -> SJPlayer:
+        with self._players_lock:
+            if player_id in self._players.keys() or len(self._players) == 4:
+                return None
+            player = SJPlayer(player_id, notify)
+            self._players[player_id] = player
 
-    def AddPlayer(self, player_id):
-        if player_id in self.players.keys():
-            return False
-        if len(self.players.keys()) == 4:
-            return False
-        self.players[player_id] = Player(player_id)
-        self.player_ids.append(player_id)
+            self.UpdatePlayers()
 
-        # Game is automatically started here
-        logging.info(self.player_ids)
+            if len(self._players) == 4:
+                self.state = 'NOT_STARTED'
 
+        return player
 
-    def StartGame(self, player_id, first_player_id):
-        if self.state == "GAME_ENDED":
-            return False
+    def UpdatePlayers(self):
+        with self._players_lock:
+            players = self._players.values()
+        for player in players:
+            player.QueueUpdate(self.ToApiGame())
 
-        # init first game
-        if self.metadata is None:
-            self.metadata = GameMetadata()
-        else:
-            self.metadata.NextGame()
-
-        # Reset player states
-        for player in self.players.keys():
-            self.players[player] = Player()
-
-        # Deal cards
-        self.DealCards()
-
-        # Creator needs to play a hand
-        self.state = "WAITING_FOR_PLAYER"
-        self.action_count += 1
+    def CompletePlayerStreams(self):
+        with self._players_lock:
+            players = self._players.values()
+        for player in players:
+            player.CompleteUpdateStream()
 
     # Returns true if a card was dealt.
-    def DealCard(self):
+    def DealCards(self):
         self.state = "DEALING_CARDS"
-        if len(self.deck_cards) == 8:
-            self.state = "CARDS_DEALT"
-            return False
-        else:
-            self.players[self.player_ids[self.next_player_index]].AddCard(self.deck_cards[0])
-            self.next_player_index = (self.next_player_index + 1) % 4
-            logging.info("Dealt card " + str(self.deck_cards[0]))
-            del self.deck_cards[0]
-            return True
+        time.sleep(self._delay)
+        with self._players_lock:
+            players = list(self._players.values())
 
+        while (len(self.deck_cards) > 8):
+            player = players[self.next_player_index]
+            player.AddCard(self.deck_cards[0])
+            logging.info(f'Dealt card {self.deck_cards[0]} to {player.player_id}')
+            self.next_player_index = (self.next_player_index + 1) % 4
+            del self.deck_cards[0]
+            self.UpdatePlayers()
+            time.sleep(self._delay)
+
+        self.state = "CARDS_DEALT"
 
     def Play(self, player_id, cards):
         # Check turn
@@ -121,46 +159,25 @@ class Game:
         self.action_count += 1
         return True
 
-
-    def NextPlayer(self):
-        for i in range(len(self.player_ids)):
-            if self.player_ids[i] == self.next_player_id:
-                return self.player_ids[i + 1]
-
-
     def ToApiGame(self):
-        game = shengji_pb2.Game()
+        game = Game()
         game.game_id = str(self.game_id)
         game.creator_player_id = str(self.creator_id)
-        
+
         # TODO: Use the real dealer
         game.dealer_player_id = "UNIMPLEMENTED"
-        for player_id in self.player_ids:
-            game.player_states.append(self.players[player_id].ToApiPlayerState())
+
+        with self._players_lock:
+            players = self._players.values()
+        for player in players:
+            game.player_states.append(player.ToApiPlayerState())
 
         # TODO: Populate kitty
 
         game.deck_card_count = len(self.deck_cards)
         return game
 
-
-class Player:
-    def __init__(self, player_id):
-        self.player_id = player_id
-        self.cards_on_hand = []
-
-    def AddCard(self, card):
-        self.cards_on_hand.append(card)
-
-    def ToApiPlayerState(self):
-        player_state = shengji_pb2.PlayerState()
-        player_state.player_id = self.player_id
-        for card in self.cards_on_hand:
-            player_state.cards_on_hand.cards.append(card.ToApiCard())
-        return player_state
-
-
-class Card:
+class SJCard:
     index = None
     suit = None
     """ Modeled the following way to Hand.type detection easier
@@ -191,49 +208,49 @@ class Card:
         return self.index
 
     def ToApiCard(self):
-        card = shengji_pb2.Card()
+        card = Card()
         if self.is_small_joker:
-            card.suit = shengji_pb2.Card.Suit.SMALL_JOKER
+            card.suit = Card.Suit.SMALL_JOKER
             return card
         if self.is_big_joker:
-            card.suit = shengji_pb2.Card.Suit.BIG_JOKER
+            card.suit = Card.Suit.BIG_JOKER
             return card
 
         if self.GetSuit() == "HEARTS":
-            card.suit = shengji_pb2.Card.Suit.HEARTS
+            card.suit = Card.Suit.HEARTS
         if self.GetSuit() == "CLUBS":
-            card.suit = shengji_pb2.Card.Suit.CLUBS
+            card.suit = Card.Suit.CLUBS
         if self.GetSuit() == "DIAMONDS":
-            card.suit = shengji_pb2.Card.Suit.DIAMONDS
+            card.suit = Card.Suit.DIAMONDS
         if self.GetSuit() == "SPADES":
-            card.suit = shengji_pb2.Card.Suit.SPADES
+            card.suit = Card.Suit.SPADES
 
         if self.GetNum() == 0:
-            card.num = shengji_pb2.Card.Num.ACE
+            card.num = Card.Num.ACE
         if self.GetNum() == 1:
-            card.num = shengji_pb2.Card.Num.TWO
+            card.num = Card.Num.TWO
         if self.GetNum() == 2:
-            card.num = shengji_pb2.Card.Num.THREE
+            card.num = Card.Num.THREE
         if self.GetNum() == 3:
-            card.num = shengji_pb2.Card.Num.FOUR
+            card.num = Card.Num.FOUR
         if self.GetNum() == 4:
-            card.num = shengji_pb2.Card.Num.FIVE
+            card.num = Card.Num.FIVE
         if self.GetNum() == 5:
-            card.num = shengji_pb2.Card.Num.SIX
+            card.num = Card.Num.SIX
         if self.GetNum() == 6:
-            card.num = shengji_pb2.Card.Num.SEVEN
+            card.num = Card.Num.SEVEN
         if self.GetNum() == 7:
-            card.num = shengji_pb2.Card.Num.EIGHT
+            card.num = Card.Num.EIGHT
         if self.GetNum() == 8:
-            card.num = shengji_pb2.Card.Num.NINE
+            card.num = Card.Num.NINE
         if self.GetNum() == 9:
-            card.num = shengji_pb2.Card.Num.TEN
+            card.num = Card.Num.TEN
         if self.GetNum() == 10:
-            card.num = shengji_pb2.Card.Num.JACK
+            card.num = Card.Num.JACK
         if self.GetNum() == 11:
-            card.num = shengji_pb2.Card.Num.QUEEN
+            card.num = Card.Num.QUEEN
         if self.GetNum() == 12:
-            card.num = shengji_pb2.Card.Num.KING
+            card.num = Card.Num.KING
         return card
 
 
@@ -241,13 +258,13 @@ class Card:
         return self.is_small_joker or self.is_big_joker
 
     def GetIndex(self):
-        return self.index;
+        return self.index
 
     def GetSuit(self):
-        return self.suit;
+        return self.suit
 
     def GetNum(self):
-        return self.num;
+        return self.num
 
     def ParseSuit(self, index):
         if int(index / 13) == 0:
@@ -261,7 +278,7 @@ class Card:
         return None
 
     def ParseNum(self, index):
-        return index % 13;
+        return index % 13
 
     def __str__(self):
         if self.is_small_joker:
@@ -288,7 +305,7 @@ class GameMetadata:
         self.trump_suit = random.choice(["HEARTS", "CLUBS", "DIAMONDS", "SPADES"])
         # 1 maps to 2 in Card
         self.trump_num = 1
-    
+
     def NextGame(self):
         self.trump_suit = random.choice(["HEARTS", "CLUBS", "DIAMONDS", "SPADES"])
 
@@ -312,7 +329,7 @@ class CardCollection:
     def __init__(self):
         self.cards = dict()
         self.card_count = 0
-  
+
         # Index cards by suit and num
         self.by_suit = dict()
         self.by_num = dict()
@@ -322,12 +339,12 @@ class CardCollection:
 
         for i in range(54):
             self.cards[i] = 0
-  
+
         for suit in ["HEARTS", "CLUBS", "DIAMONDS", "SPADES"]:
             self.by_suit[suit] = dict()
             for num in range(13):
                 self.by_suit[suit][num] = 0
-  
+
         for num in range(13):
             self.by_num[num] = dict()
             for suit in ["HEARTS", "CLUBS", "DIAMONDS", "SPADES"]:
@@ -416,14 +433,14 @@ class CardCollection:
         string = ""
         for c in self.cards.keys():
             if self.cards[c] > 0:
-                string += ", " + str(Card(c)) + "x" + str(self.cards[c]) 
+                string += ", " + str(Card(c)) + "x" + str(self.cards[c])
 
         return string
 
 """ A hand represents a valid shengji move, which consists of one of the following
 1- A single card of any kind
 2- A pair of cards of the same suit
-3- Three-of-a-kind 
+3- Three-of-a-kind
 4- Four-of-a-kind (bomb)
 5- Straight within the same suit with more than 3 cards
 6- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
@@ -509,14 +526,3 @@ class Hand:
 
     def __str__(self):
         return self.type + ": " + ",".join([str(c) for c in self.cards])
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,
-            format="%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s")
-    game = Game("1", 1)
-    game.AddPlayer("1")
-    game.AddPlayer("2")
-    game.AddPlayer("3")
-    game.AddPlayer("4")
-    while game.DealCard():
-        logging.info(game.ToApiGame())

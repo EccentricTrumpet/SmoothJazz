@@ -172,15 +172,15 @@ export class GamePage implements AfterViewChecked {
           console.log("game is starting!")
           gameStarted = true;
           this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
-        } else if (gameStarted && message.getPlayerStatesList()[0].getCardsOnHand() && message.getPlayerStatesList()[1].getCardsOnHand() && message.getPlayerStatesList()[2].getCardsOnHand() && message.getPlayerStatesList()[3].getCardsOnHand()) {
-        // We don't get a response for every card dealt, log here
-        // for debugging purpose.
-        console.log("Player cards: ",
-                    message.getPlayerStatesList()[0].getCardsOnHand().getCardsList().length,
-                    message.getPlayerStatesList()[1].getCardsOnHand().getCardsList().length,
-                    message.getPlayerStatesList()[2].getCardsOnHand().getCardsList().length,
-                    message.getPlayerStatesList()[3].getCardsOnHand().getCardsList().length,
-                   );
+        } else if (gameStarted) {
+          // We don't get a response for every card dealt, log here
+          // for debugging purpose.
+          console.log("Player cards: ",
+            message.getPlayerStatesList()[0].getCardsOnHand()?.getCardsList().length ?? 0,
+            message.getPlayerStatesList()[1].getCardsOnHand()?.getCardsList().length ?? 0,
+            message.getPlayerStatesList()[2].getCardsOnHand()?.getCardsList().length ?? 0,
+            message.getPlayerStatesList()[3].getCardsOnHand()?.getCardsList().length ?? 0,
+          );
           this.frontendGameInstance.showAnimation(message.getPlayerStatesList());
         }
       },
@@ -956,11 +956,13 @@ class FrontendGame {
   showAnimation(playerStates: PlayerState[]) {
     for (var i = 0; i < playerStates.length; i++) {
       let ps = playerStates[i];
-      let cards = ps.getCardsOnHand().getCardsList();
-      if (cards.length == this.players[i].handUI.length) {
+      let cards = ps.getCardsOnHand()?.getCardsList();
+
+      if (cards == null || cards.length == this.players[i].handUI.length) {
         console.log("Skipping update for player: "+i);
         continue;
       }
+
       for (var j = this.players[i].handUI.length; j < cards.length; j++) {
         let card = cards[j];
         console.log("Dealing card: "+card+" to player"+i+"; Deck: "+this.deckUI.length);
