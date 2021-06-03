@@ -43,13 +43,13 @@ class Card:
             card.suit = CardProto.Suit.BIG_JOKER
             return card
 
-        if self.__suit == "HEARTS":
+        if self.__suit == 'HEARTS':
             card.suit = CardProto.Suit.HEARTS
-        if self.__suit == "CLUBS":
+        if self.__suit == 'CLUBS':
             card.suit = CardProto.Suit.CLUBS
-        if self.__suit == "DIAMONDS":
+        if self.__suit == 'DIAMONDS':
             card.suit = CardProto.Suit.DIAMONDS
-        if self.__suit == "SPADES":
+        if self.__suit == 'SPADES':
             card.suit = CardProto.Suit.SPADES
 
         if self.__num == 0:
@@ -83,13 +83,13 @@ class Card:
     @classmethod
     def ParseSuit(self, index: int) -> str:
         if int(index / 13) == 0:
-            return "HEARTS"
+            return 'HEARTS'
         if int(index / 13) == 1:
-            return "CLUBS"
+            return 'CLUBS'
         if int(index / 13) == 2:
-            return "DIAMONDS"
+            return 'DIAMONDS'
         if int(index / 13) == 3:
-            return "SPADES"
+            return 'SPADES'
         return None
 
     @classmethod
@@ -98,21 +98,21 @@ class Card:
 
     def __str__(self) -> str:
         if self.__is_small_joker:
-            return "SMALL_JOKER"
+            return 'SMALL_JOKER'
         if self.__is_big_joker:
-            return "BIG_JOKER"
+            return 'BIG_JOKER'
 
         if self.__num == 10:
-            card = "JACK"
+            card = 'JACK'
         elif self.__num == 11:
-            card = "QUEEN"
+            card = 'QUEEN'
         elif self.__num == 12:
-            card = "KING"
+            card = 'KING'
         elif self.__num == 0:
-            card = "ACE"
+            card = 'ACE'
         else:
             card = str(self.__num + 1)
-        card += "_OF_"
+        card += '_OF_'
         card += self.__suit
         return card
 
@@ -177,7 +177,7 @@ class Game:
 
     # API: why do we need creator_id?
     def __init__(self, creator_id: str, game_id: str, delay: float) -> None:
-        self.state = "NOT_ENOUGH_PLAYER"
+        self.state = 'NOT_ENOUGH_PLAYER'
         self.__game_id: str = game_id
         self.__creator_id: str = creator_id
         self.__delay: float = delay
@@ -215,7 +215,7 @@ class Game:
 
     # Returns true if a card was dealt.
     def DealCards(self) -> None:
-        self.state = "DEALING_CARDS"
+        self.state = 'DEALING_CARDS'
         time.sleep(self.__delay)
         with self.__players_lock:
             players = list(self.__players.values())
@@ -229,7 +229,7 @@ class Game:
             self.__UpdatePlayers()
             time.sleep(self.__delay)
 
-        self.state = "CARDS_DEALT"
+        self.state = 'CARDS_DEALT'
 
     def Play(self, player_id: str, cards: Sequence[Card]) -> bool:
         # Check turn
@@ -267,7 +267,7 @@ class Game:
         game.creator_player_id = self.__creator_id
 
         # TODO: Use the real dealer
-        game.dealer_player_id = "UNIMPLEMENTED"
+        game.dealer_player_id = 'UNIMPLEMENTED'
 
         with self.__players_lock:
             players = self.__players.values()
@@ -288,12 +288,12 @@ class Game:
 
 class GameMetadata:
     def __init__(self):
-        self.trump_suit = random.choice(["HEARTS", "CLUBS", "DIAMONDS", "SPADES"])
+        self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
         # 1 maps to 2 in Card
         self.trump_num = 1
 
     def NextGame(self):
-        self.trump_suit = random.choice(["HEARTS", "CLUBS", "DIAMONDS", "SPADES"])
+        self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
 
 
 def IsTrumpCard(card, metadata):
@@ -328,14 +328,14 @@ class CardCollection:
         for i in range(54):
             self.cards[i] = 0
 
-        for suit in ["HEARTS", "CLUBS", "DIAMONDS", "SPADES"]:
+        for suit in ['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES']:
             self.by_suit[suit] = dict()
             for num in range(13):
                 self.by_suit[suit][num] = 0
 
         for num in range(13):
             self.by_num[num] = dict()
-            for suit in ["HEARTS", "CLUBS", "DIAMONDS", "SPADES"]:
+            for suit in ['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES']:
                 self.by_num[num][suit] = 0
 
     def AddCards(self, cards):
@@ -418,10 +418,10 @@ class CardCollection:
         return True
 
     def __str__(self):
-        string = ""
+        string = ''
         for c in self.cards.keys():
             if self.cards[c] > 0:
-                string += ", " + str(Card(c)) + "x" + str(self.cards[c])
+                string += ', ' + str(Card(c)) + 'x' + str(self.cards[c])
 
         return string
 
@@ -480,13 +480,13 @@ class Hand:
 
     def __DetectType(self) -> str:
         if len(self.__cards) == 1:
-            return "SINGLE"
+            return 'SINGLE'
         elif len(self.__cards) == 2 and self.VerifyAllCardsEq(self.__cards):
-            return "PAIR"
+            return 'PAIR'
         elif len(self.__cards) >= 4 and self.IsDoubleStraight(self.__cards):
-            return "DOUBLE_STRAIGHT"
+            return 'DOUBLE_STRAIGHT'
         else:
-            return "OTHER"
+            return 'OTHER'
 
     def __str__(self) -> str:
-        return self.type + ": " + ",".join([str(c) for c in self.__cards])
+        return self.type + ': ' + ','.join([str(c) for c in self.__cards])

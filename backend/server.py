@@ -52,7 +52,7 @@ class SJService(ShengjiServicer):
                    request: AddAIPlayerRequest,
                    context: ServicerContext
                    ) -> AddAIPlayerResponse:
-        ai_name = 'Computer' + str(random.randrange(10000))
+        ai_name = f'Computer{random.randrange(10000)}'
         logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
 
         game = self.__getGame(request.game_id)
@@ -72,7 +72,7 @@ class SJService(ShengjiServicer):
                   request: EnterRoomRequest,
                   context: ServicerContext
                   ) -> Iterable[Game]:
-        logging.info("Received a EnterRoom request: %s", request)
+        logging.info(f'Received a EnterRoom request: {request}')
 
         game = self.__getGame(request.game_id)
         player = game.AddPlayer(request.player_id, True)
@@ -86,8 +86,7 @@ class SJService(ShengjiServicer):
     def PlayHand(self,
             request: PlayHandRequest,
             context: ServicerContext) -> PlayHandResponse:
-        logging.info("Received a PlayGame request [%s] from player_id [%s], game_id [%s]",
-                request.hand, request.player_id, request.game_id)
+        logging.info(f'Received a PlayGame request [{request.hand}] from player_id [{request.player_id}], game_id [{request.game_id}]')
         with SJService.game_state_lock:
             game_id = request.game_id
             player_id = request.player_id
@@ -95,7 +94,7 @@ class SJService(ShengjiServicer):
             try:
                 self.games[game_id]
             except:
-                logging.info("Not found: game_id [%s]", request.game_id)
+                logging.info(f'Not found: game_id [{request.game_id}]')
             # TODO: Play card and notify all players
             # game = self.games[game_id]
 
@@ -120,7 +119,7 @@ async def serve(address: str) -> None:
     add_ShengjiServicer_to_server(SJService(), server)
     server.add_insecure_port(address)
     await server.start()
-    logging.info("Server serving at %s", address)
+    logging.info(f'Server serving at {address}')
     try:
         await server.wait_for_termination()
     except KeyboardInterrupt:
@@ -130,7 +129,7 @@ async def serve(address: str) -> None:
         await server.stop(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
-            format="%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s")
-    asyncio.run(serve("[::]:50051"))
+            format='%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s')
+    asyncio.run(serve('[::]:50051'))
