@@ -435,7 +435,7 @@ class Hand:
     def __init__(self, cards: Sequence[Card]) -> None:
         self.__cards: Sequence[Card] = cards
         # Type is SINGLE, PAIR, TOAK, FOAK, STRAIGHT, DOUBLE_STRAIGHT or INVALID
-        self.__type = self.__DetectType()
+        self.type = self.__DetectType()
 
     def VerifyAllCardsEq(self, cards: Sequence[Card]) -> bool:
         c = cards[0]
