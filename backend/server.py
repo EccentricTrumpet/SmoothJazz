@@ -7,7 +7,8 @@ from itertools import count
 from game_state import Game
 from typing import (
     Iterable,
-    Dict)
+    Dict,
+    Iterator)
 from shengji_pb2_grpc import (
     ShengjiServicer,
     add_ShengjiServicer_to_server)
@@ -24,13 +25,13 @@ from grpc import (
     aio)
 
 class SJService(ShengjiServicer):
-    def __init__(self, delay=0.3):
+    def __init__(self, delay: float = 0.3) -> None:
         # delay for dealing cards
-        self._delay = delay
+        self.__delay: float = delay
         # Dict that holds game states.
-        self._games: Dict[str, Game] = dict()
+        self.__games: Dict[str, Game] = dict()
         # game_id is a monotonically increasing number
-        self._game_id = count()
+        self.__game_id: Iterator[int] = count()
 
     def CreateGame(self,
             request: CreateGameRequest,
@@ -39,9 +40,9 @@ class SJService(ShengjiServicer):
 
         logging.info(f'Received a CreateGame request from player_id: {request.player_id}')
 
-        game_id = str(next(self._game_id))
-        game = Game(request.player_id, game_id, self._delay)
-        self._games[game_id] = game
+        game_id = str(next(self.__game_id))
+        game = Game(request.player_id, game_id, self.__delay)
+        self.__games[game_id] = game
 
         logging.info(f'Created game with id: {game_id}')
 
@@ -54,7 +55,7 @@ class SJService(ShengjiServicer):
         ai_name = 'Computer' + str(random.randrange(10000))
         logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
 
-        game = self._getGame(request.game_id)
+        game = self.__getGame(request.game_id)
         game.AddPlayer(ai_name, False)
 
         if game.state == 'NOT_STARTED':
@@ -73,7 +74,7 @@ class SJService(ShengjiServicer):
                   ) -> Iterable[Game]:
         logging.info("Received a EnterRoom request: %s", request)
 
-        game = self._getGame(request.game_id)
+        game = self.__getGame(request.game_id)
         player = game.AddPlayer(request.player_id, True)
 
         if game.state == 'NOT_STARTED':
@@ -101,18 +102,18 @@ class SJService(ShengjiServicer):
         # Notifies all watchers of state change
         return PlayHandResponse()
 
-    def TerminateGame(self, game_id):
-        game = self._getGame(game_id)
+    def TerminateGame(self, game_id: str) -> None:
+        game = self.__getGame(game_id)
         game.CompletePlayerStreams()
-        del self._games[game_id]
+        del self.__games[game_id]
 
-    def _getGame(self, game_id) -> Game:
-        game = self._games.get(game_id, None)
+    def __getGame(self, game_id: str) -> Game:
+        game = self.__games.get(game_id, None)
         if game is None:
             raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')
         return game
 
-async def serve(address: str):
+async def serve(address: str) -> None:
     server = aio.server(ThreadPoolExecutor(max_workers=100))
     # A new executor for tasks that exist beyond RPC context. (e.g. dealing
     # cards)

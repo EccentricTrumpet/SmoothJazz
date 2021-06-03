@@ -12,7 +12,7 @@ from shengji_pb2 import (
 # TODO(aaron): Add unit tests for 4 real players
 class ShengjiTest(unittest.TestCase):
 
-    def test_create_game(self):
+    def test_create_game(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
         req.player_id = "test_creation_id"
@@ -24,7 +24,7 @@ class ShengjiTest(unittest.TestCase):
     def _generator_wrap(self, functor, *args):
         return list(functor(*args))
 
-    def test_streaming_with_one_ai(self):
+    def test_streaming_with_one_ai(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
         req.player_id = "test_creation_id"
@@ -49,7 +49,7 @@ class ShengjiTest(unittest.TestCase):
             self.assertEqual(streaming_result[-1].creator_player_id, req.player_id)
             self.assertEqual(len(streaming_result[-1].players), 2)
 
-    def test_deal_cards(self):
+    def test_deal_cards(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
         req.player_id = "test_creation_id"

@@ -3,46 +3,154 @@ import random
 import time
 from threading import RLock, Semaphore
 from collections import deque
-from typing import Iterable
+from typing import Dict, Iterable, List, Sequence
 from shengji_pb2 import (
     Card as CardProto,
     Game as GameProto,
     Player as PlayerProto)
 
+
+class Card:
+    """ Modeled the following way to Hand.type detection easier
+    0 -> Ace
+    1 -> 2
+    9  -> 10
+    10 -> Jack
+    11 -> Queen
+    12 -> King
+    """
+    def __init__(self, index: int) -> None:
+        self.index: int = index
+        self.__suit: str = Card.ParseSuit(index)
+        self.__num: int = Card.ParseNum(index)
+        self.__is_small_joker: bool = index == 52
+        self.__is_big_joker: bool = index == 53
+
+    def __eq__(self, obj: any) -> bool:
+        if not isinstance(obj, Card):
+            return NotImplemented
+        return self.index == obj.index
+
+    def __hash__(self) -> int:
+        return self.index
+
+    def ToCardProto(self) -> CardProto:
+        card = CardProto()
+        if self.__is_small_joker:
+            card.suit = CardProto.Suit.SMALL_JOKER
+            return card
+        if self.__is_big_joker:
+            card.suit = CardProto.Suit.BIG_JOKER
+            return card
+
+        if self.__suit == "HEARTS":
+            card.suit = CardProto.Suit.HEARTS
+        if self.__suit == "CLUBS":
+            card.suit = CardProto.Suit.CLUBS
+        if self.__suit == "DIAMONDS":
+            card.suit = CardProto.Suit.DIAMONDS
+        if self.__suit == "SPADES":
+            card.suit = CardProto.Suit.SPADES
+
+        if self.__num == 0:
+            card.num = CardProto.Num.ACE
+        if self.__num == 1:
+            card.num = CardProto.Num.TWO
+        if self.__num == 2:
+            card.num = CardProto.Num.THREE
+        if self.__num == 3:
+            card.num = CardProto.Num.FOUR
+        if self.__num == 4:
+            card.num = CardProto.Num.FIVE
+        if self.__num == 5:
+            card.num = CardProto.Num.SIX
+        if self.__num == 6:
+            card.num = CardProto.Num.SEVEN
+        if self.__num == 7:
+            card.num = CardProto.Num.EIGHT
+        if self.__num == 8:
+            card.num = CardProto.Num.NINE
+        if self.__num == 9:
+            card.num = CardProto.Num.TEN
+        if self.__num == 10:
+            card.num = CardProto.Num.JACK
+        if self.__num == 11:
+            card.num = CardProto.Num.QUEEN
+        if self.__num == 12:
+            card.num = CardProto.Num.KING
+        return card
+
+    @classmethod
+    def ParseSuit(self, index: int) -> str:
+        if int(index / 13) == 0:
+            return "HEARTS"
+        if int(index / 13) == 1:
+            return "CLUBS"
+        if int(index / 13) == 2:
+            return "DIAMONDS"
+        if int(index / 13) == 3:
+            return "SPADES"
+        return None
+
+    @classmethod
+    def ParseNum(self, index: int) -> int:
+        return index % 13
+
+    def __str__(self) -> str:
+        if self.__is_small_joker:
+            return "SMALL_JOKER"
+        if self.__is_big_joker:
+            return "BIG_JOKER"
+
+        if self.__num == 10:
+            card = "JACK"
+        elif self.__num == 11:
+            card = "QUEEN"
+        elif self.__num == 12:
+            card = "KING"
+        elif self.__num == 0:
+            card = "ACE"
+        else:
+            card = str(self.__num + 1)
+        card += "_OF_"
+        card += self.__suit
+        return card
+
+
 class Player:
-    def __init__(self, player_id, notify):
-        self._notify = notify
-        self._game_queue = deque()
-        self._game_queue_sem = Semaphore(0)
-        self.player_id = player_id
-        self.cards_on_hand = []
+    def __init__(self, player_id: str, notify: bool) -> None:
+        self.player_id: str = player_id
+        self.__notify: bool = notify
+        self.__game_queue: deque[GameProto]  = deque()
+        self.__game_queue_sem: Semaphore= Semaphore(0)
+        self.__cards_on_hand: list[Card] = []
 
-    def AddCard(self, card):
-        self.cards_on_hand.append(card)
+    def AddCard(self, card: Card) -> None:
+        self.__cards_on_hand.append(card)
 
-    def ToPlayerProto(self):
-        player_proto = PlayerProto()
-        player_proto.player_id = self.player_id
-        for card in self.cards_on_hand:
-            player_proto.cards_on_hand.cards.append(card.ToCardProto())
-        return player_proto
+    def QueueUpdate(self, game: GameProto) -> None:
+        if self.__notify:
+            self.__game_queue.append(game)
+            self.__game_queue_sem.release()
 
-    def QueueUpdate(self, game: GameProto):
-        if self._notify:
-            self._game_queue.append(game)
-            self._game_queue_sem.release()
-
-    def CompleteUpdateStream(self):
-        self._notify = False
-        self._game_queue_sem.release()
+    def CompleteUpdateStream(self) -> None:
+        self.__notify = False
+        self.__game_queue_sem.release()
 
     def UpdateStream(self) -> Iterable[GameProto]:
         while True:
-            self._game_queue_sem.acquire()
-            if self._notify == False:
+            self.__game_queue_sem.acquire()
+            if self.__notify == False:
                 break
-            game_state = self._game_queue.popleft()
+            game_state = self.__game_queue.popleft()
             yield game_state
+
+    def ToPlayerProto(self) -> PlayerProto:
+        player_proto = PlayerProto()
+        player_proto.player_id = self.player_id
+        for card in self.__cards_on_hand:
+            player_proto.cards_on_hand.cards.append(card.ToCardProto())
+        return player_proto
 
 """
 Game: All state of the game is stored in this class
@@ -68,69 +176,62 @@ class Game:
     """
 
     # API: why do we need creator_id?
-    def __init__(self, creator_id, game_id, delay):
-        self.game_id = game_id
-        self.creator_id = creator_id
-        self._delay = delay
+    def __init__(self, creator_id: str, game_id: str, delay: float) -> None:
         self.state = "NOT_ENOUGH_PLAYER"
-        self._players = dict()
-        self._players_lock = RLock()
-        self.metadata = None
-        self.state = None
-        self.next_player_index = 0
+        self.__game_id: str = game_id
+        self.__creator_id: str = creator_id
+        self.__delay: float = delay
+        self.__players: Dict[str, Player] = dict()
+        self.__players_lock: RLock = RLock()
+        self.__metadata: GameMetadata = None
+        self.__next_player_index: int = 0
         # hands on table contains an array of pairs - (id, hand)
-        self.action_count = 0
-        self.hands_on_table = []
+        self.__action_count: int = 0
+        self.__hands_on_table: List[tuple[str, Hand]] = []
 
         # shuffle two decks of cards
-        self.deck_cards = [Card(x) for x in range(54)] + [Card(x) for x in range(54)]
-        random.shuffle(self.deck_cards)
+        self.__deck_cards: List[Card] = [Card(x) for x in range(54)] + [Card(x) for x in range(54)]
+        random.shuffle(self.__deck_cards)
 
-    def AddPlayer(self, player_id, notify) -> Player:
-        with self._players_lock:
-            if player_id in self._players.keys() or len(self._players) == 4:
+    def AddPlayer(self, player_id: str, notify: bool) -> Player:
+        with self.__players_lock:
+            if player_id in self.__players.keys() or len(self.__players) == 4:
                 return None
             player = Player(player_id, notify)
-            self._players[player_id] = player
+            self.__players[player_id] = player
 
-            self.UpdatePlayers()
+            self.__UpdatePlayers()
 
-            if len(self._players) == 4:
+            if len(self.__players) == 4:
                 self.state = 'NOT_STARTED'
 
         return player
 
-    def UpdatePlayers(self):
-        with self._players_lock:
-            players = self._players.values()
-        for player in players:
-            player.QueueUpdate(self.ToGameProto())
-
-    def CompletePlayerStreams(self):
-        with self._players_lock:
-            players = self._players.values()
+    def CompletePlayerStreams(self) -> None:
+        with self.__players_lock:
+            players = self.__players.values()
         for player in players:
             player.CompleteUpdateStream()
 
     # Returns true if a card was dealt.
-    def DealCards(self):
+    def DealCards(self) -> None:
         self.state = "DEALING_CARDS"
-        time.sleep(self._delay)
-        with self._players_lock:
-            players = list(self._players.values())
+        time.sleep(self.__delay)
+        with self.__players_lock:
+            players = list(self.__players.values())
 
-        while (len(self.deck_cards) > 8):
-            player = players[self.next_player_index]
-            player.AddCard(self.deck_cards[0])
-            logging.info(f'Dealt card {self.deck_cards[0]} to {player.player_id}')
-            self.next_player_index = (self.next_player_index + 1) % 4
-            del self.deck_cards[0]
-            self.UpdatePlayers()
-            time.sleep(self._delay)
+        while (len(self.__deck_cards) > 8):
+            player = players[self.__next_player_index]
+            player.AddCard(self.__deck_cards[0])
+            logging.info(f'Dealt card {self.__deck_cards[0]} to {player.player_id}')
+            self.__next_player_index = (self.__next_player_index + 1) % 4
+            del self.__deck_cards[0]
+            self.__UpdatePlayers()
+            time.sleep(self.__delay)
 
         self.state = "CARDS_DEALT"
 
-    def Play(self, player_id, cards):
+    def Play(self, player_id: str, cards: Sequence[Card]) -> bool:
         # Check turn
         if player_id != self.next_player_id:
             return False
@@ -140,166 +241,50 @@ class Game:
 
         # Check play cards
         prev_hand = None
-        if len(self.hands_on_table) > 0:
-            prev_hand = self.hands_on_table[0][1]
+        if len(self.__hands_on_table) > 0:
+            prev_hand = self.__hands_on_table[0][1]
 
-        if not self.players[player_id].CanPlayHand(hand, prev_hand, self.metadata):
+        if not self.players[player_id].CanPlayHand(hand, prev_hand, self.__metadata):
             return False
 
         # play this hand and update cards on table
         self.hands_on_table.append((player_id, hand))
-        self.players[player_id].PlayHand(hand)
+        self.__players[player_id].PlayHand(hand)
 
         # Compute winner of this round if needed
-        if len(self.hands_on_table) == 4:
+        if len(self.__hands_on_table) == 4:
             self.next_player_id = GetWinnerAndAccumulateScore()
         else:
             self.next_player_id = self.NextPlayer()
 
         # Check to see if the game has ended
-        self.action_count += 1
+        self.__action_count += 1
         return True
 
-    def ToGameProto(self):
+    def ToGameProto(self) -> GameProto:
         game = GameProto()
-        game.game_id = str(self.game_id)
-        game.creator_player_id = str(self.creator_id)
+        game.game_id = self.__game_id
+        game.creator_player_id = self.__creator_id
 
         # TODO: Use the real dealer
         game.dealer_player_id = "UNIMPLEMENTED"
 
-        with self._players_lock:
-            players = self._players.values()
+        with self.__players_lock:
+            players = self.__players.values()
         for player in players:
             game.players.append(player.ToPlayerProto())
 
         # TODO: Populate kitty
 
-        game.deck_card_count = len(self.deck_cards)
+        game.deck_card_count = len(self.__deck_cards)
         return game
 
-class Card:
-    index = None
-    suit = None
-    """ Modeled the following way to Hand.type detection easier
-    0 -> Ace
-    1 -> 2
-    9  -> 10
-    10 -> Jack
-    11 -> Queen
-    12 -> King
-    """
-    num = None
-    is_small_joker = False
-    is_big_joker = False
+    def __UpdatePlayers(self) -> None:
+        with self.__players_lock:
+            players = self.__players.values()
+        for player in players:
+            player.QueueUpdate(self.ToGameProto())
 
-    def __init__(self, index):
-        self.index = index
-        self.suit = self.ParseSuit(index)
-        self.num = self.ParseNum(index)
-        if index == 52:
-            self.is_small_joker = True
-        if index == 53:
-            self.is_big_joker = True
-
-    def __eq__(self, obj):
-        return self.index == obj.index
-
-    def __hash__(self):
-        return self.index
-
-    def ToCardProto(self):
-        card = CardProto()
-        if self.is_small_joker:
-            card.suit = CardProto.Suit.SMALL_JOKER
-            return card
-        if self.is_big_joker:
-            card.suit = CardProto.Suit.BIG_JOKER
-            return card
-
-        if self.GetSuit() == "HEARTS":
-            card.suit = CardProto.Suit.HEARTS
-        if self.GetSuit() == "CLUBS":
-            card.suit = CardProto.Suit.CLUBS
-        if self.GetSuit() == "DIAMONDS":
-            card.suit = CardProto.Suit.DIAMONDS
-        if self.GetSuit() == "SPADES":
-            card.suit = CardProto.Suit.SPADES
-
-        if self.GetNum() == 0:
-            card.num = CardProto.Num.ACE
-        if self.GetNum() == 1:
-            card.num = CardProto.Num.TWO
-        if self.GetNum() == 2:
-            card.num = CardProto.Num.THREE
-        if self.GetNum() == 3:
-            card.num = CardProto.Num.FOUR
-        if self.GetNum() == 4:
-            card.num = CardProto.Num.FIVE
-        if self.GetNum() == 5:
-            card.num = CardProto.Num.SIX
-        if self.GetNum() == 6:
-            card.num = CardProto.Num.SEVEN
-        if self.GetNum() == 7:
-            card.num = CardProto.Num.EIGHT
-        if self.GetNum() == 8:
-            card.num = CardProto.Num.NINE
-        if self.GetNum() == 9:
-            card.num = CardProto.Num.TEN
-        if self.GetNum() == 10:
-            card.num = CardProto.Num.JACK
-        if self.GetNum() == 11:
-            card.num = CardProto.Num.QUEEN
-        if self.GetNum() == 12:
-            card.num = CardProto.Num.KING
-        return card
-
-
-    def IsJoker(self):
-        return self.is_small_joker or self.is_big_joker
-
-    def GetIndex(self):
-        return self.index
-
-    def GetSuit(self):
-        return self.suit
-
-    def GetNum(self):
-        return self.num
-
-    def ParseSuit(self, index):
-        if int(index / 13) == 0:
-            return "HEARTS"
-        if int(index / 13) == 1:
-            return "CLUBS"
-        if int(index / 13) == 2:
-            return "DIAMONDS"
-        if int(index / 13) == 3:
-            return "SPADES"
-        return None
-
-    def ParseNum(self, index):
-        return index % 13
-
-    def __str__(self):
-        if self.is_small_joker:
-            return "SMALL_JOKER"
-        if self.is_big_joker:
-            return "BIG_JOKER"
-        card = ""
-        if self.num == 10:
-            card = "JACK"
-        elif self.num == 11:
-            card = "QUEEN"
-        elif self.num == 12:
-            card = "KING"
-        elif self.num == 0:
-            card = "ACE"
-        else:
-            card = str(self.num + 1)
-        card += "_OF_"
-        card += self.suit
-        return card
 
 class GameMetadata:
     def __init__(self):
@@ -320,10 +305,12 @@ def IsTrumpCard(card, metadata):
         return True
     return False
 
+
 def GetSuit(card, metadata):
     if card.is_small_joker or card.is_big_joker:
         return metadata.trump_suit
     return card.suit
+
 
 class CardCollection:
 
@@ -434,36 +421,53 @@ class CardCollection:
         string = ""
         for c in self.cards.keys():
             if self.cards[c] > 0:
-                string += ", " + str(CardProto(c)) + "x" + str(self.cards[c])
+                string += ", " + str(Card(c)) + "x" + str(self.cards[c])
 
         return string
 
 """ A hand represents a valid shengji move, which consists of one of the following
 1- A single card of any kind
 2- A pair of cards of the same suit
-5- Straight within the same suit with more than 3 cards
-6- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
+3- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
 """
 class Hand:
 
-    def __init__(self, cards):
-        self.cards = cards
+    def __init__(self, cards: Sequence[Card]) -> None:
+        self.__cards: Sequence[Card] = cards
         # Type is SINGLE, PAIR, TOAK, FOAK, STRAIGHT, DOUBLE_STRAIGHT or INVALID
-        self.type = self.DetectType()
+        self.__type = self.__DetectType()
 
-    def VerifyAllCardsEq(self, cards):
+    def VerifyAllCardsEq(self, cards: Sequence[Card]) -> bool:
         c = cards[0]
         for card in cards:
             if card != c:
                 return False
         return True
 
-    def IsDoubleStraight(self, cards):
+    def IsStraight(self, cards: Sequence[Card]) -> bool:
+        if len(cards) < 3:
+            return False
+        min_card = cards[0].GetNum()
+        max_card = cards[0].GetNum()
+        suit = cards[0].GetSuit()
+        seen_nums = []
+
+        for card in cards:
+            if card.GetSuit() != suit:
+                return False
+            if card.GetNum() in seen_nums:
+                return False
+            seen_nums.append(card.GetNum())
+            min_card = min(min_card, card.GetNum())
+            max_card = max(max_card, card.GetNum())
+        return (max_card - min_card) == len(cards) - 1
+
+    def IsDoubleStraight(self, cards) -> bool:
         grouped_cards = dict()
         for card in cards:
-            if card.GetIndex() not in grouped_cards.keys():
-                grouped_cards[card.GetIndex()] = 0
-            grouped_cards[card.GetIndex()] += 1
+            if card.index not in grouped_cards.keys():
+                grouped_cards[card.index] = 0
+            grouped_cards[card.index] += 1
         count = None
 
         # equal #s of cards
@@ -472,24 +476,17 @@ class Hand:
                 count = grouped_cards[index]
             if count != grouped_cards[index]:
                 return False
-        return self.IsStraight([CardProto(c) for c in grouped_cards.keys()])
+        return self.IsStraight([Card(c) for c in grouped_cards.keys()])
 
+    def __DetectType(self) -> str:
+        if len(self.__cards) == 1:
+            return "SINGLE"
+        elif len(self.__cards) == 2 and self.VerifyAllCardsEq(self.__cards):
+            return "PAIR"
+        elif len(self.__cards) >= 4 and self.IsDoubleStraight(self.__cards):
+            return "DOUBLE_STRAIGHT"
+        else:
+            return "OTHER"
 
-    def DetectType(self):
-        type = "OTHER"
-        if len(self.cards) == 1:
-            type = "SINGLE"
-        elif len(self.cards) == 2 and self.VerifyAllCardsEq(self.cards):
-            type = "PAIR"
-        elif len(self.cards) == 3 and self.VerifyAllCardsEq(self.cards):
-            type = "TOAK"
-        elif len(self.cards) == 4 and self.VerifyAllCardsEq(self.cards):
-            type = "FOAK"
-        elif len(self.cards) >= 3 and self.IsStraight(self.cards):
-            type = "STRAIGHT"
-        elif len(self.cards) >= 4 and self.IsDoubleStraight(self.cards):
-            type = "DOUBLE_STRAIGHT"
-        return type
-
-    def __str__(self):
-        return self.type + ": " + ",".join([str(c) for c in self.cards])
+    def __str__(self) -> str:
+        return self.type + ": " + ",".join([str(c) for c in self.__cards])
