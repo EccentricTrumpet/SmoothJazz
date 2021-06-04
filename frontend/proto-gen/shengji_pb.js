@@ -18,7 +18,7 @@ var global = Function('return this')();
 goog.exportSymbol('proto.grpc.testing.AddAIPlayerRequest', null, global);
 goog.exportSymbol('proto.grpc.testing.AddAIPlayerResponse', null, global);
 goog.exportSymbol('proto.grpc.testing.Card', null, global);
-goog.exportSymbol('proto.grpc.testing.Card.Num', null, global);
+goog.exportSymbol('proto.grpc.testing.Card.Rank', null, global);
 goog.exportSymbol('proto.grpc.testing.Card.Suit', null, global);
 goog.exportSymbol('proto.grpc.testing.CreateGameRequest', null, global);
 goog.exportSymbol('proto.grpc.testing.EnterRoomRequest', null, global);
@@ -1559,7 +1559,7 @@ proto.grpc.testing.Game.toObject = function(includeInstance, msg) {
     proto.grpc.testing.Player.toObject, includeInstance),
     kitty: (f = msg.getKitty()) && proto.grpc.testing.Hand.toObject(includeInstance, f),
     trumpSuit: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    trumpNum: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    trumpRank: jspb.Message.getFieldWithDefault(msg, 9, 0),
     deckCardCount: jspb.Message.getFieldWithDefault(msg, 10, 0)
   };
 
@@ -1632,8 +1632,8 @@ proto.grpc.testing.Game.deserializeBinaryFromReader = function(msg, reader) {
       msg.setTrumpSuit(value);
       break;
     case 9:
-      var value = /** @type {!proto.grpc.testing.Card.Num} */ (reader.readEnum());
-      msg.setTrumpNum(value);
+      var value = /** @type {!proto.grpc.testing.Card.Rank} */ (reader.readEnum());
+      msg.setTrumpRank(value);
       break;
     case 10:
       var value = /** @type {number} */ (reader.readInt32());
@@ -1726,7 +1726,7 @@ proto.grpc.testing.Game.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
-  f = message.getTrumpNum();
+  f = message.getTrumpRank();
   if (f !== 0.0) {
     writer.writeEnum(
       9,
@@ -1927,19 +1927,19 @@ proto.grpc.testing.Game.prototype.setTrumpSuit = function(value) {
 
 
 /**
- * optional Card.Num trump_num = 9;
- * @return {!proto.grpc.testing.Card.Num}
+ * optional Card.Rank trump_rank = 9;
+ * @return {!proto.grpc.testing.Card.Rank}
  */
-proto.grpc.testing.Game.prototype.getTrumpNum = function() {
-  return /** @type {!proto.grpc.testing.Card.Num} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+proto.grpc.testing.Game.prototype.getTrumpRank = function() {
+  return /** @type {!proto.grpc.testing.Card.Rank} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
 };
 
 
 /**
- * @param {!proto.grpc.testing.Card.Num} value
+ * @param {!proto.grpc.testing.Card.Rank} value
  * @return {!proto.grpc.testing.Game} returns this
  */
-proto.grpc.testing.Game.prototype.setTrumpNum = function(value) {
+proto.grpc.testing.Game.prototype.setTrumpRank = function(value) {
   return jspb.Message.setProto3EnumField(this, 9, value);
 };
 
@@ -1995,7 +1995,7 @@ proto.grpc.testing.Card.prototype.toObject = function(opt_includeInstance) {
 proto.grpc.testing.Card.toObject = function(includeInstance, msg) {
   var f, obj = {
     suit: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    num: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    rank: jspb.Message.getFieldWithDefault(msg, 2, 0)
   };
 
   if (includeInstance) {
@@ -2037,8 +2037,8 @@ proto.grpc.testing.Card.deserializeBinaryFromReader = function(msg, reader) {
       msg.setSuit(value);
       break;
     case 2:
-      var value = /** @type {!proto.grpc.testing.Card.Num} */ (reader.readEnum());
-      msg.setNum(value);
+      var value = /** @type {!proto.grpc.testing.Card.Rank} */ (reader.readEnum());
+      msg.setRank(value);
       break;
     default:
       reader.skipField();
@@ -2076,7 +2076,7 @@ proto.grpc.testing.Card.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
-  f = message.getNum();
+  f = message.getRank();
   if (f !== 0.0) {
     writer.writeEnum(
       2,
@@ -2102,8 +2102,8 @@ proto.grpc.testing.Card.Suit = {
 /**
  * @enum {number}
  */
-proto.grpc.testing.Card.Num = {
-  NUM_UNDEFINED: 0,
+proto.grpc.testing.Card.Rank = {
+  RANK_UNDEFINED: 0,
   ACE: 1,
   TWO: 2,
   THREE: 3,
@@ -2138,19 +2138,19 @@ proto.grpc.testing.Card.prototype.setSuit = function(value) {
 
 
 /**
- * optional Num num = 2;
- * @return {!proto.grpc.testing.Card.Num}
+ * optional Rank rank = 2;
+ * @return {!proto.grpc.testing.Card.Rank}
  */
-proto.grpc.testing.Card.prototype.getNum = function() {
-  return /** @type {!proto.grpc.testing.Card.Num} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+proto.grpc.testing.Card.prototype.getRank = function() {
+  return /** @type {!proto.grpc.testing.Card.Rank} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
 };
 
 
 /**
- * @param {!proto.grpc.testing.Card.Num} value
+ * @param {!proto.grpc.testing.Card.Rank} value
  * @return {!proto.grpc.testing.Card} returns this
  */
-proto.grpc.testing.Card.prototype.setNum = function(value) {
+proto.grpc.testing.Card.prototype.setRank = function(value) {
   return jspb.Message.setProto3EnumField(this, 2, value);
 };
 

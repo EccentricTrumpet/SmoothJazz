@@ -239,7 +239,7 @@ const getCardUIRankFromProto = function(cardProto: CardPB) : any {
   switch(cardProto.getSuit()) {
     case CardPB.Suit.SMALL_JOKER: return 0;
     case CardPB.Suit.BIG_JOKER: return 0;
-    default: return cardProto.getNum() + 1;
+    default: return cardProto.getRank();
   }
 }
 
@@ -255,14 +255,10 @@ const getCardProtoSuit = function(cardUI: any) : any {
   }
 }
 
-const getCardProtoNum = function(cardUI: any) : any {
-  return Math.max(cardUI.rank - 1, 0);
-}
-
 const toCardProto = function(cardUI: any) : CardPB {
   const cardProto = new CardPB();
   cardProto.setSuit(getCardProtoSuit(cardUI));
-  cardProto.setNum(getCardProtoNum(cardUI));
+  cardProto.setRank(cardUI.rank);
   return cardProto;
 }
 
