@@ -3,6 +3,8 @@ import logging
 import random
 import threading
 from concurrent.futures.thread import ThreadPoolExecutor
+from grpc import ServicerContext
+from grpc.aio import server as GrpcServer
 from itertools import count
 from game_state import (
     Game,
@@ -22,9 +24,6 @@ from shengji_pb2 import (
     PlayHandRequest,
     PlayHandResponse,
     Game as GameProto)
-from grpc import (
-    ServicerContext,
-    aio)
 
 class SJService(ShengjiServicer):
     def __init__(self, delay: float = 0.3) -> None:
@@ -116,7 +115,7 @@ class SJService(ShengjiServicer):
         return game
 
 async def serve(address: str) -> None:
-    server = aio.server(ThreadPoolExecutor(max_workers=100))
+    server = GrpcServer(ThreadPoolExecutor(max_workers=100))
     # A new executor for tasks that exist beyond RPC context. (e.g. dealing
     # cards)
     add_ShengjiServicer_to_server(SJService(), server)
