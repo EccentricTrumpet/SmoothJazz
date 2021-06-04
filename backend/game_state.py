@@ -1,13 +1,37 @@
 import logging
 import random
 import time
+from enum import Enum
 from threading import RLock, Semaphore
 from collections import deque
-from typing import Dict, Iterable, List, Sequence
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Sequence)
 from shengji_pb2 import (
     Card as CardProto,
     Game as GameProto,
     Player as PlayerProto)
+
+"""
+Game: All state of the game is stored in this class
+GameMetadata: Stores states related to the currently playing game
+Player class: Contains all player-related states, including cards etc.
+Card class: Models a poker card
+CardCollection: Organizes cards into useful structures
+Hand: A playable hand of cards.
+"""
+
+class Suit(Enum):
+    NONE = 0
+    SPADES = 1
+    HEARTS = 2
+    CLUBS = 3
+    DIAMONDS = 4
+    SMALL_JOKER = 5
+    BIG_JOKER = 6
+    TRUMP = 7
 
 
 class Card:
@@ -21,36 +45,31 @@ class Card:
     """
     def __init__(self, index: int) -> None:
         self.index: int = index
-        self.__suit: str = Card.parse_suit(index)
+        self.__suit: Suit = Card.parse_suit(index)
         self.__num: int = Card.parse_num(index)
-        self.__is_small_joker: bool = index == 52
-        self.__is_big_joker: bool = index == 53
 
     def __eq__(self, obj: any) -> bool:
         if not isinstance(obj, Card):
             return NotImplemented
         return self.index == obj.index
 
-    def __hash__(self) -> int:
-        return self.index
-
     def to_card_proto(self) -> CardProto:
         card = CardProto()
-        if self.__is_small_joker:
+
+        if self.__suit == Suit.SMALL_JOKER:
             card.suit = CardProto.Suit.SMALL_JOKER
             return card
-        if self.__is_big_joker:
+        if self.__suit == Suit.BIG_JOKER:
             card.suit = CardProto.Suit.BIG_JOKER
             return card
-
-        if self.__suit == 'HEARTS':
-            card.suit = CardProto.Suit.HEARTS
-        if self.__suit == 'CLUBS':
-            card.suit = CardProto.Suit.CLUBS
-        if self.__suit == 'DIAMONDS':
-            card.suit = CardProto.Suit.DIAMONDS
-        if self.__suit == 'SPADES':
+        if self.__suit == Suit.SPADES:
             card.suit = CardProto.Suit.SPADES
+        if self.__suit == Suit.HEARTS:
+            card.suit = CardProto.Suit.HEARTS
+        if self.__suit == Suit.CLUBS:
+            card.suit = CardProto.Suit.CLUBS
+        if self.__suit == Suit.DIAMONDS:
+            card.suit = CardProto.Suit.DIAMONDS
 
         if self.__num == 0:
             card.num = CardProto.Num.ACE
@@ -81,15 +100,19 @@ class Card:
         return card
 
     @classmethod
-    def parse_suit(self, index: int) -> str:
+    def parse_suit(self, index: int) -> Suit:
+        if index == 52:
+            return Suit.SMALL_JOKER
+        if index == 53:
+            return Suit.BIG_JOKER
         if int(index / 13) == 0:
-            return 'HEARTS'
+            return Suit.SPADES
         if int(index / 13) == 1:
-            return 'CLUBS'
+            return Suit.HEARTS
         if int(index / 13) == 2:
-            return 'DIAMONDS'
+            return Suit.CLUBS
         if int(index / 13) == 3:
-            return 'SPADES'
+            return Suit.DIAMONDS
         return None
 
     @classmethod
@@ -97,9 +120,9 @@ class Card:
         return index % 13
 
     def __str__(self) -> str:
-        if self.__is_small_joker:
+        if self.__suit == Suit.SMALL_JOKER:
             return 'SMALL_JOKER'
-        if self.__is_big_joker:
+        if self.__suit == Suit.BIG_JOKER:
             return 'BIG_JOKER'
 
         if self.__num == 10:
@@ -113,7 +136,7 @@ class Card:
         else:
             card = str(self.__num + 1)
         card += '_OF_'
-        card += self.__suit
+        card += self.__suit.name
         return card
 
 
@@ -152,32 +175,26 @@ class Player:
             player_proto.cards_on_hand.cards.append(card.to_card_proto())
         return player_proto
 
-"""
-Game: All state of the game is stored in this class
-GameMetadata: Stores states related to the currently playing game
-Player class: Contains all player-related states, including cards etc.
-Card class: Models a poker card
-CardCollection: Organizes cards into useful structures
-Hand: A playable hand of cards.
-"""
-class Game:
-    """
-    States:
-        Player < 4
-    NOT_ENOUGH_PLAYER
-        Player == 4
-    NOT_STARTED
-        Game started
-    WAITING_FOR_PLAYER_<id>
-        Game ended, next game pending
-    WAITING_TO_START
-        Game ended, one of the teams won
-    GAME_ENDED
-    """
 
-    # API: why do we need creator_id?
+class GameState(Enum):
+    # Waiting for players to join the room
+    AWAIT_JOIN = 0
+    # Waiting to deal/draw
+    AWAIT_DEAL = 1
+    # Dealing/drawing
+    DEAL = 2
+    # Dealing Kitty
+    DEAL_KITTY = 3
+    # Dealing Kitty
+    HIDE_KITTY = 4
+    # Playing
+    PLAY = 5
+    # Round ended
+    ROUND_END = 6
+
+class Game:
     def __init__(self, creator_id: str, game_id: str, delay: float) -> None:
-        self.state = 'NOT_ENOUGH_PLAYER'
+        self.state = GameState.AWAIT_JOIN
         self.__game_id: str = game_id
         self.__creator_id: str = creator_id
         self.__delay: float = delay
@@ -203,7 +220,7 @@ class Game:
             self.__update_players()
 
             if len(self.__players) == 4:
-                self.state = 'NOT_STARTED'
+                self.state = GameState.AWAIT_DEAL
 
         return player
 
@@ -215,7 +232,7 @@ class Game:
 
     # Returns true if a card was dealt.
     def deal_cards(self) -> None:
-        self.state = 'DEALING_CARDS'
+        self.state = GameState.DEAL
         time.sleep(self.__delay)
         with self.__players_lock:
             players = list(self.__players.values())
@@ -229,7 +246,7 @@ class Game:
             self.__update_players()
             time.sleep(self.__delay)
 
-        self.state = 'CARDS_DEALT'
+        self.state = GameState.DEAL_KITTY
 
     def play(self, player_id: str, cards: Sequence[Card]) -> bool:
         # Check turn

@@ -4,7 +4,9 @@ import random
 import threading
 from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import count
-from game_state import Game
+from game_state import (
+    Game,
+    GameState)
 from typing import (
     Iterable,
     Dict,
@@ -58,7 +60,7 @@ class SJService(ShengjiServicer):
         game = self.__get_game(request.game_id)
         game.add_player(ai_name, False)
 
-        if game.state == 'NOT_STARTED':
+        if game.state == GameState.AWAIT_DEAL:
             thread = threading.Thread(target=game.deal_cards(), args=())
             thread.start()
 
@@ -77,8 +79,9 @@ class SJService(ShengjiServicer):
         game = self.__get_game(request.game_id)
         player = game.add_player(request.player_id, True)
 
-        if game.state == 'NOT_STARTED':
+        if game.state == GameState.AWAIT_DEAL:
             thread = threading.Thread(target=game.deal_cards(), args=())
+            thread.start()
 
         for update in player.update_stream():
             yield update
