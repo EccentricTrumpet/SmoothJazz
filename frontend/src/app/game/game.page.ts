@@ -2,7 +2,7 @@ import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandPB, Card as CardPB, PlayerState} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandProto, Card as CardProto, PlayerState} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 declare var cards:any;
@@ -222,34 +222,34 @@ enum DeclaredTrump {
 
 // Global utilities.
 // Convert a Card protobuf definition to cardUI definition in cards.js
-const getCardUISuitFromProto = function(cardProto: CardPB) : any {
+const getCardUISuitFromProto = function(cardProto: CardProto) : any {
   switch(cardProto.getSuit()) {
-    case CardPB.Suit.SMALL_JOKER: return 'bj';
-    case CardPB.Suit.BIG_JOKER: return 'rj';
-    case CardPB.Suit.HEARTS: return 'h';
-    case CardPB.Suit.SPADES: return 's';
-    case CardPB.Suit.CLUBS: return 'c';
-    case CardPB.Suit.DIAMONDS: return 'd';
+    case CardProto.Suit.SMALL_JOKER: return 'bj';
+    case CardProto.Suit.BIG_JOKER: return 'rj';
+    case CardProto.Suit.HEARTS: return 'h';
+    case CardProto.Suit.SPADES: return 's';
+    case CardProto.Suit.CLUBS: return 'c';
+    case CardProto.Suit.DIAMONDS: return 'd';
     default: throw Error("Cannot process proto: " + cardProto);
   }
 }
 
-const getCardUIRankFromProto = function(cardProto: CardPB) : any {
+const getCardUIRankFromProto = function(cardProto: CardProto) : any {
   switch(cardProto.getSuit()) {
-    case CardPB.Suit.SMALL_JOKER: return 0;
-    case CardPB.Suit.BIG_JOKER: return 0;
+    case CardProto.Suit.SMALL_JOKER: return 0;
+    case CardProto.Suit.BIG_JOKER: return 0;
     default: return cardProto.getNum() + 1;
   }
 }
 
 const getCardProtoSuit = function(cardUI: any) : any {
   switch(cardUI.suit) {
-    case "rj": return CardPB.Suit.BIG_JOKER;
-    case "bj": return CardPB.Suit.SMALL_JOKER;
-    case "s": return CardPB.Suit.SPADES;
-    case "h": return CardPB.Suit.HEARTS;
-    case "c": return CardPB.Suit.CLUBS;
-    case "d": return CardPB.Suit.DIAMONDS;
+    case "rj": return CardProto.Suit.BIG_JOKER;
+    case "bj": return CardProto.Suit.SMALL_JOKER;
+    case "s": return CardProto.Suit.SPADES;
+    case "h": return CardProto.Suit.HEARTS;
+    case "c": return CardProto.Suit.CLUBS;
+    case "d": return CardProto.Suit.DIAMONDS;
     default: throw Error("Cannot process card ui: " + cardUI);
   }
 }
@@ -258,8 +258,8 @@ const getCardProtoNum = function(cardUI: any) : any {
   return Math.max(cardUI.rank - 1, 0);
 }
 
-const toCardProto = function(cardUI: any) : CardPB {
-  const cardProto = new CardPB();
+const toCardProto = function(cardUI: any) : CardProto {
+  const cardProto = new CardProto();
   cardProto.setSuit(getCardProtoSuit(cardUI));
   cardProto.setNum(getCardProtoNum(cardUI));
   return cardProto;
@@ -859,7 +859,7 @@ class Player {
       playHandReq.setGameId(this.game.gameId);
       // TODO(Aaron): Set the real intention somehow...
       playHandReq.setIntention(PlayHandRequest.Intention.CLAIM_TRUMP);
-      const handToPlay = new HandPB();
+      const handToPlay = new HandProto();
       let cardsProto = Array.from(this.selectedCardUIs.values()).map(ui => toCardProto(ui));
       handToPlay.setCardsList(cardsProto);
       playHandReq.setHand(handToPlay);
