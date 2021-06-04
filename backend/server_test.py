@@ -16,32 +16,32 @@ class ShengjiTest(unittest.TestCase):
         sj = SJService(delay=0)
         req = CreateGameRequest()
         req.player_id = "test_creation_id"
-        game = sj.CreateGame(req, None)
+        game = sj.createGame(req, None)
         self.assertEqual(game.creator_player_id, req.player_id)
 
     # A wrapper that returns the generator items as a list so that
     # it can work with concurrent.future for async execution.
-    def _generator_wrap(self, functor, *args):
+    def __generator_wrap(self, functor, *args):
         return list(functor(*args))
 
     def test_streaming_with_one_ai(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
         req.player_id = "test_creation_id"
-        game = sj.CreateGame(req, None)
+        game = sj.createGame(req, None)
 
         enter_room_req = EnterRoomRequest()
         enter_room_req.game_id = game.game_id
         enter_room_req.player_id = req.player_id
 
         with futures.ThreadPoolExecutor(max_workers=1) as pool:
-            f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
+            f = pool.submit(self.__generator_wrap, sj.enterRoom, enter_room_req, None)
             add_ai_req = AddAIPlayerRequest()
             add_ai_req.game_id = game.game_id
-            sj.AddAIPlayer(add_ai_req, None)
+            sj.addAIPlayer(add_ai_req, None)
             # Sleep for half a second so that creator can get the updates.
             time.sleep(0.5)
-            sj.TerminateGame(game.game_id)
+            sj.terminate_game(game.game_id)
 
             streaming_result = f.result()
 
@@ -53,7 +53,7 @@ class ShengjiTest(unittest.TestCase):
         sj = SJService(delay=0)
         req = CreateGameRequest()
         req.player_id = "test_creation_id"
-        game = sj.CreateGame(req, None)
+        game = sj.createGame(req, None)
 
         enter_room_req = EnterRoomRequest()
         enter_room_req.game_id = game.game_id
@@ -64,16 +64,16 @@ class ShengjiTest(unittest.TestCase):
             add_ai_req.game_id = game.game_id
 
             # Add three AI players
-            sj.AddAIPlayer(add_ai_req, None)
-            sj.AddAIPlayer(add_ai_req, None)
-            sj.AddAIPlayer(add_ai_req, None)
+            sj.addAIPlayer(add_ai_req, None)
+            sj.addAIPlayer(add_ai_req, None)
+            sj.addAIPlayer(add_ai_req, None)
 
             # Add the human player last (so we can trigger card dealing)
-            f = pool.submit(self._generator_wrap, sj.EnterRoom, enter_room_req, None)
+            f = pool.submit(self.__generator_wrap, sj.enterRoom, enter_room_req, None)
 
             # Sleep 3 secs to deal cards
             time.sleep(3)
-            sj.TerminateGame(game.game_id)
+            sj.terminate_game(game.game_id)
 
             streaming_result = f.result()
 

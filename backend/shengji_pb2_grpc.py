@@ -14,23 +14,23 @@ class ShengjiStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.CreateGame = channel.unary_unary(
-                '/grpc.testing.Shengji/CreateGame',
+        self.createGame = channel.unary_unary(
+                '/grpc.testing.Shengji/createGame',
                 request_serializer=shengji__pb2.CreateGameRequest.SerializeToString,
                 response_deserializer=shengji__pb2.Game.FromString,
                 )
-        self.EnterRoom = channel.unary_stream(
-                '/grpc.testing.Shengji/EnterRoom',
+        self.enterRoom = channel.unary_stream(
+                '/grpc.testing.Shengji/enterRoom',
                 request_serializer=shengji__pb2.EnterRoomRequest.SerializeToString,
                 response_deserializer=shengji__pb2.Game.FromString,
                 )
-        self.PlayHand = channel.unary_unary(
-                '/grpc.testing.Shengji/PlayHand',
+        self.playHand = channel.unary_unary(
+                '/grpc.testing.Shengji/playHand',
                 request_serializer=shengji__pb2.PlayHandRequest.SerializeToString,
                 response_deserializer=shengji__pb2.PlayHandResponse.FromString,
                 )
-        self.AddAIPlayer = channel.unary_unary(
-                '/grpc.testing.Shengji/AddAIPlayer',
+        self.addAIPlayer = channel.unary_unary(
+                '/grpc.testing.Shengji/addAIPlayer',
                 request_serializer=shengji__pb2.AddAIPlayerRequest.SerializeToString,
                 response_deserializer=shengji__pb2.AddAIPlayerResponse.FromString,
                 )
@@ -39,14 +39,14 @@ class ShengjiStub(object):
 class ShengjiServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def CreateGame(self, request, context):
+    def createGame(self, request, context):
         """Creates a new game.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def EnterRoom(self, request, context):
+    def enterRoom(self, request, context):
         """Enters the room if the player has not entered the room yet. Streams back
         the game whenever game state changes.
         """
@@ -54,14 +54,14 @@ class ShengjiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def PlayHand(self, request, context):
+    def playHand(self, request, context):
         """Plays a hand or tries to claim trump suit.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def AddAIPlayer(self, request, context):
+    def addAIPlayer(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -70,23 +70,23 @@ class ShengjiServicer(object):
 
 def add_ShengjiServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'CreateGame': grpc.unary_unary_rpc_method_handler(
-                    servicer.CreateGame,
+            'createGame': grpc.unary_unary_rpc_method_handler(
+                    servicer.createGame,
                     request_deserializer=shengji__pb2.CreateGameRequest.FromString,
                     response_serializer=shengji__pb2.Game.SerializeToString,
             ),
-            'EnterRoom': grpc.unary_stream_rpc_method_handler(
-                    servicer.EnterRoom,
+            'enterRoom': grpc.unary_stream_rpc_method_handler(
+                    servicer.enterRoom,
                     request_deserializer=shengji__pb2.EnterRoomRequest.FromString,
                     response_serializer=shengji__pb2.Game.SerializeToString,
             ),
-            'PlayHand': grpc.unary_unary_rpc_method_handler(
-                    servicer.PlayHand,
+            'playHand': grpc.unary_unary_rpc_method_handler(
+                    servicer.playHand,
                     request_deserializer=shengji__pb2.PlayHandRequest.FromString,
                     response_serializer=shengji__pb2.PlayHandResponse.SerializeToString,
             ),
-            'AddAIPlayer': grpc.unary_unary_rpc_method_handler(
-                    servicer.AddAIPlayer,
+            'addAIPlayer': grpc.unary_unary_rpc_method_handler(
+                    servicer.addAIPlayer,
                     request_deserializer=shengji__pb2.AddAIPlayerRequest.FromString,
                     response_serializer=shengji__pb2.AddAIPlayerResponse.SerializeToString,
             ),
@@ -101,7 +101,7 @@ class Shengji(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def CreateGame(request,
+    def createGame(request,
             target,
             options=(),
             channel_credentials=None,
@@ -111,14 +111,14 @@ class Shengji(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/CreateGame',
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/createGame',
             shengji__pb2.CreateGameRequest.SerializeToString,
             shengji__pb2.Game.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def EnterRoom(request,
+    def enterRoom(request,
             target,
             options=(),
             channel_credentials=None,
@@ -128,14 +128,14 @@ class Shengji(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/grpc.testing.Shengji/EnterRoom',
+        return grpc.experimental.unary_stream(request, target, '/grpc.testing.Shengji/enterRoom',
             shengji__pb2.EnterRoomRequest.SerializeToString,
             shengji__pb2.Game.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def PlayHand(request,
+    def playHand(request,
             target,
             options=(),
             channel_credentials=None,
@@ -145,14 +145,14 @@ class Shengji(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/PlayHand',
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/playHand',
             shengji__pb2.PlayHandRequest.SerializeToString,
             shengji__pb2.PlayHandResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def AddAIPlayer(request,
+    def addAIPlayer(request,
             target,
             options=(),
             channel_credentials=None,
@@ -162,7 +162,7 @@ class Shengji(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/AddAIPlayer',
+        return grpc.experimental.unary_unary(request, target, '/grpc.testing.Shengji/addAIPlayer',
             shengji__pb2.AddAIPlayerRequest.SerializeToString,
             shengji__pb2.AddAIPlayerResponse.FromString,
             options, channel_credentials,

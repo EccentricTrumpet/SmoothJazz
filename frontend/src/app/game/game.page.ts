@@ -125,7 +125,7 @@ export class GamePage implements AfterViewChecked {
     createAIRequest.setGameId(this.gameId);
     console.log('Adding AI Player for: '+this.gameId);
     const playHandReq = new PlayHandRequest();
-    grpc.unary(Shengji.AddAIPlayer, {
+    grpc.unary(Shengji.addAIPlayer, {
       request: createAIRequest,
       host: environment.grpcUrl,
       onEnd: res => {
@@ -140,7 +140,7 @@ export class GamePage implements AfterViewChecked {
   startGame(player_name: string) {
     const createGameRequest = new CreateGameRequest();
     createGameRequest.setPlayerId(player_name);
-    grpc.unary(Shengji.CreateGame, {
+    grpc.unary(Shengji.createGame, {
       request: createGameRequest,
       host: environment.grpcUrl,
       onEnd: res => {
@@ -161,7 +161,7 @@ export class GamePage implements AfterViewChecked {
     const enterRoomRequest = new EnterRoomRequest();
     enterRoomRequest.setPlayerId(player_name);
     enterRoomRequest.setGameId(game_id);
-    grpc.invoke(Shengji.EnterRoom, {
+    grpc.invoke(Shengji.enterRoom, {
       request: enterRoomRequest,
       host: environment.grpcUrl,
       onMessage: (message: Game) => {
@@ -866,7 +866,7 @@ class Player {
       playHandReq.setHand(handToPlay);
 
       console.log("Sending playhandRequest: ", playHandReq.toObject());
-      grpc.unary(Shengji.PlayHand, {
+      grpc.unary(Shengji.playHand, {
         request: playHandReq,
         host: environment.grpcUrl,
         onEnd: res => {

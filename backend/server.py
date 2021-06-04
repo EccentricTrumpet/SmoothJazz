@@ -33,7 +33,7 @@ class SJService(ShengjiServicer):
         # game_id is a monotonically increasing number
         self.__game_id: Iterator[int] = count()
 
-    def CreateGame(self,
+    def createGame(self,
             request: CreateGameRequest,
             context: ServicerContext
             ) -> GameProto:
@@ -46,20 +46,20 @@ class SJService(ShengjiServicer):
 
         logging.info(f'Created game with id: {game_id}')
 
-        return game.ToGameProto()
+        return game.to_game_proto()
 
-    def AddAIPlayer(self,
+    def addAIPlayer(self,
                    request: AddAIPlayerRequest,
                    context: ServicerContext
                    ) -> AddAIPlayerResponse:
         ai_name = f'Computer{random.randrange(10000)}'
         logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
 
-        game = self.__getGame(request.game_id)
-        game.AddPlayer(ai_name, False)
+        game = self.__get_game(request.game_id)
+        game.add_player(ai_name, False)
 
         if game.state == 'NOT_STARTED':
-            thread = threading.Thread(target=game.DealCards(), args=())
+            thread = threading.Thread(target=game.deal_cards(), args=())
             thread.start()
 
         # API: This is ignored by the frontend so is this needed?
@@ -68,22 +68,22 @@ class SJService(ShengjiServicer):
 
         return ai_player
 
-    def EnterRoom(self,
+    def enterRoom(self,
                   request: EnterRoomRequest,
                   context: ServicerContext
                   ) -> Iterable[Game]:
         logging.info(f'Received a EnterRoom request: {request}')
 
-        game = self.__getGame(request.game_id)
-        player = game.AddPlayer(request.player_id, True)
+        game = self.__get_game(request.game_id)
+        player = game.add_player(request.player_id, True)
 
         if game.state == 'NOT_STARTED':
-            thread = threading.Thread(target=game.DealCards(), args=())
+            thread = threading.Thread(target=game.deal_cards(), args=())
 
-        for update in player.UpdateStream():
+        for update in player.update_stream():
             yield update
 
-    def PlayHand(self,
+    def playHand(self,
             request: PlayHandRequest,
             context: ServicerContext) -> PlayHandResponse:
         logging.info(f'Received a PlayGame request [{request.hand}] from player_id [{request.player_id}], game_id [{request.game_id}]')
@@ -101,12 +101,12 @@ class SJService(ShengjiServicer):
         # Notifies all watchers of state change
         return PlayHandResponse()
 
-    def TerminateGame(self, game_id: str) -> None:
-        game = self.__getGame(game_id)
-        game.CompletePlayerStreams()
+    def terminate_game(self, game_id: str) -> None:
+        game = self.__get_game(game_id)
+        game.complete_player_stream()
         del self.__games[game_id]
 
-    def __getGame(self, game_id: str) -> Game:
+    def __get_game(self, game_id: str) -> Game:
         game = self.__games.get(game_id, None)
         if game is None:
             raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')

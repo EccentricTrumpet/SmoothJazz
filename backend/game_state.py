@@ -21,8 +21,8 @@ class Card:
     """
     def __init__(self, index: int) -> None:
         self.index: int = index
-        self.__suit: str = Card.ParseSuit(index)
-        self.__num: int = Card.ParseNum(index)
+        self.__suit: str = Card.parse_suit(index)
+        self.__num: int = Card.parse_num(index)
         self.__is_small_joker: bool = index == 52
         self.__is_big_joker: bool = index == 53
 
@@ -34,7 +34,7 @@ class Card:
     def __hash__(self) -> int:
         return self.index
 
-    def ToCardProto(self) -> CardProto:
+    def to_card_proto(self) -> CardProto:
         card = CardProto()
         if self.__is_small_joker:
             card.suit = CardProto.Suit.SMALL_JOKER
@@ -81,7 +81,7 @@ class Card:
         return card
 
     @classmethod
-    def ParseSuit(self, index: int) -> str:
+    def parse_suit(self, index: int) -> str:
         if int(index / 13) == 0:
             return 'HEARTS'
         if int(index / 13) == 1:
@@ -93,7 +93,7 @@ class Card:
         return None
 
     @classmethod
-    def ParseNum(self, index: int) -> int:
+    def parse_num(self, index: int) -> int:
         return index % 13
 
     def __str__(self) -> str:
@@ -125,19 +125,19 @@ class Player:
         self.__game_queue_sem: Semaphore= Semaphore(0)
         self.__cards_on_hand: list[Card] = []
 
-    def AddCard(self, card: Card) -> None:
+    def add_card(self, card: Card) -> None:
         self.__cards_on_hand.append(card)
 
-    def QueueUpdate(self, game: GameProto) -> None:
+    def queue_update(self, game: GameProto) -> None:
         if self.__notify:
             self.__game_queue.append(game)
             self.__game_queue_sem.release()
 
-    def CompleteUpdateStream(self) -> None:
+    def complete_update_stream(self) -> None:
         self.__notify = False
         self.__game_queue_sem.release()
 
-    def UpdateStream(self) -> Iterable[GameProto]:
+    def update_stream(self) -> Iterable[GameProto]:
         while True:
             self.__game_queue_sem.acquire()
             if self.__notify == False:
@@ -145,11 +145,11 @@ class Player:
             game_state = self.__game_queue.popleft()
             yield game_state
 
-    def ToPlayerProto(self) -> PlayerProto:
+    def to_player_proto(self) -> PlayerProto:
         player_proto = PlayerProto()
         player_proto.player_id = self.player_id
         for card in self.__cards_on_hand:
-            player_proto.cards_on_hand.cards.append(card.ToCardProto())
+            player_proto.cards_on_hand.cards.append(card.to_card_proto())
         return player_proto
 
 """
@@ -193,28 +193,28 @@ class Game:
         self.__deck_cards: List[Card] = [Card(x) for x in range(54)] + [Card(x) for x in range(54)]
         random.shuffle(self.__deck_cards)
 
-    def AddPlayer(self, player_id: str, notify: bool) -> Player:
+    def add_player(self, player_id: str, notify: bool) -> Player:
         with self.__players_lock:
             if player_id in self.__players.keys() or len(self.__players) == 4:
                 return None
             player = Player(player_id, notify)
             self.__players[player_id] = player
 
-            self.__UpdatePlayers()
+            self.__update_players()
 
             if len(self.__players) == 4:
                 self.state = 'NOT_STARTED'
 
         return player
 
-    def CompletePlayerStreams(self) -> None:
+    def complete_player_stream(self) -> None:
         with self.__players_lock:
             players = self.__players.values()
         for player in players:
-            player.CompleteUpdateStream()
+            player.complete_update_stream()
 
     # Returns true if a card was dealt.
-    def DealCards(self) -> None:
+    def deal_cards(self) -> None:
         self.state = 'DEALING_CARDS'
         time.sleep(self.__delay)
         with self.__players_lock:
@@ -222,16 +222,16 @@ class Game:
 
         while (len(self.__deck_cards) > 8):
             player = players[self.__next_player_index]
-            player.AddCard(self.__deck_cards[0])
+            player.add_card(self.__deck_cards[0])
             logging.info(f'Dealt card {self.__deck_cards[0]} to {player.player_id}')
             self.__next_player_index = (self.__next_player_index + 1) % 4
             del self.__deck_cards[0]
-            self.__UpdatePlayers()
+            self.__update_players()
             time.sleep(self.__delay)
 
         self.state = 'CARDS_DEALT'
 
-    def Play(self, player_id: str, cards: Sequence[Card]) -> bool:
+    def play(self, player_id: str, cards: Sequence[Card]) -> bool:
         # Check turn
         if player_id != self.next_player_id:
             return False
@@ -261,7 +261,7 @@ class Game:
         self.__action_count += 1
         return True
 
-    def ToGameProto(self) -> GameProto:
+    def to_game_proto(self) -> GameProto:
         game = GameProto()
         game.game_id = self.__game_id
         game.creator_player_id = self.__creator_id
@@ -272,20 +272,20 @@ class Game:
         with self.__players_lock:
             players = self.__players.values()
         for player in players:
-            game.players.append(player.ToPlayerProto())
+            game.players.append(player.to_player_proto())
 
         # TODO: Populate kitty
 
         game.deck_card_count = len(self.__deck_cards)
         return game
 
-    def __UpdatePlayers(self) -> None:
+    def __update_players(self) -> None:
         with self.__players_lock:
             players = self.__players.values()
         for player in players:
-            player.QueueUpdate(self.ToGameProto())
+            player.queue_update(self.to_game_proto())
 
-
+# This class needs to be refactored to follow coding styles
 class GameMetadata:
     def __init__(self):
         self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
@@ -296,6 +296,7 @@ class GameMetadata:
         self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
 
 
+# This class needs to be refactored to follow coding styles
 def IsTrumpCard(card, metadata):
     if card.is_small_joker or card.is_big_joker:
         return True
@@ -306,14 +307,15 @@ def IsTrumpCard(card, metadata):
     return False
 
 
+# This class needs to be refactored to follow coding styles
 def GetSuit(card, metadata):
     if card.is_small_joker or card.is_big_joker:
         return metadata.trump_suit
     return card.suit
 
 
+# This class needs to be refactored to follow coding styles
 class CardCollection:
-
     def __init__(self):
         self.cards = dict()
         self.card_count = 0
@@ -338,9 +340,9 @@ class CardCollection:
             for suit in ['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES']:
                 self.by_num[num][suit] = 0
 
-    def AddCards(self, cards):
+    def add_cards(self, cards):
         for card in cards:
-            self.AddCard(card)
+            self.add_card(card)
 
     def SuitCount(self, suit):
         count = 0
@@ -375,7 +377,7 @@ class CardCollection:
         return False
 
 
-    def AddCard(self, card):
+    def add_card(self, card):
         self.cards[card.GetIndex()] += 1
         self.card_count += 1
         if card.is_small_joker:
@@ -431,20 +433,19 @@ class CardCollection:
 3- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
 """
 class Hand:
-
     def __init__(self, cards: Sequence[Card]) -> None:
         self.__cards: Sequence[Card] = cards
         # Type is SINGLE, PAIR, TOAK, FOAK, STRAIGHT, DOUBLE_STRAIGHT or INVALID
-        self.type = self.__DetectType()
+        self.type = self.__detect_type()
 
-    def VerifyAllCardsEq(self, cards: Sequence[Card]) -> bool:
+    def __verify_all_cards_eq(self, cards: Sequence[Card]) -> bool:
         c = cards[0]
         for card in cards:
             if card != c:
                 return False
         return True
 
-    def IsStraight(self, cards: Sequence[Card]) -> bool:
+    def __is_straight(self, cards: Sequence[Card]) -> bool:
         if len(cards) < 3:
             return False
         min_card = cards[0].GetNum()
@@ -462,7 +463,7 @@ class Hand:
             max_card = max(max_card, card.GetNum())
         return (max_card - min_card) == len(cards) - 1
 
-    def IsDoubleStraight(self, cards) -> bool:
+    def __is_double_straight(self, cards) -> bool:
         grouped_cards = dict()
         for card in cards:
             if card.index not in grouped_cards.keys():
@@ -476,14 +477,14 @@ class Hand:
                 count = grouped_cards[index]
             if count != grouped_cards[index]:
                 return False
-        return self.IsStraight([Card(c) for c in grouped_cards.keys()])
+        return self.__is_straight([Card(c) for c in grouped_cards.keys()])
 
-    def __DetectType(self) -> str:
+    def __detect_type(self) -> str:
         if len(self.__cards) == 1:
             return 'SINGLE'
-        elif len(self.__cards) == 2 and self.VerifyAllCardsEq(self.__cards):
+        elif len(self.__cards) == 2 and self.__verify_all_cards_eq(self.__cards):
             return 'PAIR'
-        elif len(self.__cards) >= 4 and self.IsDoubleStraight(self.__cards):
+        elif len(self.__cards) >= 4 and self.__is_double_straight(self.__cards):
             return 'DOUBLE_STRAIGHT'
         else:
             return 'OTHER'

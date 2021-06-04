@@ -3,16 +3,16 @@ package grpc.testing;
 
 service Shengji {
   // Creates a new game.
-  rpc CreateGame(CreateGameRequest) returns (Game);
+  rpc createGame(CreateGameRequest) returns (Game);
 
   // Enters the room if the player has not entered the room yet. Streams back
   // the game whenever game state changes.
-  rpc EnterRoom(EnterRoomRequest) returns (stream Game);
+  rpc enterRoom(EnterRoomRequest) returns (stream Game);
 
   // Plays a hand or tries to claim trump suit.
-  rpc PlayHand(PlayHandRequest) returns (PlayHandResponse);
+  rpc playHand(PlayHandRequest) returns (PlayHandResponse);
 
-  rpc AddAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
+  rpc addAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
 }
 
 // Request and response protos
