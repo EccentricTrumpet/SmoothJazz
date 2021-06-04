@@ -36,17 +36,18 @@ class Suit(Enum):
 
 class Card:
     """ Modeled the following way to Hand.type detection easier
-    0 -> Ace
-    1 -> 2
-    9  -> 10
-    10 -> Jack
-    11 -> Queen
-    12 -> King
+    0 -> Undefined
+    1 -> Ace
+    2 -> 2
+    10  -> 10
+    11 -> Jack
+    12 -> Queen
+    13 -> King
     """
     def __init__(self, index: int) -> None:
         self.index: int = index
         self.__suit: Suit = Card.parse_suit(index)
-        self.__num: int = Card.parse_num(index)
+        self.__rank: int = Card.parse_rank(index)
 
     def __eq__(self, obj: any) -> bool:
         if not isinstance(obj, Card):
@@ -62,6 +63,8 @@ class Card:
         if self.__suit == Suit.BIG_JOKER:
             card.suit = CardProto.Suit.BIG_JOKER
             return card
+        if self.__suit == Suit.NONE:
+            card.suit = CardProto.Suit.SUIT_UNDEFINED
         if self.__suit == Suit.SPADES:
             card.suit = CardProto.Suit.SPADES
         if self.__suit == Suit.HEARTS:
@@ -71,32 +74,34 @@ class Card:
         if self.__suit == Suit.DIAMONDS:
             card.suit = CardProto.Suit.DIAMONDS
 
-        if self.__num == 0:
-            card.num = CardProto.Num.ACE
-        if self.__num == 1:
-            card.num = CardProto.Num.TWO
-        if self.__num == 2:
-            card.num = CardProto.Num.THREE
-        if self.__num == 3:
-            card.num = CardProto.Num.FOUR
-        if self.__num == 4:
-            card.num = CardProto.Num.FIVE
-        if self.__num == 5:
-            card.num = CardProto.Num.SIX
-        if self.__num == 6:
-            card.num = CardProto.Num.SEVEN
-        if self.__num == 7:
-            card.num = CardProto.Num.EIGHT
-        if self.__num == 8:
-            card.num = CardProto.Num.NINE
-        if self.__num == 9:
-            card.num = CardProto.Num.TEN
-        if self.__num == 10:
-            card.num = CardProto.Num.JACK
-        if self.__num == 11:
-            card.num = CardProto.Num.QUEEN
-        if self.__num == 12:
-            card.num = CardProto.Num.KING
+        if self.__rank == 0:
+            card.rank = CardProto.Rank.RANK_UNDEFINED
+        if self.__rank == 1:
+            card.rank = CardProto.Rank.ACE
+        if self.__rank == 2:
+            card.rank = CardProto.Rank.TWO
+        if self.__rank == 3:
+            card.rank = CardProto.Rank.THREE
+        if self.__rank == 4:
+            card.rank = CardProto.Rank.FOUR
+        if self.__rank == 5:
+            card.rank = CardProto.Rank.FIVE
+        if self.__rank == 6:
+            card.rank = CardProto.Rank.SIX
+        if self.__rank == 7:
+            card.rank = CardProto.Rank.SEVEN
+        if self.__rank == 8:
+            card.rank = CardProto.Rank.EIGHT
+        if self.__rank == 9:
+            card.rank = CardProto.Rank.NINE
+        if self.__rank == 10:
+            card.rank = CardProto.Rank.TEN
+        if self.__rank == 11:
+            card.rank = CardProto.Rank.JACK
+        if self.__rank == 12:
+            card.rank = CardProto.Rank.QUEEN
+        if self.__rank == 13:
+            card.rank = CardProto.Rank.KING
         return card
 
     @classmethod
@@ -113,10 +118,10 @@ class Card:
             return Suit.CLUBS
         if int(index / 13) == 3:
             return Suit.DIAMONDS
-        return None
+        return Suit.NONE
 
     @classmethod
-    def parse_num(self, index: int) -> int:
+    def parse_rank(self, index: int) -> int:
         return index % 13
 
     def __str__(self) -> str:
@@ -125,16 +130,16 @@ class Card:
         if self.__suit == Suit.BIG_JOKER:
             return 'BIG_JOKER'
 
-        if self.__num == 10:
+        if self.__rank == 11:
             card = 'JACK'
-        elif self.__num == 11:
+        elif self.__rank == 12:
             card = 'QUEEN'
-        elif self.__num == 12:
+        elif self.__rank == 13:
             card = 'KING'
-        elif self.__num == 0:
+        elif self.__rank == 1:
             card = 'ACE'
         else:
-            card = str(self.__num + 1)
+            card = str(self.__rank)
         card += '_OF_'
         card += self.__suit.name
         return card
@@ -306,8 +311,7 @@ class Game:
 class GameMetadata:
     def __init__(self):
         self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
-        # 1 maps to 2 in Card
-        self.trump_num = 1
+        self.trump_rank = 2
 
     def NextGame(self):
         self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
@@ -319,7 +323,7 @@ def IsTrumpCard(card, metadata):
         return True
     if metadata.trump_suit == card.suit:
         return True
-    if metadata.trump_num == card.num:
+    if metadata.trump_rank == card.rank:
         return True
     return False
 
@@ -339,7 +343,7 @@ class CardCollection:
 
         # Index cards by suit and num
         self.by_suit = dict()
-        self.by_num = dict()
+        self.by_rank = dict()
 
         self.small_joker_count = 0
         self.big_joker_count = 0
@@ -349,18 +353,19 @@ class CardCollection:
 
         for suit in ['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES']:
             self.by_suit[suit] = dict()
-            for num in range(13):
-                self.by_suit[suit][num] = 0
+            for rank in range(1, 14):
+                self.by_suit[suit][rank] = 0
 
-        for num in range(13):
-            self.by_num[num] = dict()
+        for rank in range(1, 14):
+            self.by_rank[rank] = dict()
             for suit in ['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES']:
-                self.by_num[num][suit] = 0
+                self.by_rank[rank][suit] = 0
 
     def add_cards(self, cards):
         for card in cards:
             self.add_card(card)
 
+    # What does this do?
     def SuitCount(self, suit):
         count = 0
         # Linear scan at suit
