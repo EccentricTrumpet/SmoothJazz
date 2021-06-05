@@ -1,19 +1,18 @@
 syntax = "proto3";
 package grpc.testing;
 
-
 service Shengji {
   // Creates a new game.
-  rpc CreateGame(CreateGameRequest) returns (Game);
+  rpc createGame(CreateGameRequest) returns (Game);
 
   // Enters the room if the player has not entered the room yet. Streams back
   // the game whenever game state changes.
-  rpc EnterRoom(EnterRoomRequest) returns (stream Game);
+  rpc enterRoom(EnterRoomRequest) returns (stream Game);
 
   // Plays a hand or tries to claim trump suit.
-  rpc PlayHand(PlayHandRequest) returns (PlayHandResponse);
+  rpc playHand(PlayHandRequest) returns (PlayHandResponse);
 
-  rpc AddAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
+  rpc addAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
 }
 
 // Request and response protos
@@ -58,8 +57,8 @@ message PlayHandResponse{
   string error_message = 2;
 }
 
-// Player-specific state
-message PlayerState {
+// Player
+message Player {
   // ID of the player
   string player_id = 1;
 
@@ -97,21 +96,21 @@ message Game {
   // Player who wins the current round.
   string current_round_winner_player_id = 5;
 
-  // All player states. Private states will be redacted by the server (e.g.
+  // All players. Private states will be redacted by the server (e.g.
   // other players' hand cards).
-  // Order of player_states == play order.
+  // Order of players == play order.
   // The first player is guaranteed to be the caller.
-  repeated PlayerState player_states = 6;
+  repeated Player players = 6;
 
   // Kitty/hidden hand. This is only visible to the dealer.
   Hand kitty = 7;
 
   // Current trump suit. If trump_suit is SUIT_UNDEFINED, then we're playing a
   // game without trump suit.
-  Card.Suit trump_suit = 8; 
+  Card.Suit trump_suit = 8;
 
-  // Trump number.
-  Card.Num trump_num = 9; 
+  // Trump rank.
+  Card.Rank trump_rank = 9;
 
   // Number of cards left in the deck. It should start with N (number of
   // decks) * 54 to start with, and become 0 once the dealing phase finishes.
@@ -130,25 +129,25 @@ message Card {
     BIG_JOKER = 6;
   }
 
-  enum Num {
-    NUM_UNDEFINED = 0;
-    TWO = 1;
-    THREE = 2;
-    FOUR = 3;
-    FIVE = 4;
-    SIX = 5;
-    SEVEN = 6;
-    EIGHT = 7;
-    NINE = 8;
-    TEN = 9;
-    JACK = 10;
-    QUEEN = 11;
-    KING = 12;
-    ACE = 13;
+  enum Rank {
+    RANK_UNDEFINED = 0;
+    ACE = 1;
+    TWO = 2;
+    THREE = 3;
+    FOUR = 4;
+    FIVE = 5;
+    SIX = 6;
+    SEVEN = 7;
+    EIGHT = 8;
+    NINE = 9;
+    TEN = 10;
+    JACK = 11;
+    QUEEN = 12;
+    KING = 13;
   }
 
   Suit suit = 1;
-  Num num = 2;
+  Rank rank = 2;
 }
 
 message Hand {

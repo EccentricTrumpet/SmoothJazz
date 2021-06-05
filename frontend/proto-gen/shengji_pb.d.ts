@@ -153,7 +153,7 @@ export namespace PlayHandResponse {
   }
 }
 
-export class PlayerState extends jspb.Message {
+export class Player extends jspb.Message {
   getPlayerId(): string;
   setPlayerId(value: string): void;
 
@@ -176,16 +176,16 @@ export class PlayerState extends jspb.Message {
   setScore(value: number): void;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PlayerState.AsObject;
-  static toObject(includeInstance: boolean, msg: PlayerState): PlayerState.AsObject;
+  toObject(includeInstance?: boolean): Player.AsObject;
+  static toObject(includeInstance: boolean, msg: Player): Player.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: PlayerState, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PlayerState;
-  static deserializeBinaryFromReader(message: PlayerState, reader: jspb.BinaryReader): PlayerState;
+  static serializeBinaryToWriter(message: Player, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Player;
+  static deserializeBinaryFromReader(message: Player, reader: jspb.BinaryReader): Player;
 }
 
-export namespace PlayerState {
+export namespace Player {
   export type AsObject = {
     playerId: string,
     cardsOnHand?: Hand.AsObject,
@@ -211,10 +211,10 @@ export class Game extends jspb.Message {
   getCurrentRoundWinnerPlayerId(): string;
   setCurrentRoundWinnerPlayerId(value: string): void;
 
-  clearPlayerStatesList(): void;
-  getPlayerStatesList(): Array<PlayerState>;
-  setPlayerStatesList(value: Array<PlayerState>): void;
-  addPlayerStates(value?: PlayerState, index?: number): PlayerState;
+  clearPlayersList(): void;
+  getPlayersList(): Array<Player>;
+  setPlayersList(value: Array<Player>): void;
+  addPlayers(value?: Player, index?: number): Player;
 
   hasKitty(): boolean;
   clearKitty(): void;
@@ -224,8 +224,8 @@ export class Game extends jspb.Message {
   getTrumpSuit(): Card.SuitMap[keyof Card.SuitMap];
   setTrumpSuit(value: Card.SuitMap[keyof Card.SuitMap]): void;
 
-  getTrumpNum(): Card.NumMap[keyof Card.NumMap];
-  setTrumpNum(value: Card.NumMap[keyof Card.NumMap]): void;
+  getTrumpRank(): Card.RankMap[keyof Card.RankMap];
+  setTrumpRank(value: Card.RankMap[keyof Card.RankMap]): void;
 
   getDeckCardCount(): number;
   setDeckCardCount(value: number): void;
@@ -247,10 +247,10 @@ export namespace Game {
     dealerPlayerId: string,
     nextTurnPlayerId: string,
     currentRoundWinnerPlayerId: string,
-    playerStatesList: Array<PlayerState.AsObject>,
+    playersList: Array<Player.AsObject>,
     kitty?: Hand.AsObject,
     trumpSuit: Card.SuitMap[keyof Card.SuitMap],
-    trumpNum: Card.NumMap[keyof Card.NumMap],
+    trumpRank: Card.RankMap[keyof Card.RankMap],
     deckCardCount: number,
   }
 }
@@ -259,8 +259,8 @@ export class Card extends jspb.Message {
   getSuit(): Card.SuitMap[keyof Card.SuitMap];
   setSuit(value: Card.SuitMap[keyof Card.SuitMap]): void;
 
-  getNum(): Card.NumMap[keyof Card.NumMap];
-  setNum(value: Card.NumMap[keyof Card.NumMap]): void;
+  getRank(): Card.RankMap[keyof Card.RankMap];
+  setRank(value: Card.RankMap[keyof Card.RankMap]): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Card.AsObject;
@@ -275,7 +275,7 @@ export class Card extends jspb.Message {
 export namespace Card {
   export type AsObject = {
     suit: Card.SuitMap[keyof Card.SuitMap],
-    num: Card.NumMap[keyof Card.NumMap],
+    rank: Card.RankMap[keyof Card.RankMap],
   }
 
   export interface SuitMap {
@@ -290,24 +290,24 @@ export namespace Card {
 
   export const Suit: SuitMap;
 
-  export interface NumMap {
-    NUM_UNDEFINED: 0;
-    TWO: 1;
-    THREE: 2;
-    FOUR: 3;
-    FIVE: 4;
-    SIX: 5;
-    SEVEN: 6;
-    EIGHT: 7;
-    NINE: 8;
-    TEN: 9;
-    JACK: 10;
-    QUEEN: 11;
-    KING: 12;
-    ACE: 13;
+  export interface RankMap {
+    RANK_UNDEFINED: 0;
+    ACE: 1;
+    TWO: 2;
+    THREE: 3;
+    FOUR: 4;
+    FIVE: 5;
+    SIX: 6;
+    SEVEN: 7;
+    EIGHT: 8;
+    NINE: 9;
+    TEN: 10;
+    JACK: 11;
+    QUEEN: 12;
+    KING: 13;
   }
 
-  export const Num: NumMap;
+  export const Rank: RankMap;
 }
 
 export class Hand extends jspb.Message {

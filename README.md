@@ -12,6 +12,10 @@ Local testing:
 2. start a client that creates a game, then listens for game update: python3 streaming_client.py
 3. start a client that updates the game: python3 backend/updating_client.py
 
+## Protobuf regeneration
+
+python3 -m grpc_tools.protoc -I ./protos --python_out=. --grpc_python_out=. ./protos/shengji.proto
+
 ## Using docker
 
 1. `cd backend`
@@ -23,7 +27,7 @@ Local testing:
 Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 1. `cd proxy`
 2. Download file: `./getProxy.sh`
-3. Start proxy: `proxy  --backend_addr=localhost:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
+3. Start proxy: `./proxy  --backend_addr=localhost:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
 
 Alternative installation to build from binary:
 1. Install golang
@@ -45,7 +49,8 @@ To start frontend ionic app locally:
 5. `ionic serve`
 NOTE: It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
 
-To compile new versions of the generated .d.ts file for the protobuf definition:
+## Protobuf regeneration
+
 protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:frontend/proto-gen --ts_out=service=grpc-web:frontend/proto-gen -I ./backend/protos/ ./backend/protos/shengji.proto
 
 ## Using docker

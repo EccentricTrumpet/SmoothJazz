@@ -4,7 +4,7 @@
 import * as shengji_pb from "./shengji_pb";
 import {grpc} from "@improbable-eng/grpc-web";
 
-type ShengjiCreateGame = {
+type ShengjicreateGame = {
   readonly methodName: string;
   readonly service: typeof Shengji;
   readonly requestStream: false;
@@ -13,7 +13,7 @@ type ShengjiCreateGame = {
   readonly responseType: typeof shengji_pb.Game;
 };
 
-type ShengjiEnterRoom = {
+type ShengjienterRoom = {
   readonly methodName: string;
   readonly service: typeof Shengji;
   readonly requestStream: false;
@@ -22,7 +22,7 @@ type ShengjiEnterRoom = {
   readonly responseType: typeof shengji_pb.Game;
 };
 
-type ShengjiPlayHand = {
+type ShengjiplayHand = {
   readonly methodName: string;
   readonly service: typeof Shengji;
   readonly requestStream: false;
@@ -31,7 +31,7 @@ type ShengjiPlayHand = {
   readonly responseType: typeof shengji_pb.PlayHandResponse;
 };
 
-type ShengjiAddAIPlayer = {
+type ShengjiaddAIPlayer = {
   readonly methodName: string;
   readonly service: typeof Shengji;
   readonly requestStream: false;
@@ -42,10 +42,10 @@ type ShengjiAddAIPlayer = {
 
 export class Shengji {
   static readonly serviceName: string;
-  static readonly CreateGame: ShengjiCreateGame;
-  static readonly EnterRoom: ShengjiEnterRoom;
-  static readonly PlayHand: ShengjiPlayHand;
-  static readonly AddAIPlayer: ShengjiAddAIPlayer;
+  static readonly createGame: ShengjicreateGame;
+  static readonly enterRoom: ShengjienterRoom;
+  static readonly playHand: ShengjiplayHand;
+  static readonly addAIPlayer: ShengjiaddAIPlayer;
 }
 
 export type ServiceError = { message: string, code: number; metadata: grpc.Metadata }

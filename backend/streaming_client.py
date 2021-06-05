@@ -53,9 +53,9 @@ class GameMonitor:
         # first create a game
         create_request = shengji_pb2.CreateGameRequest()
         create_request.player_id = self._player_id
-        create_response = self._stub.CreateGame(create_request)
+        create_response = self._stub.createGame(create_request)
         logging.info("Created game: game_id [%s] creator_id [%s]", create_response.game_id, create_response.creator_player_id)
-        self._game_id = create_response.game_id 
+        self._game_id = create_response.game_id
 
         logging.info("Listening for game updates")
         request = shengji_pb2.EnterRoomRequest()

@@ -2,7 +2,7 @@ import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandProto, Card as CardProto, PlayerState} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandProto, Card as CardProto, Player as PlayerProto} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 declare var cards:any;
@@ -125,7 +125,7 @@ export class GamePage implements AfterViewChecked {
     createAIRequest.setGameId(this.gameId);
     console.log('Adding AI Player for: '+this.gameId);
     const playHandReq = new PlayHandRequest();
-    grpc.unary(Shengji.AddAIPlayer, {
+    grpc.unary(Shengji.addAIPlayer, {
       request: createAIRequest,
       host: environment.grpcUrl,
       onEnd: res => {
@@ -140,7 +140,7 @@ export class GamePage implements AfterViewChecked {
   startGame(player_name: string) {
     const createGameRequest = new CreateGameRequest();
     createGameRequest.setPlayerId(player_name);
-    grpc.unary(Shengji.CreateGame, {
+    grpc.unary(Shengji.createGame, {
       request: createGameRequest,
       host: environment.grpcUrl,
       onEnd: res => {
@@ -161,14 +161,15 @@ export class GamePage implements AfterViewChecked {
     const enterRoomRequest = new EnterRoomRequest();
     enterRoomRequest.setPlayerId(player_name);
     enterRoomRequest.setGameId(game_id);
-    grpc.invoke(Shengji.EnterRoom, {
+    grpc.invoke(Shengji.enterRoom, {
       request: enterRoomRequest,
       host: environment.grpcUrl,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
-        this.playerInfos = message.getPlayerStatesList();
+        let players = message.getPlayersList();
+        this.playerInfos = players;
 
-        if (gameStarted == false && message.getPlayerStatesList().length == 4) {
+        if (gameStarted == false && players.length == 4) {
           console.log("game is starting!")
           gameStarted = true;
           this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
@@ -176,12 +177,12 @@ export class GamePage implements AfterViewChecked {
           // We don't get a response for every card dealt, log here
           // for debugging purpose.
           console.log("Player cards: ",
-            message.getPlayerStatesList()[0].getCardsOnHand()?.getCardsList().length ?? 0,
-            message.getPlayerStatesList()[1].getCardsOnHand()?.getCardsList().length ?? 0,
-            message.getPlayerStatesList()[2].getCardsOnHand()?.getCardsList().length ?? 0,
-            message.getPlayerStatesList()[3].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[0].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[1].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[2].getCardsOnHand()?.getCardsList().length ?? 0,
+            players[3].getCardsOnHand()?.getCardsList().length ?? 0,
           );
-          this.frontendGameInstance.showAnimation(message.getPlayerStatesList());
+          this.frontendGameInstance.showAnimation(players);
         }
       },
       onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
@@ -238,7 +239,7 @@ const getCardUIRankFromProto = function(cardProto: CardProto) : any {
   switch(cardProto.getSuit()) {
     case CardProto.Suit.SMALL_JOKER: return 0;
     case CardProto.Suit.BIG_JOKER: return 0;
-    default: return cardProto.getNum() + 1;
+    default: return cardProto.getRank();
   }
 }
 
@@ -254,14 +255,10 @@ const getCardProtoSuit = function(cardUI: any) : any {
   }
 }
 
-const getCardProtoNum = function(cardUI: any) : any {
-  return Math.max(cardUI.rank - 1, 0);
-}
-
 const toCardProto = function(cardUI: any) : CardProto {
   const cardProto = new CardProto();
   cardProto.setSuit(getCardProtoSuit(cardUI));
-  cardProto.setNum(getCardProtoNum(cardUI));
+  cardProto.setRank(cardUI.rank);
   return cardProto;
 }
 
@@ -865,7 +862,7 @@ class Player {
       playHandReq.setHand(handToPlay);
 
       console.log("Sending playhandRequest: ", playHandReq.toObject());
-      grpc.unary(Shengji.PlayHand, {
+      grpc.unary(Shengji.playHand, {
         request: playHandReq,
         host: environment.grpcUrl,
         onEnd: res => {
@@ -953,9 +950,9 @@ class FrontendGame {
     this.trickPile = new TrickPile(this.players, this.cardRanking, width/2, height/2);
   }
 
-  showAnimation(playerStates: PlayerState[]) {
-    for (var i = 0; i < playerStates.length; i++) {
-      let ps = playerStates[i];
+  showAnimation(players: PlayerProto[]) {
+    for (var i = 0; i < players.length; i++) {
+      let ps = players[i];
       let cards = ps.getCardsOnHand()?.getCardsList();
 
       if (cards == null || cards.length == this.players[i].handUI.length) {

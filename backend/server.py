@@ -1,57 +1,66 @@
 import asyncio
-from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 import random
 import threading
-from typing import Iterable, Dict
+from concurrent.futures.thread import ThreadPoolExecutor
+from grpc import ServicerContext
+from grpc.aio import server as GrpcServer
 from itertools import count
-from shengji_pb2 import *
-from shengji_pb2_grpc import *
+from game_state import (
+    Game,
+    GameState)
+from typing import (
+    Iterable,
+    Dict,
+    Iterator)
+from shengji_pb2_grpc import (
+    ShengjiServicer,
+    add_ShengjiServicer_to_server)
+from shengji_pb2 import (
+    AddAIPlayerRequest,
+    AddAIPlayerResponse,
+    CreateGameRequest,
+    EnterRoomRequest,
+    PlayHandRequest,
+    PlayHandResponse,
+    Game as GameProto)
 
-# Import from files in directory
-from game_state import *
+class SJService(ShengjiServicer):
+    def __init__(self, delay: float = 0.3) -> None:
+        # delay for dealing cards
+        self.__delay: float = delay
+        # Dict that holds game states.
+        self.__games: Dict[str, Game] = dict()
+        # game_id is a monotonically increasing number
+        self.__game_id: Iterator[int] = count()
 
-# Import warnings
-import grpc
-from google.protobuf.json_format import MessageToJson
-
-class SJServicer(ShengjiServicer):
-    # Dict that holds game states.
-    _games: Dict[str, SJGame] = dict()
-
-    # game_id is a monotonically increasing number
-    _game_id = count()
-
-    def __init__(self, delay=0.3):
-        self._delay = delay
-
-    def CreateGame(self,
+    def createGame(self,
             request: CreateGameRequest,
-            context: grpc.ServicerContext
-            ) -> Game:
+            context: ServicerContext
+            ) -> GameProto:
 
         logging.info(f'Received a CreateGame request from player_id: {request.player_id}')
 
-        game_id = str(next(self._game_id))
-        game = SJGame(request.player_id, game_id, self._delay)
-        self._games[game_id] = game
+        game_id = str(next(self.__game_id))
+        game = Game(request.player_id, game_id, self.__delay)
+        self.__games[game_id] = game
 
         logging.info(f'Created game with id: {game_id}')
 
-        return game.ToApiGame()
+        return game.to_game_proto()
 
-    def AddAIPlayer(self,
+    def addAIPlayer(self,
                    request: AddAIPlayerRequest,
-                   context: grpc.ServicerContext
+                   context: ServicerContext
                    ) -> AddAIPlayerResponse:
-        ai_name = 'Computer' + str(random.randrange(10000))
+        ai_name = f'Computer{random.randrange(10000)}'
         logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
 
-        game = self._getGame(request.game_id)
-        game.AddPlayer(ai_name, False)
+        game = self.__get_game(request.game_id)
+        game.add_player(ai_name, False)
 
-        if game.state == 'NOT_STARTED':
-            thread = threading.Thread(target=game.DealCards(), args=())
+        if game.state == GameState.AWAIT_DEAL:
+            thread = threading.Thread(target=game.deal_cards(), args=())
             thread.start()
 
         # API: This is ignored by the frontend so is this needed?
@@ -60,59 +69,59 @@ class SJServicer(ShengjiServicer):
 
         return ai_player
 
-    def EnterRoom(self,
+    def enterRoom(self,
                   request: EnterRoomRequest,
-                  context: grpc.ServicerContext
+                  context: ServicerContext
                   ) -> Iterable[Game]:
-        logging.info("Received a EnterRoom request: %s", request)
+        logging.info(f'Received a EnterRoom request: {request}')
 
-        game = self._getGame(request.game_id)
-        player = game.AddPlayer(request.player_id, True)
+        game = self.__get_game(request.game_id)
+        player = game.add_player(request.player_id, True)
 
-        if game.state == 'NOT_STARTED':
-            thread = threading.Thread(target=game.DealCards(), args=())
+        if game.state == GameState.AWAIT_DEAL:
+            thread = threading.Thread(target=game.deal_cards(), args=())
+            thread.start()
 
-        for update in player.UpdateStream():
+        for update in player.update_stream():
             yield update
 
-    def PlayHand(self,
+    def playHand(self,
             request: PlayHandRequest,
-            context: grpc.ServicerContext) -> PlayHandResponse:
-        logging.info("Received a PlayGame request [%s] from player_id [%s], game_id [%s]",
-                request.hand, request.player_id, request.game_id)
-        with SJServicer.game_state_lock:
+            context: ServicerContext) -> PlayHandResponse:
+        logging.info(f'Received a PlayGame request [{request.hand}] from player_id [{request.player_id}], game_id [{request.game_id}]')
+        with SJService.game_state_lock:
             game_id = request.game_id
             player_id = request.player_id
 
             try:
                 self.games[game_id]
             except:
-                logging.info("Not found: game_id [%s]", request.game_id)
+                logging.info(f'Not found: game_id [{request.game_id}]')
             # TODO: Play card and notify all players
             # game = self.games[game_id]
 
         # Notifies all watchers of state change
         return PlayHandResponse()
 
-    def TerminateGame(self, game_id):
-        game = self._getGame(game_id)
-        game.CompletePlayerStreams()
-        del self._games[game_id]
+    def terminate_game(self, game_id: str) -> None:
+        game = self.__get_game(game_id)
+        game.complete_player_stream()
+        del self.__games[game_id]
 
-    def _getGame(self, game_id) -> SJGame:
-        game = self._games.get(game_id, None)
+    def __get_game(self, game_id: str) -> Game:
+        game = self.__games.get(game_id, None)
         if game is None:
             raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')
         return game
 
-async def serve(address: str):
-    server = grpc.aio.server(ThreadPoolExecutor(max_workers=100))
+async def serve(address: str) -> None:
+    server = GrpcServer(ThreadPoolExecutor(max_workers=100))
     # A new executor for tasks that exist beyond RPC context. (e.g. dealing
     # cards)
-    add_ShengjiServicer_to_server(SJServicer(), server)
+    add_ShengjiServicer_to_server(SJService(), server)
     server.add_insecure_port(address)
     await server.start()
-    logging.info("Server serving at %s", address)
+    logging.info(f'Server serving at {address}')
     try:
         await server.wait_for_termination()
     except KeyboardInterrupt:
@@ -122,7 +131,7 @@ async def serve(address: str):
         await server.stop(0)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
-            format="%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s")
-    asyncio.run(serve("[::]:50051"))
+            format='%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s')
+    asyncio.run(serve('[::]:50051'))
