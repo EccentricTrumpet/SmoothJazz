@@ -122,7 +122,9 @@ class Card:
 
     @classmethod
     def parse_rank(self, index: int) -> int:
-        return index % 13
+        if index < 52:
+            return index % 13 + 1
+        return 0
 
     def __str__(self) -> str:
         if self.__suit == Suit.SMALL_JOKER:
