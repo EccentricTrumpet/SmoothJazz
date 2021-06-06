@@ -1,6 +1,3 @@
-const STANDARD = 0;
-const EUCHRE = 1;
-const PINOCHLE = 2;
 
 var cards = (function() {
   //The global options
@@ -13,11 +10,9 @@ var cards = (function() {
     animationSpeed: 500,
     table: 'body',
     cardback: 'red',
-    acesHigh: true,
     cardsUrl: 'assets/cards_js_img/',
     blackJoker: true,
     redJoker: true,
-    type: STANDARD,
     loop: 1
   };
   var zIndexCounter = 1;
@@ -42,22 +37,6 @@ var cards = (function() {
           opt[i] = options[i];
         }
       }
-    }
-    switch (opt.type) {
-      case STANDARD:
-        opt.acesHigh = false;
-        start = opt.acesHigh ? 2 : 1;
-        end = start + 12;
-        break;
-      case EUCHRE:
-        start = 9;
-        end = start + 5;
-        break;
-      case PINOCHLE:
-        start = 9;
-        end = start + 5;
-        opt.loop = 2;
-        break;
     }
 
     opt.table = $(opt.table)[0];
@@ -108,6 +87,7 @@ var cards = (function() {
       this.rank = rank;
       this.name = suit.toUpperCase() + rank;
       this.faceUp = false;
+      this.yAdjustment = 0;
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
       this.el = $('<div/>').css({
         width: opt.cardSize.width,
@@ -143,8 +123,7 @@ var cards = (function() {
     },
 
     showCard: function() {
-      let r = (this.rank == 14) ? 1 : this.rank;
-      let shortName = this.suit + r;
+      let shortName = this.suit + this.rank;
       $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
     },
 
@@ -235,7 +214,7 @@ var cards = (function() {
         var left = parseInt($(card.el).css('left'));
         if (top != card.targetTop || left != card.targetLeft) {
           var props = {
-            top: card.targetTop,
+            top: card.targetTop + card.yAdjustment,
             left: card.targetLeft,
             queue: false
           };

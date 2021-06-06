@@ -235,14 +235,6 @@ const getCardUISuitFromProto = function(cardProto: CardProto) : any {
   }
 }
 
-const getCardUIRankFromProto = function(cardProto: CardProto) : any {
-  switch(cardProto.getSuit()) {
-    case CardProto.Suit.SMALL_JOKER: return 0;
-    case CardProto.Suit.BIG_JOKER: return 0;
-    default: return cardProto.getRank();
-  }
-}
-
 const getCardProtoSuit = function(cardUI: any) : any {
   switch(cardUI.suit) {
     case "rj": return CardProto.Suit.BIG_JOKER;
@@ -838,12 +830,15 @@ class Player {
     if (event.type === "click") {
       if (this.selectedCardUIs.has(cardUI)) {
         this.selectedCardUIs.delete(cardUI);
-        cardUI.el[0].style.outline = "";
+        cardUI.yAdjustment = 0;
+        this.handUI.render();
         return;
       }
 
-      cardUI.el[0].style.outline = "dashed red";
+      cardUI.yAdjustment = -cardHeight()*4/10;
       this.selectedCardUIs.add(cardUI);
+
+      this.handUI.render();
     }
     // submit play with right click
     else if (event.type === "contextmenu") {
@@ -967,7 +962,7 @@ class FrontendGame {
         // the one returned from backend. This is done as we don't know what
         // cards are in the deck initially.
         this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
-        this.deckUI[this.deckUI.length-1].rank = getCardUIRankFromProto(card);
+        this.deckUI[this.deckUI.length-1].rank = card.getRank();
         this.players[i].handUI.addCard(this.deckUI.topCard());
         this.players[i].render({speed: 50});
       }
