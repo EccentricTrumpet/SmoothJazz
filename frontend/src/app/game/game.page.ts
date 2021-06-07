@@ -20,8 +20,8 @@ export class GamePage implements AfterViewChecked {
   gameId = 'None';
   started = false;
   createGame = true;
-  playerInfos = [];
-  frontendGameInstance: FrontendGame;
+  players: Player[] = [];
+  frontendGameInstance: FrontendGame = null;
   playerId = "None";
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
@@ -166,14 +166,24 @@ export class GamePage implements AfterViewChecked {
       host: environment.grpcUrl,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
-        let players = message.getPlayersList();
-        this.playerInfos = players;
+        if (this.frontendGameInstance == null ) {
+          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
+        }
+        for (const player of message.getPlayersList()) {
+          let existingPlayerNames = this.players.map(p => p.name);
+          if (existingPlayerNames.includes(player.getPlayerId())) {
+            continue;
+          }
+          const newPlayer = this.frontendGameInstance.addPlayer(player.getPlayerId());
+          this.players.push(newPlayer);
+        }
 
-        if (gameStarted == false && players.length == 4) {
+        if (gameStarted == false && this.players.length == 4) {
           console.log("game is starting!")
           gameStarted = true;
-          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
+          this.frontendGameInstance.start();
         } else if (gameStarted) {
+          const players = message.getPlayersList();
           // We don't get a response for every card dealt, log here
           // for debugging purpose.
           console.log("Player cards: ",
@@ -303,10 +313,6 @@ const resolveCardUIs = function(cards: Card[], cardUIs: any[]) : any[] {
 
   return resolvedCardUIs;
 }
-
-const cardHeight = function() : number { return cards.options.cardSize.height };
-const cardWidth = function() : number { return cards.options.cardSize.width };
-const padding = function() : number { return cards.options.cardSize.padding };
 
 // Card abstraction, mock type used for gRPC
 export class Card {
@@ -500,6 +506,7 @@ class TrickFormat {
 }
 
 class TrickPile {
+  game: FrontendGame;
   players: Player[];
   ranking: CardRanking;
   cardsPlayedUI: any[];
@@ -507,7 +514,8 @@ class TrickPile {
   winningPlayer: number | null = null;
   winningHand: TrickFormat | null = null;
 
-  constructor(players: Player[], ranking: CardRanking, x: number, y: number) {
+  constructor(game: FrontendGame, players: Player[], ranking: CardRanking, x: number, y: number) {
+    this.game = game;
     this.players = players;
     this.ranking = ranking;
     this.cardsPlayedUI = [players.length];
@@ -515,8 +523,8 @@ class TrickPile {
       let vector = [players[i].x - x, players[i].y - y];
       let magnitude = Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
       this.cardsPlayedUI[i] = new cards.Hand({faceUp: true,
-        x:x + vector[0]*cardWidth()/magnitude,
-        y:y + vector[1]*cardHeight()/magnitude
+        x:x + vector[0]*this.game.cardWidth()/magnitude,
+        y:y + vector[1]*this.game.cardHeight()/magnitude
       })
     }
   }
@@ -807,22 +815,32 @@ class TrickPile {
 
 class Player {
   game: FrontendGame;
+  name: string;
   index: number;
   x: number;
   y: number;
   handUI;
   tricksWonUI;
   selectedCardUIs = new Set<any>();
+  // Used by Angular in HTML template.
+  label_left: string;
+  label_top: string;
 
-  constructor(game: FrontendGame, index: number, x: number, y: number) {
+  constructor(game: FrontendGame, index: number, name: string, x: number, y: number) {
     this.game = game;
     this.index = index;
+    this.name = name;
     this.x = x;
     this.y = y;
-    this.handUI = new cards.Hand({faceUp: true, x:x, y:y - (cardHeight() + game.cardMargin) / 2});
-    this.tricksWonUI = new cards.Hand({faceUp: true, x:x, y:y + (cardHeight() + game.cardMargin) / 2});
+    this.handUI = new cards.Hand({faceUp: true, x:x, y:y - (game.cardHeight() + game.cardMargin) / 2});
+    this.tricksWonUI = new cards.Hand({faceUp: true, x:x, y:y + (game.cardHeight() + game.cardMargin) / 2});
     let that = this;
     this.handUI.click((c, e) => that.act(c, e));
+    // TODO: The proper way to center this would be to find the text width in
+    // px of the DOM element and divide by half, 5 is good enough for now for
+    // ASCII characters, I guess...
+    this.label_left = (x-this.name.length*5) + "px";
+    this.label_top = y + "px";
   }
 
   render(options?: any) {
@@ -892,7 +910,7 @@ class FrontendGame {
 
   // Player metadata
   playerId;
-  players : Player[];
+  players : Player[] = [];
   currentPlayer = 0;
   kittyPlayer = 0;
 
@@ -901,15 +919,21 @@ class FrontendGame {
   labelHeight = -1;
   deckUI;
   kittyUI;
+  cardSize: any;
+  width : number;
+  height : number;
+  playerLocations: any;
 
   constructor(height: number, width: number, playerId: string, gameId: string) {
     this.playerId = playerId;
     this.gameId = gameId;
+    this.height = height;
+    this.width = width;
 
     // Initialize with two decks
     this.cardMargin = height / 300;
     this.labelHeight = height / 40;
-    // Seven rows layout: 1) top layer hands; 2) top player winning
+    // Seven rows layout: 1) top player hands; 2) top player winning
     // tricks; 3) top player played cards; 4) left / right player
     // hands with played cards; 5) left / right player winning cards;
     // 6) bottom player hands; 7) bottome player winning tricks.
@@ -922,32 +946,53 @@ class FrontendGame {
     const minCardWidth = (width - 6 * this.cardMargin) / 17;
     const originCardWidth = 69;
     const originCardHeight = 94;
-    const cardSize = {
+    this.cardSize = {
       width: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight),
       height: Math.min(minCardHeight, minCardWidth * originCardHeight / originCardWidth),
       padding: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight) / 5,
     }
-    cards.init({table: "#card-table", loop: 2, cardSize: cardSize});
-    this.deckUI = new cards.Deck({x:width/2, y:height/2});
-    this.deckUI.addCards(cards.all);
-    this.deckUI.render({immediate: true});
-
     // Create players. Note that x and y coordinates are the central
     // point between hand pile and trickWon pile.
     // For left / right player, We can have a max of 33 cards (25
     // cards + 8 kitty), so the central_x locates at (1 full face
     // card plus 32 padding)/2
-    this.players = [
-      new Player(this, 0, width/2, height - cardHeight() - this.cardMargin), // bottom
-      new Player(this, 1, width - (cardWidth() + padding() * 32)/2, height/2), // right
-      new Player(this, 2, width/2, cardHeight() + this.cardMargin), // top
-      new Player(this, 3, (cardWidth() + padding() * 32)/2, height/2) ]; // left
+    this.playerLocations = [
+      {"x": this.width/2, "y": this.height - this.cardHeight() - this.cardMargin}, // bottom
+      {"x": this.width - (this.cardWidth() + this.cardPadding() * 32)/2, "y": this.height/2}, // right
+      {"x": this.width/2, "y": this.cardHeight() + this.cardMargin}, // top
+      {"x": (this.cardWidth() + this.cardPadding() * 32)/2, "y": this.height/2} // left
+    ];
+  }
 
+  addPlayer(playerName: string):Player {
+    const playerCounts = this.players.length;
+    const newPlayer = new Player(this, playerCounts, playerName, this.playerLocations[playerCounts].x, this.playerLocations[playerCounts].y);
+    this.players.push(newPlayer);
+    return newPlayer;
+  }
+
+  start() {
+    cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
     // Create kitty
-    this.kittyUI = new cards.Hand({faceUp:true, x:cardWidth()/2 + 4.5*padding(), y:height - cardWidth()/2 - padding()})
+    this.kittyUI = new cards.Hand({faceUp:true, x:this.cardWidth()/2 + 4.5*this.cardPadding(), y:this.cardHeight() - this.cardWidth()/2 - this.cardPadding()})
 
     // Create trick pile
-    this.trickPile = new TrickPile(this.players, this.cardRanking, width/2, height/2);
+    this.trickPile = new TrickPile(this, this.players, this.cardRanking, this.width/2, this.height/2);
+    this.deckUI = new cards.Deck({x:this.width/2, y:this.height/2});
+    this.deckUI.addCards(cards.all);
+    this.deckUI.render({immediate: true});
+  }
+
+  cardHeight(): number {
+    return this.cardSize.height;
+  }
+
+  cardWidth(): number {
+    return this.cardSize.width;
+  }
+
+  cardPadding(): number {
+    return this.cardSize.padding;
   }
 
   showAnimation(players: PlayerProto[]) {
