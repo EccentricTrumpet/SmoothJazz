@@ -86,7 +86,8 @@ class ShengjiTest(unittest.TestCase):
             # Expected number of game state updates is
             # 1 for human player joining game
             # 100 for dealing cards
-            self.assertEqual(len(streaming_result), 101)
+            # 8 for dealing kitty
+            self.assertEqual(len(streaming_result), 109)
 
 if __name__ == '__main__':
     logging.basicConfig(
