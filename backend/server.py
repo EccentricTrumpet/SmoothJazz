@@ -7,6 +7,7 @@ from grpc import ServicerContext
 from grpc.aio import server as GrpcServer
 from itertools import count
 from game_state import (
+    Card,
     Game,
     GameState)
 from typing import (
@@ -17,6 +18,7 @@ from shengji_pb2_grpc import (
     ShengjiServicer,
     add_ShengjiServicer_to_server)
 from shengji_pb2 import (
+    NewPlayerUpdate,
     AddAIPlayerRequest,
     AddAIPlayerResponse,
     CreateGameRequest,
@@ -47,7 +49,10 @@ class SJService(ShengjiServicer):
 
         logging.info(f'Created game with id: {game_id}')
 
-        return game.to_game_proto()
+        game_proto = game.to_game_proto()
+        game_proto.new_player_update.player_id = request.player_id
+
+        return game_proto
 
     def addAIPlayer(self,
                    request: AddAIPlayerRequest,
@@ -88,20 +93,24 @@ class SJService(ShengjiServicer):
     def playHand(self,
             request: PlayHandRequest,
             context: ServicerContext) -> PlayHandResponse:
-        logging.info(f'Received a PlayGame request [{request.hand}] from player_id [{request.player_id}], game_id [{request.game_id}]')
-        with SJService.game_state_lock:
-            game_id = request.game_id
-            player_id = request.player_id
+        logging.info(f'Received a playHand request [{request.hand}] from player_id [{request.player_id}], game_id [{request.game_id}]')
 
-            try:
-                self.games[game_id]
-            except:
-                logging.info(f'Not found: game_id [{request.game_id}]')
-            # TODO: Play card and notify all players
-            # game = self.games[game_id]
+        try:
+            game = self.__games[request.game_id]
+        except:
+            logging.info(f'Not found: game_id [{request.game_id}]')
+            response = PlayHandResponse()
+            response.success = False
+            response.error_message = f'Game {request.game_id} does not exist'
+            return response
 
-        # Notifies all watchers of state change
-        return PlayHandResponse()
+        (success, error_message) = game.play(request.player_id, [Card.from_card_proto(c) for c in request.hand.cards])
+
+        response = PlayHandResponse()
+        response.success = success
+        response.error_message = error_message
+
+        return response
 
     def terminate_game(self, game_id: str) -> None:
         game = self.__get_game(game_id)

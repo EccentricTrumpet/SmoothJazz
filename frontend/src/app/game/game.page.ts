@@ -157,7 +157,6 @@ export class GamePage implements AfterViewChecked {
     });
   }
   enterRoom(player_name: string, game_id: any) {
-    var gameStarted = false;
     const enterRoomRequest = new EnterRoomRequest();
     enterRoomRequest.setPlayerId(player_name);
     enterRoomRequest.setGameId(game_id);
@@ -166,23 +165,32 @@ export class GamePage implements AfterViewChecked {
       host: environment.grpcUrl,
       onMessage: (message: Game) => {
         console.log("Current game state: ", message.toObject());
-        let players = message.getPlayersList();
-        this.playerInfos = players;
+        if (this.frontendGameInstance == null) {
+          let players = message.getPlayersList();
+          this.playerInfos = players;
+          if (players.length == 4) {
+            console.log("game is starting!")
+            this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
 
-        if (gameStarted == false && players.length == 4) {
-          console.log("game is starting!")
-          gameStarted = true;
-          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
-        } else if (gameStarted) {
-          // We don't get a response for every card dealt, log here
-          // for debugging purpose.
-          console.log("Player cards: ",
-            players[0].getCardsOnHand()?.getCardsList().length ?? 0,
-            players[1].getCardsOnHand()?.getCardsList().length ?? 0,
-            players[2].getCardsOnHand()?.getCardsList().length ?? 0,
-            players[3].getCardsOnHand()?.getCardsList().length ?? 0,
-          );
-          this.frontendGameInstance.showAnimation(players);
+            for (let index = 0; index < players.length; index++) {
+              this.frontendGameInstance.players[index].playerId = players[index].getPlayerId()
+            }
+          }
+        }
+        else {
+          switch (message.getUpdateCase()) {
+            case Game.UpdateCase.CARD_DEALT_UPDATE:
+              let cardDealtUpdate = message.getCardDealtUpdate();
+              this.frontendGameInstance.renderCardDealt(cardDealtUpdate.getPlayerId(), cardDealtUpdate.getCard())
+              break;
+            case Game.UpdateCase.KITTY_HIDDEN_UPDATE:
+              let kittyHiddenUpdate = message.getKittyHiddenUpdate();
+              this.frontendGameInstance.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), message.getKitty().getCardsList().map(c => Card.fromProto(c)));
+              break;
+            default:
+              console.log("Invalid update");
+              break;
+          }
         }
       },
       onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
@@ -313,6 +321,78 @@ export class Card {
   static none: Card = new Card(Suit.None, 0);
   static smallJoker: Card = new Card(Suit.Joker, 1);
   static bigJoker: Card = new Card(Suit.Joker, 2);
+
+  static fromProto(cardProto: CardProto): Card {
+    let suit: Suit = null;
+    let rank: number = 0;
+
+    switch (cardProto.getSuit()) {
+      case CardProto.Suit.SUIT_UNDEFINED:
+        return this.none;
+      case CardProto.Suit.BIG_JOKER:
+        return this.bigJoker;
+      case CardProto.Suit.SMALL_JOKER:
+        return this.smallJoker;
+      case CardProto.Suit.SPADES:
+        suit = Suit.Spades;
+        break;
+      case CardProto.Suit.HEARTS:
+        suit = Suit.Hearts;
+        break;
+      case CardProto.Suit.CLUBS:
+        suit = Suit.Clubs;
+        break;
+      case CardProto.Suit.DIAMONDS:
+        suit = Suit.Diamonds;
+        break;
+    }
+
+    switch (cardProto.getRank()) {
+      case CardProto.Rank.RANK_UNDEFINED:
+        return this.none;
+      case CardProto.Rank.ACE:
+        rank = 1;
+        break;
+      case CardProto.Rank.TWO:
+        rank = 2;
+        break;
+      case CardProto.Rank.THREE:
+        rank = 3;
+        break;
+      case CardProto.Rank.FOUR:
+        rank = 4;
+        break;
+      case CardProto.Rank.FIVE:
+        rank = 5;
+        break;
+      case CardProto.Rank.SIX:
+        rank = 6;
+        break;
+      case CardProto.Rank.SEVEN:
+        rank = 7;
+        break;
+      case CardProto.Rank.EIGHT:
+        rank = 8;
+        break;
+      case CardProto.Rank.NINE:
+        rank = 9;
+        break;
+      case CardProto.Rank.TEN:
+        rank = 10;
+        break;
+      case CardProto.Rank.JACK:
+        rank = 11;
+        break;
+      case CardProto.Rank.QUEEN:
+        rank = 12;
+        break;
+      case CardProto.Rank.KING:
+        rank = 13;
+        break;
+    }
+
+    return new Card(suit, rank);
+  }
 
   public toString(): string {
     return Suit[this.suit] + this.rank;
@@ -799,6 +879,7 @@ class TrickPile {
 
 class Player {
   game: FrontendGame;
+  playerId: string;
   index: number;
   x: number;
   y: number;
@@ -849,8 +930,7 @@ class Player {
       const playHandReq = new PlayHandRequest();
       playHandReq.setPlayerId(this.game.playerId);
       playHandReq.setGameId(this.game.gameId);
-      // TODO(Aaron): Set the real intention somehow...
-      playHandReq.setIntention(PlayHandRequest.Intention.CLAIM_TRUMP);
+
       const handToPlay = new HandProto();
       let cardsProto = Array.from(this.selectedCardUIs.values()).map(ui => toCardProto(ui));
       handToPlay.setCardsList(cardsProto);
@@ -864,7 +944,7 @@ class Player {
           const { status, statusMessage, headers, message, trailers } = res;
           if (status === grpc.Code.OK && message) {
             console.log("PlayHand Response: ", message.toObject());
-            this.selectedCardUIs.forEach(ui => { ui.el[0].style.outline = "" })
+            this.selectedCardUIs.forEach(ui => { ui.yAdjustment = 0 })
             this.selectedCardUIs.clear();
           }
         }
@@ -945,28 +1025,26 @@ class FrontendGame {
     this.trickPile = new TrickPile(this.players, this.cardRanking, width/2, height/2);
   }
 
-  showAnimation(players: PlayerProto[]) {
-    for (var i = 0; i < players.length; i++) {
-      let ps = players[i];
-      let cards = ps.getCardsOnHand()?.getCardsList();
+  renderCardDealt(playerId: string, card: CardProto) {
+    console.log(`Dealing card: ${card} to player ${playerId} Deck: ${this.deckUI.length}`);
+    // Manually alter the suit and rank for the last placeholder card to be
+    // the one returned from backend. This is done as we don't know what
+    // cards are in the deck initially.
 
-      if (cards == null || cards.length == this.players[i].handUI.length) {
-        console.log("Skipping update for player: "+i);
-        continue;
-      }
+    let player = this.players.find(player => player.playerId == playerId);
 
-      for (var j = this.players[i].handUI.length; j < cards.length; j++) {
-        let card = cards[j];
-        console.log("Dealing card: "+card+" to player"+i+"; Deck: "+this.deckUI.length);
-        // Manually alter the suit and rank for the last placeholder card to be
-        // the one returned from backend. This is done as we don't know what
-        // cards are in the deck initially.
-        this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
-        this.deckUI[this.deckUI.length-1].rank = card.getRank();
-        this.players[i].handUI.addCard(this.deckUI.topCard());
-        this.players[i].render({speed: 50});
-      }
-    }
+    this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
+    this.deckUI[this.deckUI.length-1].rank = card.getRank();
+    player.handUI.addCard(this.deckUI.topCard());
+    player.render({speed: 50});
+  }
+
+  renderKittyHiddenUpdate(kittyPlayerId: string, cards: Card[]) {
+    let player = this.players.find(player => player.playerId == kittyPlayerId);
+    cards.sort((a, b) => this.cardRanking.getUIRank(a) - this.cardRanking.getUIRank(b));
+    this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
+    this.kittyUI.render();
+    player.handUI.render();
   }
 
   // mocking RPC: TO BE DELETED

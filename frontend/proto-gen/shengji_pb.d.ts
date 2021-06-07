@@ -230,6 +230,22 @@ export class Game extends jspb.Message {
   getDeckCardCount(): number;
   setDeckCardCount(value: number): void;
 
+  hasNewPlayerUpdate(): boolean;
+  clearNewPlayerUpdate(): void;
+  getNewPlayerUpdate(): NewPlayerUpdate | undefined;
+  setNewPlayerUpdate(value?: NewPlayerUpdate): void;
+
+  hasCardDealtUpdate(): boolean;
+  clearCardDealtUpdate(): void;
+  getCardDealtUpdate(): CardDealtUpdate | undefined;
+  setCardDealtUpdate(value?: CardDealtUpdate): void;
+
+  hasKittyHiddenUpdate(): boolean;
+  clearKittyHiddenUpdate(): void;
+  getKittyHiddenUpdate(): KittyHiddenUpdate | undefined;
+  setKittyHiddenUpdate(value?: KittyHiddenUpdate): void;
+
+  getUpdateCase(): Game.UpdateCase;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Game.AsObject;
   static toObject(includeInstance: boolean, msg: Game): Game.AsObject;
@@ -252,6 +268,82 @@ export namespace Game {
     trumpSuit: Card.SuitMap[keyof Card.SuitMap],
     trumpRank: Card.RankMap[keyof Card.RankMap],
     deckCardCount: number,
+    newPlayerUpdate?: NewPlayerUpdate.AsObject,
+    cardDealtUpdate?: CardDealtUpdate.AsObject,
+    kittyHiddenUpdate?: KittyHiddenUpdate.AsObject,
+  }
+
+  export enum UpdateCase {
+    UPDATE_NOT_SET = 0,
+    NEW_PLAYER_UPDATE = 11,
+    CARD_DEALT_UPDATE = 12,
+    KITTY_HIDDEN_UPDATE = 13,
+  }
+}
+
+export class NewPlayerUpdate extends jspb.Message {
+  getPlayerId(): string;
+  setPlayerId(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): NewPlayerUpdate.AsObject;
+  static toObject(includeInstance: boolean, msg: NewPlayerUpdate): NewPlayerUpdate.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: NewPlayerUpdate, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): NewPlayerUpdate;
+  static deserializeBinaryFromReader(message: NewPlayerUpdate, reader: jspb.BinaryReader): NewPlayerUpdate;
+}
+
+export namespace NewPlayerUpdate {
+  export type AsObject = {
+    playerId: string,
+  }
+}
+
+export class CardDealtUpdate extends jspb.Message {
+  getPlayerId(): string;
+  setPlayerId(value: string): void;
+
+  hasCard(): boolean;
+  clearCard(): void;
+  getCard(): Card | undefined;
+  setCard(value?: Card): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CardDealtUpdate.AsObject;
+  static toObject(includeInstance: boolean, msg: CardDealtUpdate): CardDealtUpdate.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CardDealtUpdate, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CardDealtUpdate;
+  static deserializeBinaryFromReader(message: CardDealtUpdate, reader: jspb.BinaryReader): CardDealtUpdate;
+}
+
+export namespace CardDealtUpdate {
+  export type AsObject = {
+    playerId: string,
+    card?: Card.AsObject,
+  }
+}
+
+export class KittyHiddenUpdate extends jspb.Message {
+  getKittyPlayerId(): string;
+  setKittyPlayerId(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KittyHiddenUpdate.AsObject;
+  static toObject(includeInstance: boolean, msg: KittyHiddenUpdate): KittyHiddenUpdate.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: KittyHiddenUpdate, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KittyHiddenUpdate;
+  static deserializeBinaryFromReader(message: KittyHiddenUpdate, reader: jspb.BinaryReader): KittyHiddenUpdate;
+}
+
+export namespace KittyHiddenUpdate {
+  export type AsObject = {
+    kittyPlayerId: string,
   }
 }
 

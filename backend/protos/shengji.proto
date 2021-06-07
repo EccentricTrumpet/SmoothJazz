@@ -115,6 +115,28 @@ message Game {
   // Number of cards left in the deck. It should start with N (number of
   // decks) * 54 to start with, and become 0 once the dealing phase finishes.
   int32 deck_card_count = 10;
+
+  oneof update {
+    NewPlayerUpdate new_player_update = 11;
+    CardDealtUpdate card_dealt_update = 12;
+    KittyHiddenUpdate kitty_hidden_update = 13;
+  }
+}
+
+message NewPlayerUpdate {
+  // Player who joined.
+  string player_id = 1;
+}
+
+message CardDealtUpdate {
+  // Player to whom the card was dealt.
+  string player_id = 1;
+  Card card = 2;
+}
+
+message KittyHiddenUpdate {
+  // Kitty player.
+  string kitty_player_id = 1;
 }
 
 message Card {
