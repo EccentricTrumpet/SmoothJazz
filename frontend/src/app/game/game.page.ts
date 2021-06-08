@@ -168,19 +168,19 @@ export class GamePage implements AfterViewChecked {
           this.game = new Game(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
         }
         switch (message.getUpdateCase()) {
-          case Game.UpdateCase.NEW_PLAYER_UPDATE:
+          case GameProto.UpdateCase.NEW_PLAYER_UPDATE:
               this.game.addPlayer(message.getNewPlayerUpdate().getPlayerId());
               if (this.game.players.length == 4) {
                 this.game.start();
               }
             break;
-          case Game.UpdateCase.CARD_DEALT_UPDATE:
+          case GameProto.UpdateCase.CARD_DEALT_UPDATE:
             let cardDealtUpdate = message.getCardDealtUpdate();
-            this.frontendGameInstance.renderCardDealt(cardDealtUpdate.getPlayerId(), cardDealtUpdate.getCard())
+            this.game.renderCardDealt(cardDealtUpdate.getPlayerId(), cardDealtUpdate.getCard())
             break;
-          case Game.UpdateCase.KITTY_HIDDEN_UPDATE:
+          case GameProto.UpdateCase.KITTY_HIDDEN_UPDATE:
             let kittyHiddenUpdate = message.getKittyHiddenUpdate();
-            this.frontendGameInstance.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), message.getKitty().getCardsList().map(c => Card.fromProto(c)));
+            this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), message.getKitty().getCardsList().map(c => Card.fromProto(c)));
             break;
           default:
             console.log("Invalid update");
@@ -874,7 +874,7 @@ class Player {
         return;
       }
 
-      cardUI.yAdjustment = -cardHeight()*4/10;
+      cardUI.yAdjustment = -this.game.cardHeight()*4/10;
       this.selectedCardUIs.add(cardUI);
 
       this.handUI.render();
@@ -989,7 +989,7 @@ class Game {
   start() {
     cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
     // Create kitty
-    this.kittyUI = new cards.Hand({faceUp:true, x:this.cardWidth()/2 + 4.5*this.cardPadding(), y:this.cardHeight() - this.cardWidth()/2 - this.cardPadding()})
+    this.kittyUI = new cards.Hand({faceUp:true, x:this.cardWidth()/2 + 4.5*this.cardPadding(), y:this.height - this.cardWidth()/2 - this.cardPadding()})
 
     // Create trick pile
     this.trickPile = new TrickPile(this, this.players, this.cardRanking, this.width/2, this.height/2);
@@ -1016,7 +1016,7 @@ class Game {
     // the one returned from backend. This is done as we don't know what
     // cards are in the deck initially.
 
-    let player = this.players.find(player => player.playerId == playerId);
+    let player = this.players.find(player => player.name == playerId);
 
     this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
     this.deckUI[this.deckUI.length-1].rank = card.getRank();
@@ -1025,7 +1025,7 @@ class Game {
   }
 
   renderKittyHiddenUpdate(kittyPlayerId: string, cards: Card[]) {
-    let player = this.players.find(player => player.playerId == kittyPlayerId);
+    let player = this.players.find(player => player.name == kittyPlayerId);
     cards.sort((a, b) => this.cardRanking.getUIRank(a) - this.cardRanking.getUIRank(b));
     this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
     this.kittyUI.render();
