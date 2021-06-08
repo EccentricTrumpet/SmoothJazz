@@ -889,6 +889,7 @@ class Player {
       playHandReq.setPlayerId(this.game.playerId);
       playHandReq.setGameId(this.game.gameId);
       // TODO: Set the real intention somehow...
+      playHandReq.setIntention(PlayHandRequest.Intention.HIDE_KITTY);
 
       const handToPlay = new HandProto();
       let cardsProto = Array.from(this.selectedCardUIs.values()).map(ui => toCardProto(ui));
