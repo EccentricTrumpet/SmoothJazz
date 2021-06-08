@@ -77,34 +77,8 @@ class Card:
         if self.__suit == Suit.DIAMONDS:
             card.suit = CardProto.Suit.DIAMONDS
 
-        if self.__rank == 0:
-            card.rank = CardProto.Rank.RANK_UNDEFINED
-        if self.__rank == 1:
-            card.rank = CardProto.Rank.ACE
-        if self.__rank == 2:
-            card.rank = CardProto.Rank.TWO
-        if self.__rank == 3:
-            card.rank = CardProto.Rank.THREE
-        if self.__rank == 4:
-            card.rank = CardProto.Rank.FOUR
-        if self.__rank == 5:
-            card.rank = CardProto.Rank.FIVE
-        if self.__rank == 6:
-            card.rank = CardProto.Rank.SIX
-        if self.__rank == 7:
-            card.rank = CardProto.Rank.SEVEN
-        if self.__rank == 8:
-            card.rank = CardProto.Rank.EIGHT
-        if self.__rank == 9:
-            card.rank = CardProto.Rank.NINE
-        if self.__rank == 10:
-            card.rank = CardProto.Rank.TEN
-        if self.__rank == 11:
-            card.rank = CardProto.Rank.JACK
-        if self.__rank == 12:
-            card.rank = CardProto.Rank.QUEEN
-        if self.__rank == 13:
-            card.rank = CardProto.Rank.KING
+        card.rank = self.__rank
+
         return card
 
     @classmethod
@@ -223,6 +197,8 @@ class Game:
         self.__metadata: GameMetadata = None
         self.__next_player_id: str = creator_id
         self.__kitty: List[Card] = []
+        self.__update_id: int = 0
+        self.__update_lock: RLock = RLock()
         # hands on table contains an array of pairs - (id, hand)
         self.__action_count: int = 0
         self.__hands_on_table: List[tuple[str, Hand]] = []
@@ -328,8 +304,14 @@ class Game:
         self.__action_count += 1
         return True, ''
 
-    def to_game_proto(self) -> GameProto:
+    def to_game_proto(self, increment_update_id: bool = True) -> GameProto:
+        with self.__update_lock:
+            update_id = self.__update_id
+            if increment_update_id:
+                self.__update_id += 1
+
         game = GameProto()
+        game.update_id = update_id
         game.game_id = self.__game_id
         game.creator_player_id = self.__creator_id
 
@@ -343,6 +325,7 @@ class Game:
 
         for card in self.__kitty:
             game.kitty.cards.append(card.to_card_proto())
+
 
         return game
 
@@ -381,11 +364,13 @@ class Game:
         self.__update_players(action)
 
     def __update_players(self, appendUpdate: Callable[[GameProto], None]) -> None:
+        game_proto = self.to_game_proto()
+        appendUpdate(game_proto)
+
         with self.__players_lock:
             players = self.__players.values()
+
         for player in players:
-            game_proto = self.to_game_proto()
-            appendUpdate(game_proto)
             player.queue_update(game_proto)
 
 # This class needs to be refactored to follow coding styles

@@ -164,28 +164,39 @@ export class GamePage implements AfterViewChecked {
       host: environment.grpcUrl,
       onMessage: (message: GameProto) => {
         console.log("Current game state: ", message.toObject());
-        if (this.game == null ) {
+        let updateId = message.getUpdateId();
+        if (this.game == null) {
           this.game = new Game(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
         }
-        switch (message.getUpdateCase()) {
-          case GameProto.UpdateCase.NEW_PLAYER_UPDATE:
-              this.game.addPlayer(message.getNewPlayerUpdate().getPlayerId());
-              if (this.game.players.length == 4) {
-                this.game.start();
-              }
-            break;
-          case GameProto.UpdateCase.CARD_DEALT_UPDATE:
-            let cardDealtUpdate = message.getCardDealtUpdate();
-            this.game.renderCardDealt(cardDealtUpdate.getPlayerId(), cardDealtUpdate.getCard())
-            break;
-          case GameProto.UpdateCase.KITTY_HIDDEN_UPDATE:
-            let kittyHiddenUpdate = message.getKittyHiddenUpdate();
-            this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), message.getKitty().getCardsList().map(c => Card.fromProto(c)));
-            break;
-          default:
-            console.log("Invalid update");
-            break;
+        if (this.game.updateId == -1 || this.game.updateId == updateId -1)
+        {
+          // Render delta
+          switch (message.getUpdateCase()) {
+            case GameProto.UpdateCase.NEW_PLAYER_UPDATE:
+                this.game.addPlayer(message.getNewPlayerUpdate().getPlayerId());
+                if (this.game.players.length == 4) {
+                  this.game.start();
+                }
+              break;
+            case GameProto.UpdateCase.CARD_DEALT_UPDATE:
+              let cardDealtUpdate = message.getCardDealtUpdate();
+              this.game.renderCardDealt(cardDealtUpdate.getPlayerId(), cardDealtUpdate.getCard())
+              break;
+            case GameProto.UpdateCase.KITTY_HIDDEN_UPDATE:
+              let kittyHiddenUpdate = message.getKittyHiddenUpdate();
+              this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), message.getKitty().getCardsList().map(c => Card.fromProto(c)));
+              break;
+            default:
+              console.log("Invalid update");
+              break;
+          }
         }
+        else
+        {
+          console.log(`Rerender required, update ${this.game.updateId} -> ${updateId}`);
+          // Render entire game
+        }
+        this.game.updateId = updateId;
       },
       onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
         if (code == grpc.Code.OK) {
@@ -919,6 +930,7 @@ class Game {
   cardsInKitty = 8;
   gameStage = GameStage.Deal;
   trickPile : TrickPile;
+  updateId =-1;
 
   // Trump metadata
   declaredTrumps = DeclaredTrump.None;
@@ -1012,7 +1024,7 @@ class Game {
   }
 
   renderCardDealt(playerId: string, card: CardProto) {
-    console.log(`Dealing card: ${card} to player ${playerId} Deck: ${this.deckUI.length}`);
+    console.log(`Dealing card: ${card} to player ${playerId}`);
     // Manually alter the suit and rank for the last placeholder card to be
     // the one returned from backend. This is done as we don't know what
     // cards are in the deck initially.

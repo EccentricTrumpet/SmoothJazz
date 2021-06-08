@@ -227,6 +227,9 @@ export class Game extends jspb.Message {
   getTrumpRank(): Card.RankMap[keyof Card.RankMap];
   setTrumpRank(value: Card.RankMap[keyof Card.RankMap]): void;
 
+  getUpdateId(): number;
+  setUpdateId(value: number): void;
+
   hasNewPlayerUpdate(): boolean;
   clearNewPlayerUpdate(): void;
   getNewPlayerUpdate(): NewPlayerUpdate | undefined;
@@ -264,6 +267,7 @@ export namespace Game {
     kitty?: Hand.AsObject,
     trumpSuit: Card.SuitMap[keyof Card.SuitMap],
     trumpRank: Card.RankMap[keyof Card.RankMap],
+    updateId: number,
     newPlayerUpdate?: NewPlayerUpdate.AsObject,
     cardDealtUpdate?: CardDealtUpdate.AsObject,
     kittyHiddenUpdate?: KittyHiddenUpdate.AsObject,

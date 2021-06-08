@@ -48,7 +48,7 @@ class SJService(ShengjiServicer):
 
         logging.info(f'Created game with id: {game_id}')
 
-        game_proto = game.to_game_proto()
+        game_proto = game.to_game_proto(False)
         game_proto.new_player_update.player_id = request.player_id
 
         return game_proto

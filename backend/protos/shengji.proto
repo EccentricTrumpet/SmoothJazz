@@ -112,6 +112,10 @@ message Game {
   // Trump rank.
   Card.Rank trump_rank = 9;
 
+  // Update id, a sequence of natural numbers
+  int32 update_id = 10;
+
+  // Updates that represent the delta since the last update
   oneof update {
     NewPlayerUpdate new_player_update = 11;
     CardDealtUpdate card_dealt_update = 12;
