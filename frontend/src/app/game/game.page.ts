@@ -930,6 +930,7 @@ class Player {
       const playHandReq = new PlayHandRequest();
       playHandReq.setPlayerId(this.game.playerId);
       playHandReq.setGameId(this.game.gameId);
+      // TODO: Set the real intention somehow...
 
       const handToPlay = new HandProto();
       let cardsProto = Array.from(this.selectedCardUIs.values()).map(ui => toCardProto(ui));

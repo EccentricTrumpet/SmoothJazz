@@ -82,6 +82,7 @@ class ShengjiTest(unittest.TestCase):
 
             self.assertEqual(len(streaming_result[-1].players), 4)
             self.assertEqual(len(streaming_result[-1].players[0].cards_on_hand.cards), 25)
+            self.assertEqual(len(streaming_result[-1].players[3].cards_on_hand.cards), 33)
 
             # Expected number of game state updates is
             # 1 for human player joining game

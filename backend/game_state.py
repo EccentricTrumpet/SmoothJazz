@@ -12,15 +12,11 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypeVar,
-    Union)
+    TypeVar)
 from shengji_pb2 import (
     Card as CardProto,
     Game as GameProto,
-    Player as PlayerProto,
-    NewPlayerUpdate,
-    CardDealtUpdate,
-    KittyHiddenUpdate)
+    Player as PlayerProto)
 
 """
 Game: All state of the game is stored in this class
@@ -192,9 +188,9 @@ class Player:
         hasCard = card in self.__cards_on_hand
 
         if not hasCard:
-            print('cards on hand:')
+            logging.info('cards on hand:')
             for card in self.__cards_on_hand:
-                print(card)
+                logging.info(card)
 
         return hasCard
 
@@ -302,11 +298,10 @@ class Game:
 
         while (len(self.__deck_cards) > 8):
             player = players[deal_index]
-            card = self.__deck_cards[0]
+            card = self.__deck_cards.pop()
             player.add_card(card)
             logging.info(f'Dealt card {card} to {player.player_id}')
             deal_index = (deal_index + 1) % 4
-            del self.__deck_cards[0]
 
             self.__card_dealt_update(player.player_id, card)
             time.sleep(self.__delay)
@@ -317,10 +312,9 @@ class Game:
 
         while (len(self.__deck_cards) > 0):
             player = self.__players[self.__next_player_id]
-            card = self.__deck_cards[0]
+            card = self.__deck_cards.pop()
             player.add_card(card)
             logging.info(f'Dealt kitty card {card} to {player.player_id}')
-            del self.__deck_cards[0]
 
             self.__card_dealt_update(player.player_id, card)
             time.sleep(self.__delay)
@@ -329,6 +323,7 @@ class Game:
 
     def play(self, player_id: str, cards: Sequence[Card]) -> Tuple[bool, str]:
         # Check turn
+        # TODO (https://github.com/EccentricTrumpet/SmoothJazz/issues/49): Handle out of turn play for trump declarations
         if player_id != self.__next_player_id:
             return False, f'Not the turn of player {player_id}'
 
@@ -375,9 +370,8 @@ class Game:
         for player in players:
             game.players.append(player.to_player_proto())
 
-        if len(self.__kitty) > 0:
-            for card in self.__kitty:
-                game.kitty.cards.append(card.to_card_proto())
+        for card in self.__kitty:
+            game.kitty.cards.append(card.to_card_proto())
 
         game.deck_card_count = len(self.__deck_cards)
 

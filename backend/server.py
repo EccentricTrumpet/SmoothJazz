@@ -18,7 +18,6 @@ from shengji_pb2_grpc import (
     ShengjiServicer,
     add_ShengjiServicer_to_server)
 from shengji_pb2 import (
-    NewPlayerUpdate,
     AddAIPlayerRequest,
     AddAIPlayerResponse,
     CreateGameRequest,
