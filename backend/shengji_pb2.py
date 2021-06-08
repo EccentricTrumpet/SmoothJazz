@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"%\n\x12\x41\x64\x64\x41IPlayerRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"*\n\x13\x41\x64\x64\x41IPlayerResponse\x12\x13\n\x0bplayer_name\x18\x01 \x01(\t\"6\n\x10\x45nterRoomRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x11\n\tplayer_id\x18\x02 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"\xd0\x01\n\x0fPlayHandRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12:\n\tintention\x18\x03 \x01(\x0e\x32\'.grpc.testing.PlayHandRequest.Intention\x12 \n\x04hand\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\";\n\tIntention\x12\x0f\n\x0b\x43LAIM_TRUMP\x10\x00\x12\r\n\tPLAY_HAND\x10\x01\x12\x0e\n\nHIDE_KITTY\x10\x02\":\n\x10PlayHandResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x15\n\rerror_message\x18\x02 \x01(\t\"\xb0\x01\n\x06Player\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12)\n\rcards_on_hand\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand\x12(\n\x0cwinning_pile\x18\x03 \x01(\x0b\x32\x12.grpc.testing.Hand\x12/\n\x13\x63urrent_round_trick\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\x12\r\n\x05score\x18\x05 \x01(\x05\"\x90\x04\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x18\n\x10\x64\x65\x61ler_player_id\x18\x03 \x01(\t\x12\x1b\n\x13next_turn_player_id\x18\x04 \x01(\t\x12&\n\x1e\x63urrent_round_winner_player_id\x18\x05 \x01(\t\x12%\n\x07players\x18\x06 \x03(\x0b\x32\x14.grpc.testing.Player\x12!\n\x05kitty\x18\x07 \x01(\x0b\x32\x12.grpc.testing.Hand\x12+\n\ntrump_suit\x18\x08 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12+\n\ntrump_rank\x18\t \x01(\x0e\x32\x17.grpc.testing.Card.Rank\x12\x17\n\x0f\x64\x65\x63k_card_count\x18\n \x01(\x05\x12:\n\x11new_player_update\x18\x0b \x01(\x0b\x32\x1d.grpc.testing.NewPlayerUpdateH\x00\x12:\n\x11\x63\x61rd_dealt_update\x18\x0c \x01(\x0b\x32\x1d.grpc.testing.CardDealtUpdateH\x00\x12>\n\x13kitty_hidden_update\x18\r \x01(\x0b\x32\x1f.grpc.testing.KittyHiddenUpdateH\x00\x42\x08\n\x06update\"$\n\x0fNewPlayerUpdate\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"F\n\x0f\x43\x61rdDealtUpdate\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12 \n\x04\x63\x61rd\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Card\",\n\x11KittyHiddenUpdate\x12\x17\n\x0fkitty_player_id\x18\x01 \x01(\t\"\xe0\x02\n\x04\x43\x61rd\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12%\n\x04rank\x18\x02 \x01(\x0e\x32\x17.grpc.testing.Card.Rank\"k\n\x04Suit\x12\x12\n\x0eSUIT_UNDEFINED\x10\x00\x12\n\n\x06HEARTS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\x12\x0f\n\x0bSMALL_JOKER\x10\x05\x12\r\n\tBIG_JOKER\x10\x06\"\x9c\x01\n\x04Rank\x12\x12\n\x0eRANK_UNDEFINED\x10\x00\x12\x07\n\x03\x41\x43\x45\x10\x01\x12\x07\n\x03TWO\x10\x02\x12\t\n\x05THREE\x10\x03\x12\x08\n\x04\x46OUR\x10\x04\x12\x08\n\x04\x46IVE\x10\x05\x12\x07\n\x03SIX\x10\x06\x12\t\n\x05SEVEN\x10\x07\x12\t\n\x05\x45IGHT\x10\x08\x12\x08\n\x04NINE\x10\t\x12\x07\n\x03TEN\x10\n\x12\x08\n\x04JACK\x10\x0b\x12\t\n\x05QUEEN\x10\x0c\x12\x08\n\x04KING\x10\r\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card2\xae\x02\n\x07Shengji\x12\x41\n\ncreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12\x41\n\tenterRoom\x12\x1e.grpc.testing.EnterRoomRequest\x1a\x12.grpc.testing.Game0\x01\x12I\n\x08playHand\x12\x1d.grpc.testing.PlayHandRequest\x1a\x1e.grpc.testing.PlayHandResponse\x12R\n\x0b\x61\x64\x64\x41IPlayer\x12 .grpc.testing.AddAIPlayerRequest\x1a!.grpc.testing.AddAIPlayerResponseb\x06proto3'
+  serialized_pb=b'\n\rshengji.proto\x12\x0cgrpc.testing\"%\n\x12\x41\x64\x64\x41IPlayerRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\"*\n\x13\x41\x64\x64\x41IPlayerResponse\x12\x13\n\x0bplayer_name\x18\x01 \x01(\t\"6\n\x10\x45nterRoomRequest\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x11\n\tplayer_id\x18\x02 \x01(\t\"&\n\x11\x43reateGameRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"\xd0\x01\n\x0fPlayHandRequest\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12\x0f\n\x07game_id\x18\x02 \x01(\t\x12:\n\tintention\x18\x03 \x01(\x0e\x32\'.grpc.testing.PlayHandRequest.Intention\x12 \n\x04hand\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\";\n\tIntention\x12\x0f\n\x0b\x43LAIM_TRUMP\x10\x00\x12\r\n\tPLAY_HAND\x10\x01\x12\x0e\n\nHIDE_KITTY\x10\x02\":\n\x10PlayHandResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x15\n\rerror_message\x18\x02 \x01(\t\"\xb0\x01\n\x06Player\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12)\n\rcards_on_hand\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Hand\x12(\n\x0cwinning_pile\x18\x03 \x01(\x0b\x32\x12.grpc.testing.Hand\x12/\n\x13\x63urrent_round_trick\x18\x04 \x01(\x0b\x32\x12.grpc.testing.Hand\x12\r\n\x05score\x18\x05 \x01(\x05\"\xf7\x03\n\x04Game\x12\x0f\n\x07game_id\x18\x01 \x01(\t\x12\x19\n\x11\x63reator_player_id\x18\x02 \x01(\t\x12\x18\n\x10\x64\x65\x61ler_player_id\x18\x03 \x01(\t\x12\x1b\n\x13next_turn_player_id\x18\x04 \x01(\t\x12&\n\x1e\x63urrent_round_winner_player_id\x18\x05 \x01(\t\x12%\n\x07players\x18\x06 \x03(\x0b\x32\x14.grpc.testing.Player\x12!\n\x05kitty\x18\x07 \x01(\x0b\x32\x12.grpc.testing.Hand\x12+\n\ntrump_suit\x18\x08 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12+\n\ntrump_rank\x18\t \x01(\x0e\x32\x17.grpc.testing.Card.Rank\x12:\n\x11new_player_update\x18\x0b \x01(\x0b\x32\x1d.grpc.testing.NewPlayerUpdateH\x00\x12:\n\x11\x63\x61rd_dealt_update\x18\x0c \x01(\x0b\x32\x1d.grpc.testing.CardDealtUpdateH\x00\x12>\n\x13kitty_hidden_update\x18\r \x01(\x0b\x32\x1f.grpc.testing.KittyHiddenUpdateH\x00\x42\x08\n\x06update\"$\n\x0fNewPlayerUpdate\x12\x11\n\tplayer_id\x18\x01 \x01(\t\"F\n\x0f\x43\x61rdDealtUpdate\x12\x11\n\tplayer_id\x18\x01 \x01(\t\x12 \n\x04\x63\x61rd\x18\x02 \x01(\x0b\x32\x12.grpc.testing.Card\",\n\x11KittyHiddenUpdate\x12\x17\n\x0fkitty_player_id\x18\x01 \x01(\t\"\xe0\x02\n\x04\x43\x61rd\x12%\n\x04suit\x18\x01 \x01(\x0e\x32\x17.grpc.testing.Card.Suit\x12%\n\x04rank\x18\x02 \x01(\x0e\x32\x17.grpc.testing.Card.Rank\"k\n\x04Suit\x12\x12\n\x0eSUIT_UNDEFINED\x10\x00\x12\n\n\x06HEARTS\x10\x01\x12\n\n\x06SPADES\x10\x02\x12\t\n\x05\x43LUBS\x10\x03\x12\x0c\n\x08\x44IAMONDS\x10\x04\x12\x0f\n\x0bSMALL_JOKER\x10\x05\x12\r\n\tBIG_JOKER\x10\x06\"\x9c\x01\n\x04Rank\x12\x12\n\x0eRANK_UNDEFINED\x10\x00\x12\x07\n\x03\x41\x43\x45\x10\x01\x12\x07\n\x03TWO\x10\x02\x12\t\n\x05THREE\x10\x03\x12\x08\n\x04\x46OUR\x10\x04\x12\x08\n\x04\x46IVE\x10\x05\x12\x07\n\x03SIX\x10\x06\x12\t\n\x05SEVEN\x10\x07\x12\t\n\x05\x45IGHT\x10\x08\x12\x08\n\x04NINE\x10\t\x12\x07\n\x03TEN\x10\n\x12\x08\n\x04JACK\x10\x0b\x12\t\n\x05QUEEN\x10\x0c\x12\x08\n\x04KING\x10\r\")\n\x04Hand\x12!\n\x05\x63\x61rds\x18\x01 \x03(\x0b\x32\x12.grpc.testing.Card2\xae\x02\n\x07Shengji\x12\x41\n\ncreateGame\x12\x1f.grpc.testing.CreateGameRequest\x1a\x12.grpc.testing.Game\x12\x41\n\tenterRoom\x12\x1e.grpc.testing.EnterRoomRequest\x1a\x12.grpc.testing.Game0\x01\x12I\n\x08playHand\x12\x1d.grpc.testing.PlayHandRequest\x1a\x1e.grpc.testing.PlayHandResponse\x12R\n\x0b\x61\x64\x64\x41IPlayer\x12 .grpc.testing.AddAIPlayerRequest\x1a!.grpc.testing.AddAIPlayerResponseb\x06proto3'
 )
 
 
@@ -99,8 +99,8 @@ _CARD_SUIT = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1434,
-  serialized_end=1541,
+  serialized_start=1409,
+  serialized_end=1516,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_SUIT)
 
@@ -184,8 +184,8 @@ _CARD_RANK = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1544,
-  serialized_end=1700,
+  serialized_start=1519,
+  serialized_end=1675,
 )
 _sym_db.RegisterEnumDescriptor(_CARD_RANK)
 
@@ -550,28 +550,21 @@ _GAME = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='deck_card_count', full_name='grpc.testing.Game.deck_card_count', index=9,
-      number=10, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='new_player_update', full_name='grpc.testing.Game.new_player_update', index=10,
+      name='new_player_update', full_name='grpc.testing.Game.new_player_update', index=9,
       number=11, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='card_dealt_update', full_name='grpc.testing.Game.card_dealt_update', index=11,
+      name='card_dealt_update', full_name='grpc.testing.Game.card_dealt_update', index=10,
       number=12, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='kitty_hidden_update', full_name='grpc.testing.Game.kitty_hidden_update', index=12,
+      name='kitty_hidden_update', full_name='grpc.testing.Game.kitty_hidden_update', index=11,
       number=13, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -595,7 +588,7 @@ _GAME = _descriptor.Descriptor(
     fields=[]),
   ],
   serialized_start=661,
-  serialized_end=1189,
+  serialized_end=1164,
 )
 
 
@@ -626,8 +619,8 @@ _NEWPLAYERUPDATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1191,
-  serialized_end=1227,
+  serialized_start=1166,
+  serialized_end=1202,
 )
 
 
@@ -665,8 +658,8 @@ _CARDDEALTUPDATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1229,
-  serialized_end=1299,
+  serialized_start=1204,
+  serialized_end=1274,
 )
 
 
@@ -697,8 +690,8 @@ _KITTYHIDDENUPDATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1301,
-  serialized_end=1345,
+  serialized_start=1276,
+  serialized_end=1320,
 )
 
 
@@ -738,8 +731,8 @@ _CARD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1348,
-  serialized_end=1700,
+  serialized_start=1323,
+  serialized_end=1675,
 )
 
 
@@ -770,8 +763,8 @@ _HAND = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1702,
-  serialized_end=1743,
+  serialized_start=1677,
+  serialized_end=1718,
 )
 
 _PLAYHANDREQUEST.fields_by_name['intention'].enum_type = _PLAYHANDREQUEST_INTENTION
@@ -917,8 +910,8 @@ _SHENGJI = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=1746,
-  serialized_end=2048,
+  serialized_start=1721,
+  serialized_end=2023,
   methods=[
   _descriptor.MethodDescriptor(
     name='createGame',

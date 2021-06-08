@@ -344,8 +344,6 @@ class Game:
         for card in self.__kitty:
             game.kitty.cards.append(card.to_card_proto())
 
-        game.deck_card_count = len(self.__deck_cards)
-
         return game
 
     def __hide_kitty(self, player: Player, cards: Sequence[Card]) -> Tuple[bool, str]:

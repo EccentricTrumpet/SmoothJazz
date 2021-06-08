@@ -112,10 +112,6 @@ message Game {
   // Trump rank.
   Card.Rank trump_rank = 9;
 
-  // Number of cards left in the deck. It should start with N (number of
-  // decks) * 54 to start with, and become 0 once the dealing phase finishes.
-  int32 deck_card_count = 10;
-
   oneof update {
     NewPlayerUpdate new_player_update = 11;
     CardDealtUpdate card_dealt_update = 12;

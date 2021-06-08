@@ -1654,7 +1654,6 @@ proto.grpc.testing.Game.toObject = function(includeInstance, msg) {
     kitty: (f = msg.getKitty()) && proto.grpc.testing.Hand.toObject(includeInstance, f),
     trumpSuit: jspb.Message.getFieldWithDefault(msg, 8, 0),
     trumpRank: jspb.Message.getFieldWithDefault(msg, 9, 0),
-    deckCardCount: jspb.Message.getFieldWithDefault(msg, 10, 0),
     newPlayerUpdate: (f = msg.getNewPlayerUpdate()) && proto.grpc.testing.NewPlayerUpdate.toObject(includeInstance, f),
     cardDealtUpdate: (f = msg.getCardDealtUpdate()) && proto.grpc.testing.CardDealtUpdate.toObject(includeInstance, f),
     kittyHiddenUpdate: (f = msg.getKittyHiddenUpdate()) && proto.grpc.testing.KittyHiddenUpdate.toObject(includeInstance, f)
@@ -1731,10 +1730,6 @@ proto.grpc.testing.Game.deserializeBinaryFromReader = function(msg, reader) {
     case 9:
       var value = /** @type {!proto.grpc.testing.Card.Rank} */ (reader.readEnum());
       msg.setTrumpRank(value);
-      break;
-    case 10:
-      var value = /** @type {number} */ (reader.readInt32());
-      msg.setDeckCardCount(value);
       break;
     case 11:
       var value = new proto.grpc.testing.NewPlayerUpdate;
@@ -1842,13 +1837,6 @@ proto.grpc.testing.Game.serializeBinaryToWriter = function(message, writer) {
   if (f !== 0.0) {
     writer.writeEnum(
       9,
-      f
-    );
-  }
-  f = message.getDeckCardCount();
-  if (f !== 0) {
-    writer.writeInt32(
-      10,
       f
     );
   }
@@ -2077,24 +2065,6 @@ proto.grpc.testing.Game.prototype.getTrumpRank = function() {
  */
 proto.grpc.testing.Game.prototype.setTrumpRank = function(value) {
   return jspb.Message.setProto3EnumField(this, 9, value);
-};
-
-
-/**
- * optional int32 deck_card_count = 10;
- * @return {number}
- */
-proto.grpc.testing.Game.prototype.getDeckCardCount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 10, 0));
-};
-
-
-/**
- * @param {number} value
- * @return {!proto.grpc.testing.Game} returns this
- */
-proto.grpc.testing.Game.prototype.setDeckCardCount = function(value) {
-  return jspb.Message.setProto3IntField(this, 10, value);
 };
 
 
