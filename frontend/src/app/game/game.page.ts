@@ -347,51 +347,8 @@ export class Card {
         break;
     }
 
-    switch (cardProto.getRank()) {
-      case CardProto.Rank.RANK_UNDEFINED:
-        return this.none;
-      case CardProto.Rank.ACE:
-        rank = 1;
-        break;
-      case CardProto.Rank.TWO:
-        rank = 2;
-        break;
-      case CardProto.Rank.THREE:
-        rank = 3;
-        break;
-      case CardProto.Rank.FOUR:
-        rank = 4;
-        break;
-      case CardProto.Rank.FIVE:
-        rank = 5;
-        break;
-      case CardProto.Rank.SIX:
-        rank = 6;
-        break;
-      case CardProto.Rank.SEVEN:
-        rank = 7;
-        break;
-      case CardProto.Rank.EIGHT:
-        rank = 8;
-        break;
-      case CardProto.Rank.NINE:
-        rank = 9;
-        break;
-      case CardProto.Rank.TEN:
-        rank = 10;
-        break;
-      case CardProto.Rank.JACK:
-        rank = 11;
-        break;
-      case CardProto.Rank.QUEEN:
-        rank = 12;
-        break;
-      case CardProto.Rank.KING:
-        rank = 13;
-        break;
-    }
-
-    return new Card(suit, rank);
+    // cardProto.getRank() returns an enum Card.Rank but we use it as a number
+    return new Card(suit, cardProto.getRank());
   }
 
   public toString(): string {

@@ -124,36 +124,7 @@ class Card:
         if card_proto.suit == CardProto.Suit.DIAMONDS:
             suit = Suit.DIAMONDS
 
-        if card_proto.rank == CardProto.Rank.RANK_UNDEFINED:
-            rank = 0
-        if card_proto.rank == CardProto.Rank.ACE:
-            rank = 1
-        if card_proto.rank == CardProto.Rank.TWO:
-            rank = 2
-        if card_proto.rank == CardProto.Rank.THREE:
-            rank = 3
-        if card_proto.rank == CardProto.Rank.FOUR:
-            rank = 4
-        if card_proto.rank == CardProto.Rank.FIVE:
-            rank = 5
-        if card_proto.rank == CardProto.Rank.SIX:
-            rank = 6
-        if card_proto.rank == CardProto.Rank.SEVEN:
-            rank = 7
-        if card_proto.rank == CardProto.Rank.EIGHT:
-            rank = 8
-        if card_proto.rank == CardProto.Rank.NINE:
-            rank = 9
-        if card_proto.rank == CardProto.Rank.TEN:
-            rank = 10
-        if card_proto.rank == CardProto.Rank.JACK:
-            rank = 11
-        if card_proto.rank == CardProto.Rank.QUEEN:
-            rank = 12
-        if card_proto.rank == CardProto.Rank.KING:
-            rank = 13
-
-        return Card(suit, rank)
+        return Card(suit, card_proto.rank)
 
     def __str__(self) -> str:
         if self.__suit == Suit.SMALL_JOKER:
