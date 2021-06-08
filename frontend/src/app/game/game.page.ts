@@ -2,7 +2,7 @@ import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game, Hand as HandProto, Card as CardProto, Player as PlayerProto} from "proto-gen/shengji_pb";
+import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game as GameProto, Hand as HandProto, Card as CardProto, Player as PlayerProto} from "proto-gen/shengji_pb";
 import { AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 declare var cards:any;
@@ -20,8 +20,7 @@ export class GamePage implements AfterViewChecked {
   gameId = 'None';
   started = false;
   createGame = true;
-  players: Player[] = [];
-  frontendGameInstance: FrontendGame = null;
+  game: Game = null;
   playerId = "None";
 
   constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
@@ -164,24 +163,23 @@ export class GamePage implements AfterViewChecked {
     grpc.invoke(Shengji.enterRoom, {
       request: enterRoomRequest,
       host: environment.grpcUrl,
-      onMessage: (message: Game) => {
+      onMessage: (message: GameProto) => {
         console.log("Current game state: ", message.toObject());
-        if (this.frontendGameInstance == null ) {
-          this.frontendGameInstance = new FrontendGame(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
+        if (this.game == null ) {
+          this.game = new Game(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
         }
         for (const player of message.getPlayersList()) {
-          let existingPlayerNames = this.players.map(p => p.name);
+          let existingPlayerNames = this.game.players.map(p => p.name);
           if (existingPlayerNames.includes(player.getPlayerId())) {
             continue;
           }
-          const newPlayer = this.frontendGameInstance.addPlayer(player.getPlayerId());
-          this.players.push(newPlayer);
+          this.game.addPlayer(player.getPlayerId());
         }
 
-        if (gameStarted == false && this.players.length == 4) {
+        if (gameStarted == false && this.game.players.length == 4) {
           console.log("game is starting!")
           gameStarted = true;
-          this.frontendGameInstance.start();
+          this.game.start();
         } else if (gameStarted) {
           const players = message.getPlayersList();
           // We don't get a response for every card dealt, log here
@@ -192,7 +190,7 @@ export class GamePage implements AfterViewChecked {
             players[2].getCardsOnHand()?.getCardsList().length ?? 0,
             players[3].getCardsOnHand()?.getCardsList().length ?? 0,
           );
-          this.frontendGameInstance.showAnimation(players);
+          this.game.showAnimation(players);
         }
       },
       onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
@@ -506,7 +504,7 @@ class TrickFormat {
 }
 
 class TrickPile {
-  game: FrontendGame;
+  game: Game;
   players: Player[];
   ranking: CardRanking;
   cardsPlayedUI: any[];
@@ -514,7 +512,7 @@ class TrickPile {
   winningPlayer: number | null = null;
   winningHand: TrickFormat | null = null;
 
-  constructor(game: FrontendGame, players: Player[], ranking: CardRanking, x: number, y: number) {
+  constructor(game: Game, players: Player[], ranking: CardRanking, x: number, y: number) {
     this.game = game;
     this.players = players;
     this.ranking = ranking;
@@ -814,7 +812,7 @@ class TrickPile {
 }
 
 class Player {
-  game: FrontendGame;
+  game: Game;
   name: string;
   index: number;
   x: number;
@@ -826,7 +824,7 @@ class Player {
   label_left: string;
   label_top: string;
 
-  constructor(game: FrontendGame, index: number, name: string, x: number, y: number) {
+  constructor(game: Game, index: number, name: string, x: number, y: number) {
     this.game = game;
     this.index = index;
     this.name = name;
@@ -896,7 +894,7 @@ class Player {
   }
 }
 
-class FrontendGame {
+class Game {
   // Game metadata
   gameId;
   cardsInKitty = 8;
@@ -964,11 +962,10 @@ class FrontendGame {
     ];
   }
 
-  addPlayer(playerName: string):Player {
+  addPlayer(playerName: string):void {
     const playerCounts = this.players.length;
     const newPlayer = new Player(this, playerCounts, playerName, this.playerLocations[playerCounts].x, this.playerLocations[playerCounts].y);
     this.players.push(newPlayer);
-    return newPlayer;
   }
 
   start() {

@@ -5,7 +5,7 @@
       Add AI Player
     </ion-button>
     <br/><div #gameInfo id="game-info"></div>
-    <div *ngFor="let player of players">
+    <div *ngFor="let player of game?.players">
       <div [style.position]="'absolute'" [style.left]="player.label_left" [style.top]="player.label_top">{{player.name}}</div>
     </div>
   </div>
