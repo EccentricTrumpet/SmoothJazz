@@ -12,7 +12,8 @@ import {
   PlayHandRequest,
   Game as GameProto,
   Hand as HandProto,
-  Card as CardProto
+  Card as CardProto,
+  Player as PlayerProto
 } from "proto-gen/shengji_pb";
 declare var cards:any;
 
@@ -106,6 +107,16 @@ export class GamePage implements AfterViewChecked, OnInit {
     });
   }
 
+  getUIIndex(playerName: string, players: PlayerProto[], player0Name: string): number {
+    let player0Index = players.findIndex(p => p.getPlayerId() == player0Name);
+    let playerIndex = players.findIndex(p => p.getPlayerId() == playerName);
+    let uiIndex = playerIndex - player0Index;
+    if (uiIndex < 0) {
+      uiIndex += 4;
+    }
+    return uiIndex;
+  }
+
   enterRoom(playerName: string, gameID: string) {
     console.log(`${playerName} is joining game ${gameID}`);
     const enterRoomRequest = new EnterRoomRequest();
@@ -126,12 +137,9 @@ export class GamePage implements AfterViewChecked, OnInit {
           switch (message.getUpdateCase()) {
             case GameProto.UpdateCase.NEW_PLAYER_UPDATE:
                 let newPlayer = message.getNewPlayerUpdate().getPlayerId();
-                let players = message.getPlayersList();
-                let thisPlayerIndex = players.findIndex(p => p.getPlayerId() == playerName);
-                let newPlayerIndex = players.findIndex(p => p.getPlayerId() == newPlayer);
-                let uiIndex = newPlayerIndex - thisPlayerIndex;
 
-                this.game.addPlayer(newPlayer, uiIndex);
+                this.game.addPlayer(newPlayer, this.getUIIndex(newPlayer, message.getPlayersList(), playerName));
+
                 if (this.game.playerCount == 4) {
                   this.game.start();
                 }
@@ -156,16 +164,13 @@ export class GamePage implements AfterViewChecked, OnInit {
 
           if (this.game.gameStage == GameStage.Setup) {
             // Game hasn't started, render all player locations
-            let thisPlayerIndex = message.getPlayersList().findIndex(p => p.getPlayerId() == playerName);
             let players = message.getPlayersList();
 
             for (let i = 0; i < players.length; i++) {
-              let uiIndex = i - thisPlayerIndex;
-              if (uiIndex < 0) {
-                uiIndex += 4;
-              }
+              let name = players[i].getPlayerId();
+              let uiIndex = this.getUIIndex(name, players, playerName);
 
-              this.game.addPlayer(players[i].getPlayerId(), uiIndex);
+              this.game.addPlayer(name, uiIndex);
             }
 
             if (this.game.playerCount == 4) {
