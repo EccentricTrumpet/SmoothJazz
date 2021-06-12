@@ -25,8 +25,8 @@ jobs:
             - ".venv"
             - "/usr/local/bin"
             - "/usr/local/lib/python3.8/site-packages"
-      - run: pipenv run python game_state_test.py -v
-      - run: pipenv run python server_test.py -v
+      - run: apt install -y protobuf-compiler
+      - run: pipenv run make test
   test-frontend:
     working_directory: ~/repo/frontend
     docker:
@@ -42,6 +42,7 @@ jobs:
           key: frontend-npm-{{ checksum "package.json" }}-{{ checksum "package-lock.json" }}
           paths:
             - "node_modules"
+      - run: apt install -y protobuf-compiler
       - run: npm run test -- --configuration ci --browsers=ChromeHeadlessCI
   deploy-aks:
     docker:
@@ -52,6 +53,8 @@ jobs:
       # Install docker with buildkit support
       - setup_remote_docker:
           version: 20.10.2
+      # Install protoc
+      - run: apt install -y protobuf-compiler
       # Build frontend
       - restore_cache:
           key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
@@ -102,6 +105,6 @@ workflows:
           requires:
             - test-backend
             - test-frontend
-          filters:
-            branches:
-              only: main
+          # filters:
+          #   branches:
+          #     only: main

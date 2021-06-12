@@ -3,25 +3,31 @@
 http://smoothjazz.ddns.net
 
 # Backend
-Installation:
-pip3 install grpcio
-pip3 install grpcio-tools
 
-Local testing:
-1. start the server: python3 backend/server.py
-2. start a client that creates a game, then listens for game update: python3 streaming_client.py
-3. start a client that updates the game: python3 backend/updating_client.py
+---
+**NOTE**
 
-## Protobuf regeneration
+All commands run in the `./backend` directory
 
-python3 -m grpc_tools.protoc -I ./protos --python_out=. --grpc_python_out=. ./protos/shengji.proto
+---
 
-## Using docker
+## Setup
 
-1. `cd backend`
-2. Build docker image: `docker build -t backend:v1 .`
-3. Run docker image: `docker run -it --rm -p 50051:50051 backend:v1 pipenv run python server.py`
-4. Exit: `{ctl-c}` twice
+1. Install dependencies: `pipenv install`
+
+## Launch
+
+1. Start server: `make run`
+
+## Launch with docker
+
+1. Build docker image: `docker build -t backend:v1 .`
+2. Run docker image: `docker run -it --rm -p 50051:50051 backend:v1 pipenv run python server.py`
+3. Exit: `{ctl-c}` twice
+
+## Testing
+
+1. Run tests: `make test`
 
 # Reverse Proxy
 Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
@@ -29,11 +35,7 @@ Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 2. Download file: `./getProxy.sh`
 3. Start proxy: `./proxy  --backend_addr=localhost:50051 --backend_tls=False --server_tls_cert_file=./misc/localhost.crt --server_tls_key_file=./misc/localhost.key --allow_all_origins --server_http_max_read_timeout=1h --server_http_max_write_timeout=1h`
 
-Alternative installation to build from binary:
-1. Install golang
-2. Follow instructions from https://github.com/improbable-eng/grpc-web/tree/master/go/grpcwebproxy
-
-## Using docker
+## Launch with docker
 
 1. `cd proxy`
 2. Build docker image: `docker build -t proxy:v1 .`
@@ -41,28 +43,48 @@ Alternative installation to build from binary:
 4. Exit: `{ctl-c}`
 
 # Frontend
-To start frontend ionic app locally:
-1. `cd frontend`
-2. sudo apt-get install -y npm
-3. npm install -g @ionic/cli
-4. `npm install`
-5. `ionic serve`
-NOTE: It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
+
+---
+**NOTE**
+
+All commands run in the `./backend` directory
+
+---
+
+## Setup
+
+1. Install NPM: `sudo apt-get install -y npm`
+2. Install Ionic CLI: `npm install -g @ionic/cli`
+3. Install NPM dependencies: `npm install`
+
+## Launch
+
+1. `ionic serve`
+
+---
+**NOTE**
+
+It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
+
+---
 
 ## Protobuf regeneration
 
-protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:frontend/proto-gen --ts_out=service=grpc-web:frontend/proto-gen -I ./backend/protos/ ./backend/protos/shengji.proto
+1. `npm run prebuild`
 
-## Using docker
+## Launch with docker
 
-1. `cd frontend`
-2. `npm install`
-3. `npm run build`
-4. Build docker image: `docker build -t frontend:v1 .`
-5. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
-6. Exit: `docker ps; docker stop {CONTAINER_ID}`
+1. Build app: `npm run build`
+2. Build docker image: `docker build -t frontend:v1 .`
+3. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
+4. Exit: `docker ps; docker stop {CONTAINER_ID}`
+
+## Testing
+
+1. Run tests: `ng test`
 
 # To start all servers locally
+
 1. Start: `./local_test.sh start`
 2. navigate to http://localhost:8100
 3. Stop: `./local_test.sh stop`
@@ -74,29 +96,6 @@ protoc --plugin=protoc-gen-ts=./frontend/node_modules/.bin/protoc-gen-ts --js_ou
 3. Stop: `{ctl-c}`
 4. Cleanup: `docker compose down`
 
-# Testing
-
-## Backend
-
-Requirements
-1. Python dependencies
-
-```console
-$ cd backend
-$ python *test.py
-```
-
-## Frontend
-
-Requirements
-1. Angular CLI
-2. NPM package dependencies
-3. Chrome browser
-
-```console
-$ cd frontend
-$ ng test
-```
 # Deployment
 
 ## Prerequisites
