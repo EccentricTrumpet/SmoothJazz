@@ -66,6 +66,7 @@ jobs:
           key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
           paths:
             - "frontend/node_modules"
+      - run: sudo apt install -y protobuf-compiler
       - run: cd ./frontend && npm run build -- --configuration production,ci
       - azure-acr/build-and-push-image:
           path: frontend
