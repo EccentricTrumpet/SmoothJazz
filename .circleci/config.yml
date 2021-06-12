@@ -58,8 +58,6 @@ jobs:
       # Install docker with buildkit support
       - setup_remote_docker:
           version: 20.10.2
-      # Install protoc
-      - run: sudo apt install -y protobuf-compiler
       # Build frontend
       # - restore_cache:
       #     key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
@@ -85,6 +83,7 @@ jobs:
       # Build backend
       - attach_workspace:
           at: backend
+      - run: cd backend && ls
       - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
