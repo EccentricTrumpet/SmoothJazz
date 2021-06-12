@@ -4,12 +4,7 @@ http://smoothjazz.ddns.net
 
 # Backend
 
----
-**NOTE**
-
-All commands run in the `./backend` directory
-
----
+> **Note**: All commands run in the `./backend` directory
 
 ## Setup
 
@@ -45,12 +40,7 @@ Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 
 # Frontend
 
----
-**NOTE**
-
-All commands run in the `./backend` directory
-
----
+> **Note**: All commands run in the `./frontend` directory
 
 ## Setup
 
@@ -62,12 +52,7 @@ All commands run in the `./backend` directory
 
 1. `ionic serve`
 
----
-**NOTE**
-
-It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
-
----
+> **Note**: It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
 
 ## Protobuf regeneration
 
@@ -118,4 +103,3 @@ It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ioni
 ## Kubernetes deployment
 
 1. `kubectl apply -f kubernetes.yml`
-
