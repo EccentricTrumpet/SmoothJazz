@@ -28,7 +28,7 @@ jobs:
       - run: sudo apt install -y protobuf-compiler
       - run: pipenv run make test
       - persist_to_workspace:
-          root: backend
+          root: .
           paths:
             - shengji_pb.py
             - shengji_pb_grpc.py
