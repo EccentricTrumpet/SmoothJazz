@@ -59,20 +59,20 @@ jobs:
       - setup_remote_docker:
           version: 20.10.2
       # Build frontend
-      # - restore_cache:
-      #     key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
-      # - run: cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts
-      # - save_cache:
-      #     key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
-      #     paths:
-      #       - "frontend/node_modules"
-      # - run: cd ./frontend && npm run build -- --configuration production,ci
-      # - azure-acr/build-and-push-image:
-      #     path: frontend
-      #     login-server-name: smoothjazz.azurecr.io
-      #     registry-name: smoothjazz
-      #     repo: frontend
-      #     tag: ci-<< pipeline.number >>
+      - restore_cache:
+          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+      - run: cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts
+      - save_cache:
+          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+          paths:
+            - "frontend/node_modules"
+      - run: cd ./frontend && npm run build -- --configuration production,ci
+      - azure-acr/build-and-push-image:
+          path: frontend
+          login-server-name: smoothjazz.azurecr.io
+          registry-name: smoothjazz
+          repo: frontend
+          tag: ci-<< pipeline.number >>
       # Build proxy
       - azure-acr/build-and-push-image:
           path: ./proxy
@@ -83,7 +83,6 @@ jobs:
       # Build backend
       - attach_workspace:
           at: backend
-      - run: cd backend && ls
       - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
@@ -106,11 +105,11 @@ workflows:
   build:
     jobs:
       - test-backend
-      # - test-frontend
+      - test-frontend
       - deploy-aks:
           requires:
             - test-backend
-            # - test-frontend
-          # filters:
-          #   branches:
-          #     only: main
+            - test-frontend
+          filters:
+            branches:
+              only: main
