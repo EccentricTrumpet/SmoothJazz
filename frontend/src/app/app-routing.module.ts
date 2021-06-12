@@ -12,7 +12,7 @@ const routes: Routes = [
     loadChildren: () => import('./menu/menu.module').then( m => m.MenuPageModule)
   },
   {
-    path: 'game',
+    path: 'game/:gameID',
     loadChildren: () => import('./game/game.module').then( m => m.GamePageModule)
   }
 ];

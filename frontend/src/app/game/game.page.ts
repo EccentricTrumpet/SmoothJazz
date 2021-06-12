@@ -1,10 +1,20 @@
-import { AfterViewChecked, Component, ViewChild, Renderer2, ElementRef } from '@angular/core';
+import { AfterViewChecked, Component, ViewChild, ElementRef, OnInit} from '@angular/core';
 import {environment} from '../../environments/environment';
 import {grpc} from "@improbable-eng/grpc-web";
 import {Shengji} from "proto-gen/shengji_pb_service";
-import {CreateGameRequest, EnterRoomRequest, AddAIPlayerRequest, PlayHandRequest, Game as GameProto, Hand as HandProto, Card as CardProto, Player as PlayerProto} from "proto-gen/shengji_pb";
+import {ActivatedRoute, NavigationStart, Router} from "@angular/router";
+import { COOKIE_PLAYER_NAME } from '../app.constants';
+import { CookieService } from 'ngx-cookie-service';
 import { AlertController } from '@ionic/angular';
-import { ActivatedRoute, Router } from '@angular/router';
+import {
+  EnterRoomRequest,
+  AddAIPlayerRequest,
+  PlayHandRequest,
+  Game as GameProto,
+  Hand as HandProto,
+  Card as CardProto,
+  Player as PlayerProto
+} from "proto-gen/shengji_pb";
 declare var cards:any;
 
 @Component({
@@ -13,26 +23,60 @@ declare var cards:any;
   styleUrls: ['./game.page.scss'],
 })
 
-export class GamePage implements AfterViewChecked {
+export class GamePage implements AfterViewChecked, OnInit {
 @ViewChild('cardTable') tableElement: ElementRef;
 @ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
   nativeElement: any;
-  gameId = 'None';
   started = false;
-  createGame = true;
   game: Game = null;
-  playerId = "None";
+  gameID: string;
 
-  constructor(private route: ActivatedRoute, private router: Router, public alertController: AlertController, private renderer:Renderer2) {
-    if (this.router.getCurrentNavigation().extras.state) {
-      this.createGame = this.router.getCurrentNavigation().extras.state.createGame;
-    }
-    console.log("game page, createGame is "+this.createGame);
-    if (this.createGame) {
-      this.roomCreationPrompt();
-    } else {
-      this.roomJoinPrompt();
-    }
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private cookieService: CookieService,
+    private alertController: AlertController) {
+    // Close any opened dialog when route changes
+    router.events.subscribe(async event => {
+      if (event instanceof NavigationStart) {
+        try { await this.alertController.dismiss(); } catch { }
+      }
+    });
+  }
+
+  ngOnInit() {
+    this.route.params.subscribe(async params => {
+      this.gameID = params['gameID'];
+      console.log(`Game: ${this.gameID}`);
+
+      if (this.cookieService.check(COOKIE_PLAYER_NAME)) {
+        let playerName = this.cookieService.get(COOKIE_PLAYER_NAME);
+        this.enterRoom(playerName, this.gameID);
+        return;
+      }
+
+      const alert = await this.alertController.create({
+        // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
+        header: 'Please Enter Your Name:',
+        inputs: [
+          {
+            name: 'playerName',
+            placeholder: '<Player Name>'
+          },
+        ],
+        buttons: [
+          {
+            text: 'Ok',
+            handler: inputData => {
+              console.log(`Player name: ${inputData.playerName}`);
+              this.cookieService.set(COOKIE_PLAYER_NAME, inputData.playerName);
+              this.enterRoom(inputData.playerName, this.gameID);
+            }
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 
   // TODO(Aaron): Check if this can be replaced by ionViewDidEnter
@@ -46,84 +90,10 @@ export class GamePage implements AfterViewChecked {
     }
   }
 
-  async roomCreationPrompt() {
-    const alert = await this.alertController.create({
-      // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
-      header: 'Please Enter Your Name:',
-      inputs: [
-        {
-          name: 'player_name',
-          id: 'player_name',
-          type: 'text',
-          placeholder: '<My Name>'
-        },
-      ],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-          cssClass: 'secondary',
-          handler: () => {
-            console.log('Player refuses to enter name.');
-            this.router.navigate(['/']);
-          }
-        }, {
-          text: 'Ok',
-          handler: (inputData) => {
-            console.log('Player entered: '+JSON.stringify(inputData));
-            this.playerId = inputData.player_name;
-            this.startGame(inputData.player_name);
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
-  async roomJoinPrompt() {
-    const alert = await this.alertController.create({
-      // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
-      header: 'Please Enter Game Room ID and Your Name:',
-      inputs: [
-        {
-          name: 'game_id',
-          id: 'game_id',
-          type: 'text',
-          placeholder: '<Game Room ID>'
-        },
-        {
-          name: 'player_name',
-          id: 'player_name',
-          type: 'text',
-          placeholder: '<My Name>'
-        },
-      ],
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel',
-          cssClass: 'secondary',
-          handler: () => {
-            console.log('Player refuses to enter game ID or name.');
-            this.router.navigate(['/']);
-          }
-        }, {
-          text: 'Ok',
-          handler: (inputData) => {
-            console.log('Player entered: '+JSON.stringify(inputData));
-            this.gameId = inputData.game_id;
-            this.playerId = inputData.player_name;
-            this.enterRoom(inputData.player_name, inputData.game_id);
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
   addAIPlayer() {
     const createAIRequest = new AddAIPlayerRequest();
-    createAIRequest.setGameId(this.gameId);
-    console.log('Adding AI Player for: '+this.gameId);
-    const playHandReq = new PlayHandRequest();
+    createAIRequest.setGameId(this.gameID);
+    console.log('Adding AI Player for: '+this.gameID);
     grpc.unary(Shengji.addAIPlayer, {
       request: createAIRequest,
       host: environment.grpcUrl,
@@ -136,29 +106,22 @@ export class GamePage implements AfterViewChecked {
       }
     });
   }
-  startGame(player_name: string) {
-    const createGameRequest = new CreateGameRequest();
-    createGameRequest.setPlayerId(player_name);
-    grpc.unary(Shengji.createGame, {
-      request: createGameRequest,
-      host: environment.grpcUrl,
-      onEnd: res => {
-        const { status, statusMessage, headers, message, trailers } = res;
-        if (status === grpc.Code.OK && message) {
-          this.gameId = message.toObject()['gameId']
-          const gameIdText = this.renderer.createText('Room ID: '+this.gameId);
-          this.renderer.appendChild(this.gameInfo.nativeElement, gameIdText);
 
-          console.log("Created game object: ", message.toObject());
-          this.enterRoom(player_name, this.gameId);
-        }
-      }
-    });
+  getUIIndex(playerName: string, players: PlayerProto[], player0Name: string): number {
+    let player0Index = players.findIndex(p => p.getPlayerId() == player0Name);
+    let playerIndex = players.findIndex(p => p.getPlayerId() == playerName);
+    let uiIndex = playerIndex - player0Index;
+    if (uiIndex < 0) {
+      uiIndex += 4;
+    }
+    return uiIndex;
   }
-  enterRoom(player_name: string, game_id: any) {
+
+  enterRoom(playerName: string, gameID: string) {
+    console.log(`${playerName} is joining game ${gameID}`);
     const enterRoomRequest = new EnterRoomRequest();
-    enterRoomRequest.setPlayerId(player_name);
-    enterRoomRequest.setGameId(game_id);
+    enterRoomRequest.setPlayerId(playerName);
+    enterRoomRequest.setGameId(gameID);
     grpc.invoke(Shengji.enterRoom, {
       request: enterRoomRequest,
       host: environment.grpcUrl,
@@ -166,15 +129,18 @@ export class GamePage implements AfterViewChecked {
         console.log("Current game state: ", message.toObject());
         let updateId = message.getUpdateId();
         if (this.game == null) {
-          this.game = new Game(this.nativeElement.clientHeight, this.nativeElement.clientWidth, this.playerId, this.gameId);
+          this.game = new Game(this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
-        if (this.game.updateId == -1 || this.game.updateId == updateId -1)
+        if (updateId - this.game.updateId == 1)
         {
           // Render delta
           switch (message.getUpdateCase()) {
             case GameProto.UpdateCase.NEW_PLAYER_UPDATE:
-                this.game.addPlayer(message.getNewPlayerUpdate().getPlayerId());
-                if (this.game.players.length == 4) {
+                let newPlayer = message.getNewPlayerUpdate().getPlayerId();
+
+                this.game.addPlayer(newPlayer, this.getUIIndex(newPlayer, message.getPlayersList(), playerName));
+
+                if (this.game.playerCount == 4) {
                   this.game.start();
                 }
               break;
@@ -193,8 +159,25 @@ export class GamePage implements AfterViewChecked {
         }
         else
         {
-          console.log(`Rerender required, update ${this.game.updateId} -> ${updateId}`);
           // Render entire game
+          console.log(`Rerender required, update ${this.game.updateId} -> ${updateId}`);
+
+          if (this.game.gameStage == GameStage.Setup) {
+            // Game hasn't started, render all player locations
+            let players = message.getPlayersList();
+
+            for (let i = 0; i < players.length; i++) {
+              let name = players[i].getPlayerId();
+              let uiIndex = this.getUIIndex(name, players, playerName);
+
+              this.game.addPlayer(name, uiIndex);
+            }
+
+            if (this.game.playerCount == 4) {
+              this.game.start();
+            }
+          }
+
         }
         this.game.updateId = updateId;
       },
@@ -220,6 +203,7 @@ export enum Suit {
 }
 
 enum GameStage {
+  Setup,
   Deal,
   DealKitty,
   HideKitty,
@@ -325,7 +309,6 @@ export class Card {
 
   static fromProto(cardProto: CardProto): Card {
     let suit: Suit = null;
-    let rank: number = 0;
 
     switch (cardProto.getSuit()) {
       case CardProto.Suit.SUIT_UNDEFINED:
@@ -926,10 +909,10 @@ class Player {
 
 class Game {
   // Game metadata
-  gameId;
+  gameId: string;
   cardsInKitty = 8;
-  gameStage = GameStage.Deal;
-  trickPile : TrickPile;
+  gameStage = GameStage.Setup;
+  trickPile: TrickPile;
   updateId =-1;
 
   // Trump metadata
@@ -938,8 +921,9 @@ class Game {
   cardRanking = new CardRanking(this.trumpRank);
 
   // Player metadata
-  playerId;
-  players : Player[] = [];
+  playerId: string;
+  players: Player[] = new Array(4).fill(null);
+  playerCount = 0;
   currentPlayer = 0;
   kittyPlayer = 0;
 
@@ -949,8 +933,8 @@ class Game {
   deckUI;
   kittyUI;
   cardSize: any;
-  width : number;
-  height : number;
+  width: number;
+  height: number;
   playerLocations: any;
 
   constructor(height: number, width: number, playerId: string, gameId: string) {
@@ -993,14 +977,18 @@ class Game {
     ];
   }
 
-  addPlayer(playerName: string):void {
-    const playerCounts = this.players.length;
-    const newPlayer = new Player(this, playerCounts, playerName, this.playerLocations[playerCounts].x, this.playerLocations[playerCounts].y);
-    this.players.push(newPlayer);
+  addPlayer(playerName: string, index: number):void {
+    this.playerCount++;
+    const newPlayer = new Player(this, index, playerName, this.playerLocations[index].x, this.playerLocations[index].y);
+    this.players[index] = newPlayer;
   }
 
   start() {
     cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
+
+    // Start game
+    this.gameStage = GameStage.Deal;
+
     // Create kitty
     this.kittyUI = new cards.Hand({faceUp:true, x:this.cardWidth()/2 + 4.5*this.cardPadding(), y:this.height - this.cardWidth()/2 - this.cardPadding()})
 
