@@ -25,7 +25,7 @@ jobs:
             - ".venv"
             - "/usr/local/bin"
             - "/usr/local/lib/python3.8/site-packages"
-      - run: apt install -y protobuf-compiler
+      - run: sudo apt install -y protobuf-compiler
       - run: pipenv run make test
   test-frontend:
     working_directory: ~/repo/frontend
@@ -42,7 +42,7 @@ jobs:
           key: frontend-npm-{{ checksum "package.json" }}-{{ checksum "package-lock.json" }}
           paths:
             - "node_modules"
-      - run: apt install -y protobuf-compiler
+      - run: sudo apt install -y protobuf-compiler
       - run: npm run test -- --configuration ci --browsers=ChromeHeadlessCI
   deploy-aks:
     docker:
@@ -54,7 +54,7 @@ jobs:
       - setup_remote_docker:
           version: 20.10.2
       # Install protoc
-      - run: apt install -y protobuf-compiler
+      - run: sudo apt install -y protobuf-compiler
       # Build frontend
       - restore_cache:
           key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
