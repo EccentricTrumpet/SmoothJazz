@@ -27,6 +27,11 @@ jobs:
             - "/usr/local/lib/python3.8/site-packages"
       - run: sudo apt install -y protobuf-compiler
       - run: pipenv run make test
+      - persist_to_workspace:
+          root: backend
+          paths:
+            - shengji_pb.py
+            - shengji_pb_grpc.py
   test-frontend:
     working_directory: ~/repo/frontend
     docker:
@@ -78,18 +83,8 @@ jobs:
           repo: proxy
           tag: ci-<< pipeline.number >>
       # Build backend
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
-      - restore_cache:  # ensure this step occurs *before* installing dependencies
-          key: backend-pipenv-docker-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
-      - run: PIPENV_VENV_IN_PROJECT=enabled cd ./backend && pipenv sync
-      - save_cache:
-          key: backend-pipenv-docker-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
-          paths:
-            - "./backend/.venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.8/site-packages"
-      - run: cd ./backend && pipenv run make proto
+      - attach_workspace:
+          at: backend
       - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
