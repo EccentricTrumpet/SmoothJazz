@@ -6,8 +6,11 @@
   "scripts": {
     "postinstall": "ngcc --tsconfig tsconfig.json --properties es2015",
     "ng": "ng",
-    "start": "ng serve",
+    "prestart": "protoc --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:proto-gen --ts_out=service=grpc-web:proto-gen -I ../backend/protos/ ../backend/protos/shengji.proto",
+    "start": "ionic serve",
+    "prebuild": "protoc --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:proto-gen --ts_out=service=grpc-web:proto-gen -I ../backend/protos/ ../backend/protos/shengji.proto",
     "build": "ng build",
+    "pretest": "protoc --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:proto-gen --ts_out=service=grpc-web:proto-gen -I ../backend/protos/ ../backend/protos/shengji.proto",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"

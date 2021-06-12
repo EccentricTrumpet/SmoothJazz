@@ -25,8 +25,13 @@ jobs:
             - ".venv"
             - "/usr/local/bin"
             - "/usr/local/lib/python3.8/site-packages"
-      - run: pipenv run python game_state_test.py -v
-      - run: pipenv run python server_test.py -v
+      - run: sudo apt install -y protobuf-compiler
+      - run: pipenv run make test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - shengji_pb2.py
+            - shengji_pb2_grpc.py
   test-frontend:
     working_directory: ~/repo/frontend
     docker:
@@ -42,6 +47,7 @@ jobs:
           key: frontend-npm-{{ checksum "package.json" }}-{{ checksum "package-lock.json" }}
           paths:
             - "node_modules"
+      - run: sudo apt install -y protobuf-compiler
       - run: npm run test -- --configuration ci --browsers=ChromeHeadlessCI
   deploy-aks:
     docker:
@@ -75,6 +81,8 @@ jobs:
           repo: proxy
           tag: ci-<< pipeline.number >>
       # Build backend
+      - attach_workspace:
+          at: backend
       - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
