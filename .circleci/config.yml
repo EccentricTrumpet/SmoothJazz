@@ -30,8 +30,8 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - shengji_pb.py
-            - shengji_pb_grpc.py
+            - shengji_pb2.py
+            - shengji_pb2_grpc.py
   test-frontend:
     working_directory: ~/repo/frontend
     docker:
