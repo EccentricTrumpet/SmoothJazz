@@ -21,9 +21,10 @@ All commands run in the `./backend` directory
 
 ## Launch with docker
 
-1. Build docker image: `docker build -t backend:v1 .`
-2. Run docker image: `docker run -it --rm -p 50051:50051 backend:v1 pipenv run python server.py`
-3. Exit: `{ctl-c}` twice
+1. Regenerate proto: `make proto`
+2. Build docker image: `docker build -t backend:v1 .`
+3. Run docker image: `docker run -it --rm -p 50051:50051 backend:v1 pipenv run python server.py`
+4. Exit: `{ctl-c}` twice
 
 ## Testing
 

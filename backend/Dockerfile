@@ -5,6 +5,3 @@ COPY . /app
 
 RUN pip install pipenv
 RUN pipenv sync
-RUN apt install -y protobuf-compiler
-
-RUN make proto

@@ -78,6 +78,7 @@ jobs:
           repo: proxy
           tag: ci-<< pipeline.number >>
       # Build backend
+      - run: cd ./backend && make proto
       - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
