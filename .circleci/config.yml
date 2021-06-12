@@ -56,20 +56,20 @@ jobs:
       # Install protoc
       - run: sudo apt install -y protobuf-compiler
       # Build frontend
-      - restore_cache:
-          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
-      - run: cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts
-      - save_cache:
-          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
-          paths:
-            - "frontend/node_modules"
-      - run: cd ./frontend && npm run build -- --configuration production,ci
-      - azure-acr/build-and-push-image:
-          path: frontend
-          login-server-name: smoothjazz.azurecr.io
-          registry-name: smoothjazz
-          repo: frontend
-          tag: ci-<< pipeline.number >>
+      # - restore_cache:
+      #     key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+      # - run: cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts
+      # - save_cache:
+      #     key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+      #     paths:
+      #       - "frontend/node_modules"
+      # - run: cd ./frontend && npm run build -- --configuration production,ci
+      # - azure-acr/build-and-push-image:
+      #     path: frontend
+      #     login-server-name: smoothjazz.azurecr.io
+      #     registry-name: smoothjazz
+      #     repo: frontend
+      #     tag: ci-<< pipeline.number >>
       # Build proxy
       - azure-acr/build-and-push-image:
           path: ./proxy
@@ -78,7 +78,18 @@ jobs:
           repo: proxy
           tag: ci-<< pipeline.number >>
       # Build backend
-      - run: cd ./backend && make proto
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.8/site-packages
+      - restore_cache:  # ensure this step occurs *before* installing dependencies
+          key: backend-pipenv-docker-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
+      - run: PIPENV_VENV_IN_PROJECT=enabled cd ./backend && pipenv sync
+      - save_cache:
+          key: backend-pipenv-docker-{{ checksum "Pipfile" }}-{{ checksum "Pipfile.lock" }}
+          paths:
+            - "./backend/.venv"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.8/site-packages"
+      - run: cd ./backend && pipenv run make proto
       - azure-acr/build-and-push-image:
           path: ./backend
           login-server-name: smoothjazz.azurecr.io
@@ -101,11 +112,11 @@ workflows:
   build:
     jobs:
       - test-backend
-      - test-frontend
+      # - test-frontend
       - deploy-aks:
           requires:
             - test-backend
-            - test-frontend
+            # - test-frontend
           # filters:
           #   branches:
           #     only: main
