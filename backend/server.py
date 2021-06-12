@@ -1,15 +1,14 @@
 import asyncio
 import logging
 import random
-import threading
 from concurrent.futures.thread import ThreadPoolExecutor
+from google.protobuf.empty_pb2 import Empty
 from grpc import ServicerContext
 from grpc.aio import server as GrpcServer
 from itertools import count
 from game_state import (
     Card,
-    Game,
-    GameState)
+    Game)
 from typing import (
     Iterable,
     Dict,
@@ -21,6 +20,7 @@ from shengji_pb2 import (
     AddAIPlayerRequest,
     AddAIPlayerResponse,
     CreateGameRequest,
+    DrawCardsRequest,
     EnterRoomRequest,
     PlayHandRequest,
     PlayHandResponse,
@@ -63,10 +63,6 @@ class SJService(ShengjiServicer):
         game = self.__get_game(request.game_id)
         game.add_player(ai_name, False)
 
-        if game.state == GameState.AWAIT_DEAL:
-            thread = threading.Thread(target=game.deal_cards(), args=())
-            thread.start()
-
         # API: This is ignored by the frontend so is this needed?
         ai_player = AddAIPlayerResponse()
         ai_player.player_name = ai_name
@@ -82,10 +78,6 @@ class SJService(ShengjiServicer):
         game = self.__get_game(request.game_id)
         player = game.add_player(request.player_id, True)
 
-        if game.state == GameState.AWAIT_DEAL:
-            thread = threading.Thread(target=game.deal_cards(), args=())
-            thread.start()
-
         for update in player.update_stream():
             yield update
 
@@ -95,9 +87,8 @@ class SJService(ShengjiServicer):
         logging.info(f'Received a playHand request [{request.hand}] from player_id [{request.player_id}], game_id [{request.game_id}]')
 
         try:
-            game = self.__games[request.game_id]
+            game = self.__get_game(request.game_id)
         except:
-            logging.info(f'Not found: game_id [{request.game_id}]')
             response = PlayHandResponse()
             response.success = False
             response.error_message = f'Game {request.game_id} does not exist'
@@ -110,6 +101,15 @@ class SJService(ShengjiServicer):
         response.error_message = error_message
 
         return response
+
+    def drawCards(self,
+        request: DrawCardsRequest,
+        context: ServicerContext) -> Empty:
+
+        game = self.__get_game(request.game_id)
+        game.drawCards(request.player_name)
+
+        return Empty()
 
     def terminate_game(self, game_id: str) -> None:
         game = self.__get_game(game_id)
