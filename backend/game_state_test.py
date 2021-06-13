@@ -44,19 +44,19 @@ class GameTests(unittest.TestCase):
     def test_declare_trump(self) -> None:
         game = Game('creator', '0', 0.001)
         game.state = GameState.DEAL
-        p1 = game.add_player('player_1', False)
-        # p1_update_stream = [next(p1.update_stream())]
-        p1_update_stream = p1.update_stream()
+        p1 = game.add_player('player_1', True)
         hand = [Card(Suit.SPADES, 2)]
         self.__addCardsToHand(p1, hand)
 
+        # player_1 declares trump
         success, err = game.play('player_1', [Card(Suit.SPADES, 2)])
-        # game.complete_player_stream()
+        p1_add_player_update = next(p1.update_stream())
+        p1_declare_trump_update = next(p1.update_stream())
 
-        updates = [p1_update_stream]
         self.assertTrue(success)
         self.assertEqual(err, '')
-        self.assertEqual(updates[-1], [])
+        self.assertEqual(p1_declare_trump_update.trump_player_id, "player_1")
+        self.assertEqual(p1_declare_trump_update.trump_cards, "player_1")
 
 if __name__ == '__main__':
     unittest.main()

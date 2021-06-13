@@ -68,6 +68,7 @@ class Player:
             if self.__notify == False:
                 break
             game_state = self.__game_queue.popleft()
+            print(f"AW - yeilding {game_state}")
             yield game_state
 
     def to_player_proto(self) -> PlayerProto:
@@ -261,6 +262,7 @@ class Game:
 
     def __declare_trump_update(self, player_id: str, trump_hand: Sequence[Card]) -> None:
         def action(game: GameProto):
+            print("AW - __declare_trump_update action cb is called")
             game.trump_player_id = player_id
             for card in trump_hand:
                 card_proto = game.trump_cards.cards.add()
