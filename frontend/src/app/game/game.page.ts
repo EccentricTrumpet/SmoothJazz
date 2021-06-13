@@ -522,11 +522,13 @@ class TrickPile {
           }
         }
       }
-      let suit = cards[0].getSuit();
-      for (const card of cards) {
-        if (this.game.ranking.isTrump(card) || suit !== card.getSuit()) {
-          console.log("Cards cannot be played since more than one suit detected");
-          return TrickFormat.invalid;
+      else {
+        let suit = cards[0].getSuit();
+        for (const card of cards) {
+          if (this.game.ranking.isTrump(card) || suit !== card.getSuit()) {
+            console.log("Cards cannot be played since more than one suit detected");
+            return TrickFormat.invalid;
+          }
         }
       }
 
