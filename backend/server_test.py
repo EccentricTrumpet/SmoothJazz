@@ -7,6 +7,7 @@ from server import SJService
 from shengji_pb2 import (
     AddAIPlayerRequest,
     CreateGameRequest,
+    DrawCardsRequest,
     EnterRoomRequest)
 
 # TODO(aaron): Add unit tests for 4 real players
@@ -59,7 +60,11 @@ class ShengjiTest(unittest.TestCase):
         enter_room_req.game_id = game.game_id
         enter_room_req.player_id = req.player_id
 
-        with futures.ThreadPoolExecutor(max_workers=1) as pool:
+        draw_req = DrawCardsRequest()
+        draw_req.game_id = game.game_id
+        draw_req.player_name = req.player_id
+
+        with futures.ThreadPoolExecutor(max_workers=2) as pool:
             add_ai_req = AddAIPlayerRequest()
             add_ai_req.game_id = game.game_id
 
@@ -71,8 +76,13 @@ class ShengjiTest(unittest.TestCase):
             # Add the human player last (so we can trigger card dealing)
             f = pool.submit(self.__generator_wrap, sj.enterRoom, enter_room_req, None)
 
-            # Sleep 3 secs to deal cards
-            time.sleep(3)
+            # Draw hands
+            sj.drawCards(draw_req, None)
+
+            # Draw kitty
+            sj.drawCards(draw_req, None)
+
+            time.sleep(1.0)
             sj.terminate_game(game.game_id)
 
             streaming_result = f.result()

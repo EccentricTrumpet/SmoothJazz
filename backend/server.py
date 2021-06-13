@@ -73,7 +73,7 @@ class SJService(ShengjiServicer):
                   request: EnterRoomRequest,
                   context: ServicerContext
                   ) -> Iterable[Game]:
-        logging.info(f'Received a EnterRoom request: {request}')
+        logging.info(f'Received a EnterRoom request: {request.player_id} wants to join game {request.game_id}')
 
         game = self.__get_game(request.game_id)
         player = game.add_player(request.player_id, True)
