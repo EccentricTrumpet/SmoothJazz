@@ -10,116 +10,30 @@ from typing import (
     Iterable,
     List,
     Sequence,
-    Tuple,
-    Type,
-    TypeVar)
+    Tuple)
 from shengji_pb2 import (
     Card as CardProto,
     Game as GameProto,
     Player as PlayerProto)
 
+# Type aliases
+Suit = CardProto.Suit
+Rank = CardProto.Rank
+
+# Utility functions
+def create_cardproto(suit: Suit, rank: Rank) -> CardProto:
+    card = CardProto()
+    card.suit = suit
+    card.rank = rank
+    return card
+
 """
 Game: All state of the game is stored in this class
 GameMetadata: Stores states related to the currently playing game
 Player class: Contains all player-related states, including cards etc.
-Card class: Models a poker card
 CardCollection: Organizes cards into useful structures
 Hand: A playable hand of cards.
 """
-
-class Suit(Enum):
-    SUIT_UNDEFINED = 0
-    SPADES = 1
-    HEARTS = 2
-    CLUBS = 3
-    DIAMONDS = 4
-    SMALL_JOKER = 5
-    BIG_JOKER = 6
-    TRUMP = 7
-
-TCard = TypeVar('TCard', bound='Card')
-class Card:
-    """ Modeled the following way to Hand.type detection easier
-    0 -> Undefined
-    1 -> Ace
-    2 -> 2
-    10  -> 10
-    11 -> Jack
-    12 -> Queen
-    13 -> King
-    """
-    def __init__(self, suit: Suit, rank: int) -> None:
-        self.__suit: Suit = suit
-        self.__rank: int = rank
-
-    def __eq__(self, obj: any) -> bool:
-        if not isinstance(obj, Card):
-            return NotImplemented
-        return self.__suit == obj.__suit and self.__rank == obj.__rank
-
-    def to_card_proto(self) -> CardProto:
-        card = CardProto()
-
-        if self.__suit == Suit.SMALL_JOKER:
-            card.suit = CardProto.Suit.SMALL_JOKER
-            return card
-        if self.__suit == Suit.BIG_JOKER:
-            card.suit = CardProto.Suit.BIG_JOKER
-            return card
-        if self.__suit == Suit.SUIT_UNDEFINED:
-            card.suit = CardProto.Suit.SUIT_UNDEFINED
-        if self.__suit == Suit.SPADES:
-            card.suit = CardProto.Suit.SPADES
-        if self.__suit == Suit.HEARTS:
-            card.suit = CardProto.Suit.HEARTS
-        if self.__suit == Suit.CLUBS:
-            card.suit = CardProto.Suit.CLUBS
-        if self.__suit == Suit.DIAMONDS:
-            card.suit = CardProto.Suit.DIAMONDS
-
-        card.rank = self.__rank
-
-        return card
-
-    @classmethod
-    def from_card_proto(cls: Type[TCard], card_proto: CardProto) -> TCard:
-        if card_proto.suit == CardProto.Suit.SMALL_JOKER:
-            suit = Suit.SMALL_JOKER
-        if card_proto.suit == CardProto.Suit.BIG_JOKER:
-            suit = Suit.BIG_JOKER
-        if card_proto.suit == CardProto.Suit.SUIT_UNDEFINED:
-            suit = Suit.SUIT_UNDEFINED
-        if card_proto.suit == CardProto.Suit.SPADES:
-            suit = Suit.SPADES
-        if card_proto.suit == CardProto.Suit.HEARTS:
-            suit = Suit.HEARTS
-        if card_proto.suit == CardProto.Suit.CLUBS:
-            suit = Suit.CLUBS
-        if card_proto.suit == CardProto.Suit.DIAMONDS:
-            suit = Suit.DIAMONDS
-
-        return Card(suit, card_proto.rank)
-
-    def __str__(self) -> str:
-        if self.__suit == Suit.SMALL_JOKER:
-            return 'SMALL_JOKER'
-        if self.__suit == Suit.BIG_JOKER:
-            return 'BIG_JOKER'
-
-        if self.__rank == 11:
-            card = 'JACK'
-        elif self.__rank == 12:
-            card = 'QUEEN'
-        elif self.__rank == 13:
-            card = 'KING'
-        elif self.__rank == 1:
-            card = 'ACE'
-        else:
-            card = str(self.__rank)
-        card += '_OF_'
-        card += self.__suit.name
-        return card
-
 
 class Player:
     def __init__(self, player_id: str, notify: bool) -> None:
@@ -127,23 +41,16 @@ class Player:
         self.__notify: bool = notify
         self.__game_queue: deque[GameProto]  = deque()
         self.__game_queue_sem: Semaphore= Semaphore(0)
-        self.__cards_on_hand: list[Card] = []
+        self.cards_on_hand: list[CardProto] = []
 
-    def has_card(self, card: Card) -> None:
-        hasCard = card in self.__cards_on_hand
+    def has_card(self, card: CardProto) -> bool:
+        return card in self.cards_on_hand
 
-        if not hasCard:
-            logging.info('cards on hand:')
-            for card in self.__cards_on_hand:
-                logging.info(card)
+    def remove_card(self, card: CardProto) -> None:
+        self.cards_on_hand.remove(card)
 
-        return hasCard
-
-    def remove_card(self, card: Card) -> None:
-        self.__cards_on_hand.remove(card)
-
-    def add_card(self, card: Card) -> None:
-        self.__cards_on_hand.append(card)
+    def add_card(self, card: CardProto) -> None:
+        self.cards_on_hand.append(card)
 
     def queue_update(self, game: GameProto) -> None:
         if self.__notify:
@@ -165,8 +72,8 @@ class Player:
     def to_player_proto(self) -> PlayerProto:
         player_proto = PlayerProto()
         player_proto.player_id = self.player_id
-        for card in self.__cards_on_hand:
-            player_proto.cards_on_hand.cards.append(card.to_card_proto())
+        for card in self.cards_on_hand:
+            player_proto.cards_on_hand.cards.append(card)
         return player_proto
 
 
@@ -197,7 +104,7 @@ class Game:
         self.__players_lock: RLock = RLock()
         self.__metadata: GameMetadata = None
         self.__next_player_id: str = creator_id
-        self.__kitty: List[Card] = []
+        self.__kitty: List[CardProto] = []
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
         # hands on table contains an array of pairs - (id, hand)
@@ -205,13 +112,13 @@ class Game:
         self.__hands_on_table: List[tuple[str, Hand]] = []
 
         # shuffle two decks of cards
-        self.__deck_cards: List[Card] = []
+        self.__deck_cards: List[CardProto] = []
         for i in range(2):
-            self.__deck_cards.append(Card(Suit.BIG_JOKER, 0))
-            self.__deck_cards.append(Card(Suit.SMALL_JOKER, 0))
+            self.__deck_cards.append(create_cardproto(Suit.BIG_JOKER, Rank.RANK_UNDEFINED))
+            self.__deck_cards.append(create_cardproto(Suit.SMALL_JOKER, Rank.RANK_UNDEFINED))
             for s in Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS:
-                for r in range(1, 14):
-                    self.__deck_cards.append(Card(s, r))
+                for r in range(Rank.ACE, Rank.KING + 1):
+                    self.__deck_cards.append(create_cardproto(s, r))
 
         random.shuffle(self.__deck_cards)
 
@@ -235,7 +142,7 @@ class Game:
         for player in players:
             player.complete_update_stream()
 
-    def play(self, player_id: str, cards: Sequence[Card]) -> Tuple[bool, str]:
+    def play(self, player_id: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         # Check turn
         # TODO (https://github.com/EccentricTrumpet/SmoothJazz/issues/49): Handle out of turn play for trump declarations
         if player_id != self.__next_player_id:
@@ -339,7 +246,7 @@ class Game:
 
             self.__card_dealt_update(player.player_id, card)
 
-    def __hide_kitty(self, player: Player, cards: Sequence[Card]) -> Tuple[bool, str]:
+    def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         if (len(cards) != 8):
             return False, 'Incorrect number of cards to hide'
 
@@ -367,10 +274,10 @@ class Game:
             game.new_player_update.player_id = player_id
         self.__update_players(action)
 
-    def __card_dealt_update(self, player_id: str, card: Card) -> None:
+    def __card_dealt_update(self, player_id: str, card: CardProto) -> None:
         def action(game: GameProto):
             game.card_dealt_update.player_id = player_id
-            game.card_dealt_update.card.CopyFrom(card.to_card_proto())
+            game.card_dealt_update.card.CopyFrom(card)
         self.__update_players(action)
 
     def __update_players(self, appendUpdate: Callable[[GameProto], None]) -> None:
@@ -382,6 +289,7 @@ class Game:
 
         for player in players:
             player.queue_update(game_proto)
+
 
 # This class needs to be refactored to follow coding styles
 class GameMetadata:
@@ -521,7 +429,7 @@ class CardCollection:
         string = ''
         for c in self.cards.keys():
             if self.cards[c] > 0:
-                string += ', ' + str(Card(c)) + 'x' + str(self.cards[c])
+                string += ', ' + str(CardProto(c)) + 'x' + str(self.cards[c])
 
         return string
 
@@ -531,19 +439,19 @@ class CardCollection:
 3- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
 """
 class Hand:
-    def __init__(self, cards: Sequence[Card]) -> None:
-        self.__cards: Sequence[Card] = cards
+    def __init__(self, cards: Sequence[CardProto]) -> None:
+        self.__cards: Sequence[CardProto] = cards
         # Type is SINGLE, PAIR, TOAK, FOAK, STRAIGHT, DOUBLE_STRAIGHT or INVALID
         self.type = self.__detect_type()
 
-    def __verify_all_cards_eq(self, cards: Sequence[Card]) -> bool:
+    def __verify_all_cards_eq(self, cards: Sequence[CardProto]) -> bool:
         c = cards[0]
         for card in cards:
             if card != c:
                 return False
         return True
 
-    def __is_straight(self, cards: Sequence[Card]) -> bool:
+    def __is_straight(self, cards: Sequence[CardProto]) -> bool:
         if len(cards) < 3:
             return False
         min_card = cards[0].GetNum()
@@ -575,7 +483,7 @@ class Hand:
                 count = grouped_cards[index]
             if count != grouped_cards[index]:
                 return False
-        return self.__is_straight([Card(c) for c in grouped_cards.keys()])
+        return self.__is_straight([CardProto(c) for c in grouped_cards.keys()])
 
     def __detect_type(self) -> str:
         if len(self.__cards) == 1:
