@@ -67,7 +67,7 @@ jobs:
           paths:
             - "frontend/node_modules"
       - run: sudo apt install -y protobuf-compiler
-      - run: cd ./frontend && npm build -- --configuration production,ci
+      - run: cd ./frontend && npm run build -- --configuration production,ci
       - azure-acr/build-and-push-image:
           path: frontend
           login-server-name: smoothjazz.azurecr.io
