@@ -13,6 +13,7 @@ from typing import (
     Tuple)
 from shengji_pb2 import (
     Card as CardProto,
+    Hand as HandProto,
     Game as GameProto,
     Player as PlayerProto)
 
@@ -143,10 +144,11 @@ class Game:
             player.complete_update_stream()
 
     def play(self, player_id: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        # Check turn
-        # TODO (https://github.com/EccentricTrumpet/SmoothJazz/issues/49): Handle out of turn play for trump declarations
-        if player_id != self.__next_player_id:
+        if player_id != self.__next_player_id and self.state != GameState.DEAL:
             return False, f'Not the turn of player {player_id}'
+        logging.info(f'Game state: {self.state}')
+        if (self.state == GameState.DEAL):
+            return self.__declare_trump(self.__players[player_id], cards)
 
         if (self.state == GameState.HIDE_KITTY):
             return self.__hide_kitty(self.__players[player_id], cards)
@@ -243,6 +245,25 @@ class Game:
 
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_id, card)
+
+    def __declare_trump(self, player: Player, cards: Sequence[Card]) -> Tuple[bool, str]:
+        logging.info(f'{player} declares trump as: {cards}')
+
+        for card in cards:
+            if not player.has_card(card):
+                return False, f'Player does not possess the card {card}'
+
+        self.__declare_trump_update(player.player_id, cards)
+
+        return True, ''
+
+    def __declare_trump_update(self, player_id: str, trump_hand: Sequence[Card]) -> None:
+        def action(game: GameProto):
+            game.trump_player_id = player_id
+            for card in trump_hand:
+                card_proto = game.trump_cards.cards.add()
+                card_proto.CopyFrom(card.to_card_proto())
+        self.__update_players(action)
 
     def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         if (len(cards) != 8):

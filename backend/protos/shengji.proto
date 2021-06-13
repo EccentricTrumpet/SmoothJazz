@@ -115,12 +115,11 @@ message Game {
   // Kitty/hidden hand. This is only visible to the dealer.
   Hand kitty = 7;
 
-  // Current trump suit. If trump_suit is SUIT_UNDEFINED, then we're playing a
-  // game without trump suit.
-  Card.Suit trump_suit = 8;
+  // Currently declared trump cards.
+  Hand trump_cards = 8;
 
-  // Trump rank.
-  Card.Rank trump_rank = 9;
+  // Currently declared trump cards.
+  string trump_player_id = 9;
 
   // Update id, a sequence of natural numbers
   int32 update_id = 10;
