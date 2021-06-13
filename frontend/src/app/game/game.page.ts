@@ -172,11 +172,6 @@ export class GamePage implements AfterViewChecked, OnInit {
         }
         this.game.updateId = updateId;
       })
-      .on('status', function(status) {
-        console.log(status.code);
-        console.log(status.details);
-        console.log(status.metadata);
-      })
       .on('end', () => console.log('game stream closed'))
       .on('error', error => console.log(`hit an error: ${error.code} - ${error.message}`));
   }
