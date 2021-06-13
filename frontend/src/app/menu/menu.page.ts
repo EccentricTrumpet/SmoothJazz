@@ -3,7 +3,7 @@ import { NavigationStart, Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { CookieService } from 'ngx-cookie-service';
 import { CreateGameRequest } from 'proto-gen/shengji_pb';
-import { ShengjiClient } from 'proto-gen/shengji_pb_service';
+import { ShengjiClient } from 'proto-gen/ShengjiServiceClientPb';
 import { environment } from 'src/environments/environment';
 import { COOKIE_PLAYER_NAME } from '../app.constants';
 
@@ -49,7 +49,7 @@ export class MenuPage {
         },
         {
           text: 'Ok',
-          handler: inputData => {
+          handler: async inputData => {
             console.log(`Player name: ${inputData.playerName}`);
             playerName = inputData.playerName;
             this.cookieService.set(COOKIE_PLAYER_NAME, playerName);
@@ -57,10 +57,8 @@ export class MenuPage {
             let createGameRequest = new CreateGameRequest();
             createGameRequest.setPlayerId(playerName);
 
-            this.client.createGame(createGameRequest, (error, response) => {
-              let gameId = response.getGameId();
-              this.router.navigate([`game/${gameId}`]);
-            });
+            let response = await this.client.createGame(createGameRequest, null);
+            this.router.navigate([`game/${response.getGameId()}`]);
           }
         }
       ]

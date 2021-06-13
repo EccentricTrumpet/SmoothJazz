@@ -1,6 +1,6 @@
 import { AfterViewChecked, Component, ViewChild, ElementRef, OnInit} from '@angular/core';
 import { environment } from '../../environments/environment';
-import { ShengjiClient } from "proto-gen/shengji_pb_service";
+import { ShengjiClient } from "proto-gen/ShengjiServiceClientPb";
 import { ActivatedRoute, NavigationStart, Router } from "@angular/router";
 import { COOKIE_PLAYER_NAME } from '../app.constants';
 import { CookieService } from 'ngx-cookie-service';
@@ -92,14 +92,13 @@ export class GamePage implements AfterViewChecked, OnInit {
     }
   }
 
-  addAIPlayer() {
+  async addAIPlayer() {
     const createAIRequest = new AddAIPlayerRequest();
     createAIRequest.setGameId(this.gameID);
     console.log('Adding AI Player for: '+this.gameID);
 
-    this.client.addAIPlayer(createAIRequest, (error, response) => {
+    let response = await this.client.addAIPlayer(createAIRequest, null);
       console.log(`${response.getPlayerName()} is added to the room`);
-    });
   }
 
   getUIIndex(playerName: string, players: PlayerProto[], player0Name: string): number {
@@ -118,9 +117,8 @@ export class GamePage implements AfterViewChecked, OnInit {
     enterRoomRequest.setPlayerId(playerName);
     enterRoomRequest.setGameId(gameID);
 
-    this
-      .client.enterRoom(enterRoomRequest)
-      .on('data', gameProto => {
+    this.client.enterRoom(enterRoomRequest)
+      .on('data', (gameProto: GameProto) => {
         console.log("Current game state: ", gameProto.toObject());
         let updateId = gameProto.getUpdateId();
         if (this.game == null) {
@@ -174,8 +172,13 @@ export class GamePage implements AfterViewChecked, OnInit {
         }
         this.game.updateId = updateId;
       })
-      .on('end', () => console.log("all ok"))
-      .on('status', status => console.log("hit an error", status?.code, status?.details, status?.metadata));
+      .on('status', function(status) {
+        console.log(status.code);
+        console.log(status.details);
+        console.log(status.metadata);
+      })
+      .on('end', () => console.log('game stream closed'))
+      .on('error', error => console.log(`hit an error: ${error.code} - ${error.message}`));
   }
 }
 
@@ -842,7 +845,7 @@ class Player {
     this.handUI.render(options);
   }
 
-  act(cardUI: any, event: any) {
+  async act(cardUI: any, event: any) {
     // prevent context menu on right click
     event.preventDefault();
 
@@ -878,12 +881,11 @@ class Player {
       playHandReq.setHand(handToPlay);
 
       console.log("Sending playhandRequest: ", playHandReq.toObject());
+      let response = await this.game.client.playHand(playHandReq, null);
 
-      this.game.client.playHand(playHandReq, (error, response) => {
-        console.log("PlayHand Response: ", response.toObject());
-        this.selectedCardUIs.forEach(ui => { ui.yAdjustment = 0 })
-        this.selectedCardUIs.clear();
-      });
+      console.log("PlayHand Response: ", response.toObject());
+      this.selectedCardUIs.forEach(ui => { ui.yAdjustment = 0 })
+      this.selectedCardUIs.clear();
     }
   }
 }
