@@ -60,10 +60,10 @@ jobs:
           version: 20.10.2
       # Build frontend
       - restore_cache:
-          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
-      - run: cd ./frontend && [[ -d node_modules ]] || npm ci --ignore-scripts
+          key: frontend-npm-docker-v2-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+      - run: cd ./frontend && [[ -d node_modules ]] || npm ci
       - save_cache:
-          key: frontend-npm-docker-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
+          key: frontend-npm-docker-v2-{{ checksum "frontend/package.json" }}-{{ checksum "frontend/package-lock.json" }}
           paths:
             - "frontend/node_modules"
       - run: sudo apt install -y protobuf-compiler
@@ -106,11 +106,11 @@ workflows:
   build:
     jobs:
       - test-backend
-      - test-frontend
+      # - test-frontend
       - deploy-aks:
           requires:
             - test-backend
-            - test-frontend
+            # - test-frontend
           # filters:
           #   branches:
           #     only: main
