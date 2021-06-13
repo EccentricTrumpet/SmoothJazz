@@ -2,7 +2,6 @@ import asyncio
 import logging
 import random
 from concurrent.futures.thread import ThreadPoolExecutor
-from google.protobuf.empty_pb2 import Empty
 from grpc import ServicerContext
 from grpc.aio import server as GrpcServer
 from itertools import count
@@ -21,6 +20,7 @@ from shengji_pb2 import (
     AddAIPlayerResponse,
     CreateGameRequest,
     DrawCardsRequest,
+    DrawCardsResponse,
     EnterRoomRequest,
     PlayHandRequest,
     PlayHandResponse,
@@ -104,12 +104,12 @@ class SJService(ShengjiServicer):
 
     def drawCards(self,
         request: DrawCardsRequest,
-        context: ServicerContext) -> Empty:
+        context: ServicerContext) -> DrawCardsResponse:
 
         game = self.__get_game(request.game_id)
         game.drawCards(request.player_name)
 
-        return Empty()
+        return DrawCardsResponse()
 
     def terminate_game(self, game_id: str) -> None:
         game = self.__get_game(game_id)

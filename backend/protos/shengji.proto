@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
 package grpc.testing;
 
 service Shengji {
@@ -15,7 +14,7 @@ service Shengji {
 
   rpc addAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
 
-  rpc drawCards(DrawCardsRequest) returns (google.protobuf.Empty);
+  rpc drawCards(DrawCardsRequest) returns (DrawCardsResponse);
 }
 
 // Request and response protos
@@ -30,6 +29,9 @@ message AddAIPlayerResponse {
 message DrawCardsRequest {
   string game_id = 1;
   string player_name = 2;
+}
+
+message DrawCardsResponse {
 }
 
 message EnterRoomRequest {
