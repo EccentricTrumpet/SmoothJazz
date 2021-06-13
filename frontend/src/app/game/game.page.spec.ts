@@ -6,15 +6,15 @@ describe('GamePage', () => {
     let ranking = new src.CardRanking(3)
     ranking.resetOrder(src.Suit.CLUBS)
 
-    let resolvedTrump = ranking.getFunctionalSuit(src.cardProto(src.Suit.CLUBS, 1))
-    expect(resolvedTrump).toBe(src.Suit.TRUMP)
+    let resolvedTrump = ranking.isTrump(src.cardProto(src.Suit.CLUBS, 1))
+    expect(resolvedTrump).toBe(true)
   })
 
   it('should resolve Trump rank', () => {
     let ranking = new src.CardRanking(3)
-    let resolvedTrump = ranking.getFunctionalSuit(src.cardProto(src.Suit.CLUBS, 3))
+    let resolvedTrump = ranking.isTrump(src.cardProto(src.Suit.CLUBS, 3))
 
-    expect(resolvedTrump).toBe(src.Suit.TRUMP)
+    expect(resolvedTrump).toBe(true)
   })
 
 });
