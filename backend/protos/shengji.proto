@@ -151,19 +151,13 @@ message KittyHiddenUpdate {
 
 message Card {
   enum Suit {
-    // Default value
     SUIT_UNDEFINED = 0;
-
-    // Real suits
     HEARTS = 1;
     SPADES = 2;
     CLUBS = 3;
     DIAMONDS = 4;
     SMALL_JOKER = 5;
     BIG_JOKER = 6;
-
-    // Artificial suit for game logic
-    TRUMP = 7;
   }
 
   enum Rank {

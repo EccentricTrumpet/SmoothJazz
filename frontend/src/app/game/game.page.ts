@@ -18,8 +18,8 @@ import {
 declare var cards:any;
 
 // Aliases
-type Suit = CardProto.SuitMap[keyof CardProto.SuitMap];
-type Rank = CardProto.RankMap[keyof CardProto.RankMap];
+type Suit = CardProto.Suit;
+type Rank = CardProto.Rank;
 export const Suit = CardProto.Suit;
 const Rank = CardProto.Rank;
 
@@ -333,12 +333,12 @@ export class CardRanking {
   }
 
   // For determing winning tricks
-  getFunctionalSuit(card: CardProto) : Suit {
+  isTrump(card: CardProto) : boolean {
     let suit = card.getSuit();
     if (suit === Suit.BIG_JOKER || suit === Suit.SMALL_JOKER || suit === this.trumpSuit || card.getRank() === this.trumpRank) {
-      return Suit.TRUMP;
+      return true;
     }
-    return suit;
+    return false;
   }
 }
 
@@ -368,15 +368,17 @@ class TractorGroup {
 
 class TrickFormat {
   suit: Suit;
+  isTrump: boolean;
   length: number;
   tractorGroups: TractorGroup[] = [];
   pairs: CardProto[] = [];
   singles: CardProto[] = [];
 
-  static invalid = new TrickFormat(Suit.SUIT_UNDEFINED, 0);
+  static invalid = new TrickFormat(Suit.SUIT_UNDEFINED, false, 0);
 
-  constructor(suit: Suit, length: number) {
+  constructor(suit: Suit, isTrump: boolean, length: number) {
     this.suit = suit;
+    this.isTrump = isTrump;
     this.length = length;
   }
 
@@ -439,16 +441,14 @@ class TrickFormat {
 class TrickPile {
   game: Game;
   players: Player[];
-  ranking: CardRanking;
   cardsPlayedUI: any[];
   trickFormat: TrickFormat | null = null;
   winningPlayer: number | null = null;
   winningHand: TrickFormat | null = null;
 
-  constructor(game: Game, players: Player[], ranking: CardRanking, x: number, y: number) {
+  constructor(game: Game, players: Player[], x: number, y: number) {
     this.game = game;
     this.players = players;
-    this.ranking = ranking;
     this.cardsPlayedUI = [players.length];
     for (let i = 0; i < players.length; i++) {
       let vector = [players[i].x - x, players[i].y - y];
@@ -460,13 +460,9 @@ class TrickPile {
     }
   }
 
-  initialize(ranking: CardRanking) {
-    this.ranking = ranking;
-  }
-
   // Currently assumes cards are of the same suit, consider moving mixed suit logic here
   resolveFormat(cards: CardProto[]): TrickFormat {
-    let format = new TrickFormat(this.ranking.getFunctionalSuit(cards[0]), cards.length);
+    let format = new TrickFormat(cards[0].getSuit(), this.game.ranking.isTrump(cards[0]), cards.length);
 
     // Resolve singles and pairs
     let i = 0;
@@ -487,7 +483,7 @@ class TrickPile {
       let j = i;
       // Find longest run
       while (j < format.pairs.length - 1
-        && this.ranking.getUIRank(format.pairs[j+1]) - this.ranking.getUIRank(format.pairs[j]) === 1) {
+        && this.game.ranking.getUIRank(format.pairs[j+1]) - this.game.ranking.getUIRank(format.pairs[j]) === 1) {
         j++;
       }
       if (i !== j) {
@@ -517,9 +513,18 @@ class TrickPile {
     // Check legality of lead
     if (this.trickFormat === null) {
       // Currently can only resolve leading plays with one suit
-      let suit = this.ranking.getFunctionalSuit(cards[0]);
+      if (this.game.ranking.isTrump(cards[0]))
+      {
+        for (const card of cards) {
+          if (!this.game.ranking.isTrump(card)) {
+            console.log("Cards cannot be played since more than one suit detected");
+            return TrickFormat.invalid;
+          }
+        }
+      }
+      let suit = cards[0].getSuit();
       for (const card of cards) {
-        if (suit !== this.ranking.getFunctionalSuit(card)) {
+        if (this.game.ranking.isTrump(card) || suit !== card.getSuit()) {
           console.log("Cards cannot be played since more than one suit detected");
           return TrickFormat.invalid;
         }
@@ -540,15 +545,31 @@ class TrickPile {
     }
 
     // Follow suit if possible
-    let suitCardsInHand = this.players[playerIndex].handUI.map((ui: any) => toCardProto(ui))
-      .filter((c: CardProto) => this.ranking.getFunctionalSuit(c) === this.trickFormat.suit);
-    let suitTotalInHand = suitCardsInHand.length;
-    let suitTotalInPlay = cards.filter(card =>
-      this.ranking.getFunctionalSuit(card) === this.trickFormat.suit).length;
+    let suitCardsInHand: any;
+    let suitTotalInHand: number;
+    if (this.trickFormat.isTrump) {
+      suitCardsInHand = this.players[playerIndex].handUI.map((ui: any) => toCardProto(ui))
+        .filter((c: CardProto) => this.game.ranking.isTrump(c));
+      suitTotalInHand = suitCardsInHand.length;
+      let suitTotalInPlay = cards.filter(c =>
+        this.game.ranking.isTrump(c)).length;
 
-    if (suitTotalInPlay < Math.min(suitTotalInHand, this.trickFormat.length)) {
-      console.log("Not all playable cards of the lead suit were played.");
-      return TrickFormat.invalid;
+      if (suitTotalInPlay < Math.min(suitTotalInHand, this.trickFormat.length)) {
+        console.log("Not all playable cards of the lead suit were played.");
+        return TrickFormat.invalid;
+      }
+    }
+    else {
+      suitCardsInHand = this.players[playerIndex].handUI.map((ui: any) => toCardProto(ui))
+        .filter((c: CardProto) => !this.game.ranking.isTrump(c) && this.trickFormat.suit === c.getSuit());
+      suitTotalInHand = suitCardsInHand.length;
+      let suitTotalInPlay = cards.filter(c =>
+        !this.game.ranking.isTrump(c) && this.trickFormat.suit === c.getSuit()).length;
+
+      if (suitTotalInPlay < Math.min(suitTotalInHand, this.trickFormat.length)) {
+        console.log("Not all playable cards of the lead suit were played.");
+        return TrickFormat.invalid;
+      }
     }
 
     if (suitTotalInHand >= this.trickFormat.length) {
@@ -613,28 +634,28 @@ class TrickPile {
       }
       else {
         console.log("Mixed format, valid");
-        return new TrickFormat(Suit.SUIT_UNDEFINED, format.length);
+        return new TrickFormat(Suit.SUIT_UNDEFINED, false, format.length);
       }
     }
 
     if (suitTotalInHand > 0 && suitTotalInHand < this.trickFormat.length) {
       // Must be a mixed format
       console.log("Partial follow, valid");
-      return new TrickFormat(Suit.SUIT_UNDEFINED, cards.length);
+      return new TrickFormat(Suit.SUIT_UNDEFINED, false, cards.length);
     }
 
     if (suitTotalInHand === 0) {
       // Check for a mixed format
       for (const card of cards) {
-        if (this.ranking.getFunctionalSuit(card) !== Suit.TRUMP) {
+        if (!this.game.ranking.isTrump(card)) {
           console.log("Can't follow, mixed format, valid");
-          return new TrickFormat(Suit.SUIT_UNDEFINED, cards.length);
+          return new TrickFormat(Suit.SUIT_UNDEFINED, false, cards.length);
         }
       }
 
       // Must be an all trump format
       let format = this.resolveFormat(cards);
-      if (format.suit != Suit.TRUMP) {
+      if (!format.isTrump) {
         throw new Error("We shoud never resolve the format when non-trumps follow a leading suit");
       }
 
@@ -644,7 +665,7 @@ class TrickPile {
       }
       else {
         console.log("Can't follow, mixed trump format, valid");
-        return new TrickFormat(Suit.SUIT_UNDEFINED, cards.length);
+        return new TrickFormat(Suit.SUIT_UNDEFINED, false, cards.length);
       }
     }
 
@@ -674,10 +695,10 @@ class TrickPile {
       else {
         let that = this;
         let champDefends = function(champCards: CardProto[], challengerCards: CardProto[]) : boolean {
-          champCards.sort((a, b) => that.ranking.getFunctionRank(a) - that.ranking.getFunctionRank(b));
-          challengerCards.sort((a, b) => that.ranking.getFunctionRank(a) - that.ranking.getFunctionRank(b));
+          champCards.sort((a, b) => that.game.ranking.getFunctionRank(a) - that.game.ranking.getFunctionRank(b));
+          challengerCards.sort((a, b) => that.game.ranking.getFunctionRank(a) - that.game.ranking.getFunctionRank(b));
           for (let i = 0; i < champCards.length; i++) {
-            if (that.ranking.getFunctionRank(challengerCards[i]) >= that.ranking.getFunctionRank(champCards[i])) {
+            if (that.game.ranking.getFunctionRank(challengerCards[i]) >= that.game.ranking.getFunctionRank(champCards[i])) {
               return true;
             }
           }
@@ -775,7 +796,7 @@ class Player {
   }
 
   render(options?: any) {
-    this.handUI.sort((a, b) => this.game.cardRanking.getUIRank(toCardProto(a)) - this.game.cardRanking.getUIRank(toCardProto(b)));
+    this.handUI.sort((a, b) => this.game.ranking.getUIRank(toCardProto(a)) - this.game.ranking.getUIRank(toCardProto(b)));
     this.handUI.render(options);
   }
 
@@ -835,7 +856,7 @@ class Game {
   // Trump metadata
   declaredTrumps = DeclaredTrump.None;
   trumpRank: Rank = Rank.TWO;
-  cardRanking = new CardRanking(this.trumpRank);
+  ranking = new CardRanking(this.trumpRank);
 
   // Player metadata
   playerId: string;
@@ -915,7 +936,7 @@ class Game {
     this.kittyUI = new cards.Hand({faceUp:true, x:this.cardWidth()/2 + 4.5*this.cardPadding(), y:this.height - this.cardWidth()/2 - this.cardPadding()})
 
     // Create trick pile
-    this.trickPile = new TrickPile(this, this.players, this.cardRanking, this.width/2, this.height/2);
+    this.trickPile = new TrickPile(this, this.players, this.width/2, this.height/2);
     this.deckUI = new cards.Deck({x:this.width/2, y:this.height/2});
     let that = this;
     this.deckUI.click(() => that.draw());
@@ -958,7 +979,7 @@ class Game {
 
   renderKittyHiddenUpdate(kittyPlayerId: string, cards: CardProto[]) {
     let player = this.players.find(player => player.name == kittyPlayerId);
-    cards.sort((a, b) => this.cardRanking.getUIRank(a) - this.cardRanking.getUIRank(b));
+    cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
     this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
     this.kittyUI.render();
     player.handUI.render();
@@ -966,13 +987,13 @@ class Game {
 
   async play(playerIndex: number, cards: CardProto[]) : Promise<boolean> {
     // TODO: Check that player isn't lying and actually has the cards
-    cards.sort((a, b) => this.cardRanking.getUIRank(a) - this.cardRanking.getUIRank(b));
+    cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
 
     if (this.gameStage === GameStage.Deal) {
       let that = this;
       let declareTrump = function(declaredTrump: DeclaredTrump) {
         that.declaredTrumps = declaredTrump;
-        that.cardRanking.resetOrder(cards[0].getSuit());
+        that.ranking.resetOrder(cards[0].getSuit());
 
         if (that.trumpRank === 2) {
           that.kittyPlayer = playerIndex;
@@ -980,7 +1001,7 @@ class Game {
 
         that.players.forEach(p => p.render());
 
-        console.log("player " + playerIndex + " declared " + Suit[that.cardRanking.trumpSuit]);
+        console.log("player " + playerIndex + " declared " + Suit[that.ranking.trumpSuit]);
       }
 
        // Single trump
@@ -991,15 +1012,15 @@ class Game {
       // TODO: Can you revoke your own declarations?
       if (cards.length === 2 && cards[0].toString() === cards[1].toString()) {
          // Pair of trumps
-        if (this.declaredTrumps < DeclaredTrump.Pair && cards[0].getSuit() === this.trumpRank) {
-            declareTrump(DeclaredTrump.Pair);
-            return true;
-          }
+        if (this.declaredTrumps < DeclaredTrump.Pair && cards[0].getRank() === this.trumpRank) {
+          declareTrump(DeclaredTrump.Pair);
+          return true;
+        }
         // Pair of Jokers (TODO: should big jokers over trump small jokers? What about three player games e.g. 3 2's vs 2 Jokers?)
         if (this.declaredTrumps < DeclaredTrump.Jokers && (cards[0].getSuit() === Suit.BIG_JOKER || cards[0].getSuit() === Suit.SMALL_JOKER)) {
-            declareTrump(DeclaredTrump.Jokers);
-            return true;
-          }
+          declareTrump(DeclaredTrump.Jokers);
+          return true;
+        }
       }
     }
     else if (this.gameStage === GameStage.HideKitty) {
@@ -1009,7 +1030,6 @@ class Game {
         this.players[this.currentPlayer].handUI.render();
 
         this.gameStage = GameStage.Play;
-        this.trickPile.initialize(this.cardRanking);
         return true;
       }
     }
