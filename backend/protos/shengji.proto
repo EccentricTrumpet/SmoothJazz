@@ -156,7 +156,6 @@ message Card {
     SPADES = 2;
     CLUBS = 3;
     DIAMONDS = 4;
-
     SMALL_JOKER = 5;
     BIG_JOKER = 6;
   }

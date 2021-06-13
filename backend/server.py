@@ -6,7 +6,6 @@ from grpc import ServicerContext
 from grpc.aio import server as GrpcServer
 from itertools import count
 from game_state import (
-    Card,
     Game)
 from typing import (
     Iterable,
@@ -94,7 +93,7 @@ class SJService(ShengjiServicer):
             response.error_message = f'Game {request.game_id} does not exist'
             return response
 
-        (success, error_message) = game.play(request.player_id, [Card.from_card_proto(c) for c in request.hand.cards])
+        (success, error_message) = game.play(request.player_id, request.hand.cards)
 
         response = PlayHandResponse()
         response.success = success
@@ -124,8 +123,6 @@ class SJService(ShengjiServicer):
 
 async def serve(address: str) -> None:
     server = GrpcServer(ThreadPoolExecutor(max_workers=100))
-    # A new executor for tasks that exist beyond RPC context. (e.g. dealing
-    # cards)
     add_ShengjiServicer_to_server(SJService(), server)
     server.add_insecure_port(address)
     await server.start()
