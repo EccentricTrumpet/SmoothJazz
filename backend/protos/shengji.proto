@@ -13,6 +13,8 @@ service Shengji {
   rpc playHand(PlayHandRequest) returns (PlayHandResponse);
 
   rpc addAIPlayer(AddAIPlayerRequest) returns (AddAIPlayerResponse);
+
+  rpc drawCards(DrawCardsRequest) returns (DrawCardsResponse);
 }
 
 // Request and response protos
@@ -22,6 +24,14 @@ message AddAIPlayerRequest {
 
 message AddAIPlayerResponse {
   string player_name = 1;
+}
+
+message DrawCardsRequest {
+  string game_id = 1;
+  string player_name = 2;
+}
+
+message DrawCardsResponse {
 }
 
 message EnterRoomRequest {

@@ -12,7 +12,8 @@ import {
   Game as GameProto,
   Hand as HandProto,
   Card as CardProto,
-  Player as PlayerProto
+  Player as PlayerProto,
+  DrawCardsRequest
 } from "proto-gen/shengji_pb";
 declare var cards:any;
 
@@ -32,7 +33,7 @@ export class GamePage implements AfterViewChecked, OnInit {
   game: Game = null;
 
   constructor(
-    private router: Router,
+    router: Router,
     private route: ActivatedRoute,
     private cookieService: CookieService,
     private alertController: AlertController) {
@@ -960,13 +961,13 @@ class Game {
     ];
   }
 
-  addPlayer(playerName: string, index: number):void {
+  addPlayer(playerName: string, index: number): void {
     this.playerCount++;
     const newPlayer = new Player(this, index, playerName, this.playerLocations[index].x, this.playerLocations[index].y);
     this.players[index] = newPlayer;
   }
 
-  start() {
+  start(): void {
     cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
 
     // Start game
@@ -978,6 +979,8 @@ class Game {
     // Create trick pile
     this.trickPile = new TrickPile(this, this.players, this.cardRanking, this.width/2, this.height/2);
     this.deckUI = new cards.Deck({x:this.width/2, y:this.height/2});
+    let that = this;
+    this.deckUI.click(() => that.draw());
     this.deckUI.addCards(cards.all);
     this.deckUI.render({immediate: true});
   }
@@ -992,6 +995,13 @@ class Game {
 
   cardPadding(): number {
     return this.cardSize.padding;
+  }
+
+  async draw(): Promise<void> {
+    const drawCardsRequest = new DrawCardsRequest();
+    drawCardsRequest.setGameId(this.gameId);
+    drawCardsRequest.setPlayerName(this.playerId);
+    await this.client.drawCards(drawCardsRequest, null);
   }
 
   renderCardDealt(playerId: string, card: CardProto) {
@@ -1014,39 +1024,6 @@ class Game {
     this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
     this.kittyUI.render();
     player.handUI.render();
-  }
-
-  // mocking RPC: TO BE DELETED
-  draw(playerIndex: number) : Card[] {
-    if (this.gameStage === GameStage.Deal) {
-      if (playerIndex === this.currentPlayer) {
-        this.currentPlayer = (this.currentPlayer + 1) % this.players.length;
-        let card = this.deckUI.topCard();
-        this.players[playerIndex].handUI.addCard(card);
-        this.players[playerIndex].render({speed: 100});
-
-        if (this.deckUI.length === this.cardsInKitty) {
-          this.gameStage = GameStage.DealKitty;
-          this.currentPlayer = this.kittyPlayer;
-        }
-
-        return [toCard(card)];
-      }
-    }
-    else if (this.gameStage === GameStage.DealKitty) {
-      if (playerIndex === this.kittyPlayer) {
-        let cards = this.deckUI.map(ui => toCard(ui));
-        this.deckUI.deal(cards.length, [this.players[playerIndex].handUI]);
-        this.players[playerIndex].render();
-
-        if (this.deckUI.length === 0) {
-          this.gameStage = GameStage.HideKitty;
-        }
-
-        return cards;
-      }
-    }
-    return [Card.none];
   }
 
   async play(playerIndex: number, cards: Card[]) : Promise<boolean> {
