@@ -997,15 +997,11 @@ class Game {
     return this.cardSize.padding;
   }
 
-  draw(): void {
+  async draw(): Promise<void> {
     const drawCardsRequest = new DrawCardsRequest();
     drawCardsRequest.setGameId(this.gameId);
     drawCardsRequest.setPlayerName(this.playerId);
-    grpc.unary(Shengji.drawCards, {
-      request: drawCardsRequest,
-      host: environment.grpcUrl,
-      onEnd: res => { }
-    });
+    await this.client.drawCards(drawCardsRequest, null);
   }
 
   renderCardDealt(playerId: string, card: CardProto) {

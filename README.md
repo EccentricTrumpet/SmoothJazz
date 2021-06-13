@@ -50,24 +50,24 @@ Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 
 ## Launch
 
-1. `ionic serve`
+1. `npm start`
 
 > **Note**: It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
 
 ## Protobuf regeneration
 
-1. `npm run prebuild`
+1. `npm prebuild`
 
 ## Launch with docker
 
-1. Build app: `npm run build`
+1. Build app: `npm build`
 2. Build docker image: `docker build -t frontend:v1 .`
 3. Run docker image: `docker run --rm -it -p 8100:80 frontend:v1`
 4. Exit: `docker ps; docker stop {CONTAINER_ID}`
 
 ## Testing
 
-1. Run tests: `ng test`
+1. Run tests: `npm test`
 
 # To start all servers locally
 
