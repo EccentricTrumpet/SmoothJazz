@@ -222,10 +222,10 @@ class Game:
             player = Player(player_id, notify)
             self.__players[player_id] = player
 
-            self.__new_player_update(player_id)
-
             if len(self.__players) == 4:
                 self.state = GameState.AWAIT_DEAL
+
+            self.__new_player_update(player_id)
 
         return player
 
@@ -291,6 +291,9 @@ class Game:
         # TODO: Use the real dealer
         game.dealer_player_id = 'UNIMPLEMENTED'
 
+        # Hack to communicate state
+        game.next_turn_player_id = self.state.name
+
         with self.__players_lock:
             players = self.__players.values()
         for player in players:
@@ -315,10 +318,12 @@ class Game:
             logging.info(f'Dealt card {card} to {player.player_id}')
             deal_index = (deal_index + 1) % 4
 
-            self.__card_dealt_update(player.player_id, card)
-            time.sleep(self.__delay)
+            if len(self.__deck_cards) == 8:
+                self.state = GameState.DEAL_KITTY
+            else:
+                time.sleep(self.__delay)
 
-        self.state = GameState.DEAL_KITTY
+            self.__card_dealt_update(player.player_id, card)
 
     def __deal_kitty(self) -> None:
         while (len(self.__deck_cards) > 0):
@@ -327,10 +332,12 @@ class Game:
             player.add_card(card)
             logging.info(f'Dealt kitty card {card} to {player.player_id}')
 
-            self.__card_dealt_update(player.player_id, card)
-            time.sleep(self.__delay)
+            if len(self.__deck_cards) == 0:
+                self.state = GameState.HIDE_KITTY
+            else:
+                time.sleep(self.__delay)
 
-        self.state = GameState.HIDE_KITTY
+            self.__card_dealt_update(player.player_id, card)
 
     def __hide_kitty(self, player: Player, cards: Sequence[Card]) -> Tuple[bool, str]:
         if (len(cards) != 8):
