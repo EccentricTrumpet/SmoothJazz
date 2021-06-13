@@ -1,8 +1,7 @@
 import { AfterViewChecked, Component, ViewChild, ElementRef, OnInit} from '@angular/core';
-import {environment} from '../../environments/environment';
-import {grpc} from "@improbable-eng/grpc-web";
-import {Shengji} from "proto-gen/shengji_pb_service";
-import {ActivatedRoute, NavigationStart, Router} from "@angular/router";
+import { environment } from '../../environments/environment';
+import { ShengjiClient } from "proto-gen/ShengjiServiceClientPb";
+import { ActivatedRoute, NavigationStart, Router } from "@angular/router";
 import { COOKIE_PLAYER_NAME } from '../app.constants';
 import { CookieService } from 'ngx-cookie-service';
 import { AlertController } from '@ionic/angular';
@@ -26,10 +25,11 @@ declare var cards:any;
 export class GamePage implements AfterViewChecked, OnInit {
 @ViewChild('cardTable') tableElement: ElementRef;
 @ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
-  nativeElement: any;
-  started = false;
-  game: Game = null;
-  gameID: string;
+  private nativeElement: any;
+  private started = false;
+  private game: Game = null;
+  private gameID: string;
+  private client: ShengjiClient;
 
   constructor(
     private router: Router,
@@ -42,6 +42,8 @@ export class GamePage implements AfterViewChecked, OnInit {
         try { await this.alertController.dismiss(); } catch { }
       }
     });
+
+    this.client = new ShengjiClient(environment.grpcUrl);
   }
 
   ngOnInit() {
@@ -90,21 +92,13 @@ export class GamePage implements AfterViewChecked, OnInit {
     }
   }
 
-  addAIPlayer() {
+  async addAIPlayer() {
     const createAIRequest = new AddAIPlayerRequest();
     createAIRequest.setGameId(this.gameID);
     console.log('Adding AI Player for: '+this.gameID);
-    grpc.unary(Shengji.addAIPlayer, {
-      request: createAIRequest,
-      host: environment.grpcUrl,
-      onEnd: res => {
-        const { status, statusMessage, headers, message, trailers } = res;
-        if (status === grpc.Code.OK && message) {
-          var AIName = message.toObject()['playerName']
-          console.log(AIName + " is added to room");
-        }
-      }
-    });
+
+    let response = await this.client.addAIPlayer(createAIRequest, null);
+      console.log(`${response.getPlayerName()} is added to the room`);
   }
 
   getUIIndex(playerName: string, players: PlayerProto[], player0Name: string): number {
@@ -122,35 +116,33 @@ export class GamePage implements AfterViewChecked, OnInit {
     const enterRoomRequest = new EnterRoomRequest();
     enterRoomRequest.setPlayerId(playerName);
     enterRoomRequest.setGameId(gameID);
-    grpc.invoke(Shengji.enterRoom, {
-      request: enterRoomRequest,
-      host: environment.grpcUrl,
-      onMessage: (message: GameProto) => {
-        console.log("Current game state: ", message.toObject());
-        let updateId = message.getUpdateId();
+
+    this.client.enterRoom(enterRoomRequest)
+      .on('data', (gameProto: GameProto) => {
+        console.log("Current game state: ", gameProto.toObject());
+        let updateId = gameProto.getUpdateId();
         if (this.game == null) {
-          this.game = new Game(this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
+          this.game = new Game(this.client, this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
         if (updateId - this.game.updateId == 1)
         {
           // Render delta
-          switch (message.getUpdateCase()) {
+          switch (gameProto.getUpdateCase()) {
             case GameProto.UpdateCase.NEW_PLAYER_UPDATE:
-                let newPlayer = message.getNewPlayerUpdate().getPlayerId();
-
-                this.game.addPlayer(newPlayer, this.getUIIndex(newPlayer, message.getPlayersList(), playerName));
+                let newPlayer = gameProto.getNewPlayerUpdate().getPlayerId();
+                this.game.addPlayer(newPlayer, this.getUIIndex(newPlayer, gameProto.getPlayersList(), playerName));
 
                 if (this.game.playerCount == 4) {
                   this.game.start();
                 }
               break;
             case GameProto.UpdateCase.CARD_DEALT_UPDATE:
-              let cardDealtUpdate = message.getCardDealtUpdate();
+              let cardDealtUpdate = gameProto.getCardDealtUpdate();
               this.game.renderCardDealt(cardDealtUpdate.getPlayerId(), cardDealtUpdate.getCard())
               break;
             case GameProto.UpdateCase.KITTY_HIDDEN_UPDATE:
-              let kittyHiddenUpdate = message.getKittyHiddenUpdate();
-              this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), message.getKitty().getCardsList().map(c => Card.fromProto(c)));
+              let kittyHiddenUpdate = gameProto.getKittyHiddenUpdate();
+              this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), gameProto.getKitty().getCardsList().map(c => Card.fromProto(c)));
               break;
             default:
               console.log("Invalid update");
@@ -164,7 +156,7 @@ export class GamePage implements AfterViewChecked, OnInit {
 
           if (this.game.gameStage == GameStage.Setup) {
             // Game hasn't started, render all player locations
-            let players = message.getPlayersList();
+            let players = gameProto.getPlayersList();
 
             for (let i = 0; i < players.length; i++) {
               let name = players[i].getPlayerId();
@@ -177,18 +169,11 @@ export class GamePage implements AfterViewChecked, OnInit {
               this.game.start();
             }
           }
-
         }
         this.game.updateId = updateId;
-      },
-      onEnd: (code: grpc.Code, msg: string | undefined, trailers: grpc.Metadata) => {
-        if (code == grpc.Code.OK) {
-          console.log("all ok")
-        } else {
-          console.log("hit an error", code, msg, trailers);
-        }
-      }
-    });
+      })
+      .on('end', () => console.log('game stream closed'))
+      .on('error', error => console.log(`hit an error: ${error.code} - ${error.message}`));
   }
 }
 
@@ -855,7 +840,7 @@ class Player {
     this.handUI.render(options);
   }
 
-  act(cardUI: any, event: any) {
+  async act(cardUI: any, event: any) {
     // prevent context menu on right click
     event.preventDefault();
 
@@ -891,18 +876,11 @@ class Player {
       playHandReq.setHand(handToPlay);
 
       console.log("Sending playhandRequest: ", playHandReq.toObject());
-      grpc.unary(Shengji.playHand, {
-        request: playHandReq,
-        host: environment.grpcUrl,
-        onEnd: res => {
-          const { status, statusMessage, headers, message, trailers } = res;
-          if (status === grpc.Code.OK && message) {
-            console.log("PlayHand Response: ", message.toObject());
-            this.selectedCardUIs.forEach(ui => { ui.yAdjustment = 0 })
-            this.selectedCardUIs.clear();
-          }
-        }
-      });
+      let response = await this.game.client.playHand(playHandReq, null);
+
+      console.log("PlayHand Response: ", response.toObject());
+      this.selectedCardUIs.forEach(ui => { ui.yAdjustment = 0 })
+      this.selectedCardUIs.clear();
     }
   }
 }
@@ -937,7 +915,12 @@ class Game {
   height: number;
   playerLocations: any;
 
-  constructor(height: number, width: number, playerId: string, gameId: string) {
+  // gRPC
+  client: ShengjiClient;
+
+  constructor(client: ShengjiClient, height: number, width: number, playerId: string, gameId: string) {
+    this.client = client;
+
     this.playerId = playerId;
     this.gameId = gameId;
     this.height = height;
