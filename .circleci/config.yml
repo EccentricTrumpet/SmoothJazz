@@ -106,11 +106,11 @@ workflows:
   build:
     jobs:
       - test-backend
-      # - test-frontend
+      - test-frontend
       - deploy-aks:
           requires:
             - test-backend
-            # - test-frontend
-          # filters:
-          #   branches:
-          #     only: main
+            - test-frontend
+          filters:
+            branches:
+              only: main
