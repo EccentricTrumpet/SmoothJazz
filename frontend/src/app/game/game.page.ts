@@ -27,9 +27,9 @@ export class GamePage implements AfterViewChecked, OnInit {
 @ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
   private nativeElement: any;
   private started = false;
-  private game: Game = null;
   private gameID: string;
   private client: ShengjiClient;
+  game: Game = null;
 
   constructor(
     private router: Router,
