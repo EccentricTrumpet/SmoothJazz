@@ -26,7 +26,6 @@
     "@angular/platform-browser-dynamic": "~11.2.0",
     "@angular/router": "~11.2.0",
     "@capacitor/core": "2.4.7",
-    "@improbable-eng/grpc-web": "^0.14.0",
     "@ionic/angular": "^5.5.2",
     "@types/jquery": "^3.5.5",
     "jquery": "^3.6.0",

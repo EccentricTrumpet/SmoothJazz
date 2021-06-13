@@ -1,10 +1,9 @@
 import { Component } from '@angular/core';
 import { NavigationStart, Router } from '@angular/router';
-import { grpc } from '@improbable-eng/grpc-web';
 import { AlertController } from '@ionic/angular';
 import { CookieService } from 'ngx-cookie-service';
 import { CreateGameRequest } from 'proto-gen/shengji_pb';
-import { Shengji } from 'proto-gen/shengji_pb_service';
+import { ShengjiClient } from 'proto-gen/shengji_pb_service';
 import { environment } from 'src/environments/environment';
 import { COOKIE_PLAYER_NAME } from '../app.constants';
 
@@ -14,6 +13,8 @@ import { COOKIE_PLAYER_NAME } from '../app.constants';
   styleUrls: ['./menu.page.scss'],
 })
 export class MenuPage {
+  private client: ShengjiClient;
+
   constructor(
     private router: Router,
     private alertController: AlertController,
@@ -24,6 +25,8 @@ export class MenuPage {
         try { await this.alertController.dismiss(); } catch { }
       }
     });
+
+    this.client = new ShengjiClient(environment.grpcUrl);
   }
 
   async createGame() {
@@ -51,18 +54,12 @@ export class MenuPage {
             playerName = inputData.playerName;
             this.cookieService.set(COOKIE_PLAYER_NAME, playerName);
 
-            const createGameRequest = new CreateGameRequest();
+            let createGameRequest = new CreateGameRequest();
             createGameRequest.setPlayerId(playerName);
-            grpc.unary(Shengji.createGame, {
-              request: createGameRequest,
-              host: environment.grpcUrl,
-              onEnd: res => {
-                const { status, statusMessage, headers, message, trailers } = res;
-                if (status === grpc.Code.OK && message) {
-                  let gameId = message.toObject()['gameId'];
-                  this.router.navigate([`game/${gameId}`]);
-                }
-              }
+
+            this.client.createGame(createGameRequest, (error, response) => {
+              let gameId = response.getGameId();
+              this.router.navigate([`game/${gameId}`]);
             });
           }
         }
