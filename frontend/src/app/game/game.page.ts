@@ -20,7 +20,7 @@ declare var cards:any;
 // Aliases
 type Suit = CardProto.SuitMap[keyof CardProto.SuitMap];
 type Rank = CardProto.RankMap[keyof CardProto.RankMap];
-const Suit = CardProto.Suit;
+export const Suit = CardProto.Suit;
 const Rank = CardProto.Rank;
 
 // Global utilities.
@@ -49,7 +49,7 @@ const getCardProtoSuit = function(cardUI: any) : Suit {
   }
 }
 
-const cardProto = function(suit: Suit, rank: Rank) : CardProto {
+export const cardProto = function(suit: Suit, rank: Rank) : CardProto {
   const cardProto = new CardProto();
   cardProto.setSuit(suit);
   cardProto.setRank(rank);
