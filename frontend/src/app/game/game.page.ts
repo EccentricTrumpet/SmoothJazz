@@ -168,7 +168,7 @@ export class GamePage implements AfterViewChecked, OnInit {
     console.log('Adding AI Player for: '+this.gameID);
 
     let response = await this.client.addAIPlayer(createAIRequest, null);
-      console.log(`${response.getPlayerName()} is added to the room`);
+    console.log(`${response.getPlayerName()} is added to the room`);
   }
 
   getUIIndex(playerName: string, players: PlayerProto[], player0Name: string): number {
@@ -335,10 +335,10 @@ export class CardRanking {
   // For determing winning tricks
   isTrump(card: CardProto) : boolean {
     let suit = card.getSuit();
-    if (suit === Suit.BIG_JOKER || suit === Suit.SMALL_JOKER || suit === this.trumpSuit || card.getRank() === this.trumpRank) {
-      return true;
-    }
-    return false;
+    return suit === Suit.BIG_JOKER
+      || suit === Suit.SMALL_JOKER
+      || card.getRank() === this.trumpRank
+      || (suit === this.trumpSuit && suit !== Suit.SUIT_UNDEFINED);
   }
 }
 
@@ -1023,16 +1023,6 @@ class Game {
           declareTrump(DeclaredTrump.Jokers);
           return true;
         }
-      }
-    }
-    else if (this.gameStage === GameStage.HideKitty) {
-      if (cards.length === this.cardsInKitty && playerIndex === this.currentPlayer) {
-        this.kittyUI.addCards(resolveCardUIs(cards, this.players[this.currentPlayer].handUI));
-        this.kittyUI.render();
-        this.players[this.currentPlayer].handUI.render();
-
-        this.gameStage = GameStage.Play;
-        return true;
       }
     }
     else if (this.gameStage === GameStage.Play && playerIndex === this.currentPlayer) {
