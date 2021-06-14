@@ -194,6 +194,13 @@ export class GamePage implements AfterViewChecked, OnInit {
         if (this.game == null) {
           this.game = new Game(this.client, this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
+        const trumpCards = gameProto.getTrumpCards()?.getCardsList();
+        if (trumpCards?.length > 0 && trumpCards[0].getSuit() != this.game.ranking.trumpSuit) {
+          console.log(gameProto.getTrumpPlayerId() + " declared " + trumpCards[0].getSuit()) + " as trump suit.";
+          this.game.ranking.resetOrder(trumpCards[0].getSuit());
+          this.game.players.forEach(p => p.render());
+          this.game.trumpPlayer = gameProto.getTrumpPlayerId();
+        }
         if (updateId - this.game.updateId == 1)
         {
           // Render delta
@@ -858,6 +865,7 @@ class Game {
   // Trump metadata
   declaredTrumps = DeclaredTrump.None;
   trumpRank: Rank = Rank.TWO;
+  trumpPlayer: string = "";
   ranking = new CardRanking(this.trumpRank);
 
   // Player metadata

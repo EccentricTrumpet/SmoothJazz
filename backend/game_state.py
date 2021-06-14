@@ -185,7 +185,8 @@ class Game:
     def drawCards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_id:
             self.__deal_hands()
-        elif self.state == GameState.DEAL_KITTY and player_name == self.__kitty_id:
+        elif self.state == GameState.DEAL and player_name == self.__kitty_id:
+            self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
 
     def to_game_proto(self, increment_update_id: bool = True) -> GameProto:
@@ -229,10 +230,7 @@ class Game:
             logging.info(f'Dealt card {card} to {player.player_id}')
             deal_index = (deal_index + 1) % 4
 
-            if len(self.__deck_cards) == 8:
-                self.state = GameState.DEAL_KITTY
-            else:
-                time.sleep(self.__delay)
+            time.sleep(self.__delay)
 
             self.__card_dealt_update(player.player_id, card)
 
