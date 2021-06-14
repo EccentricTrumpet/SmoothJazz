@@ -207,7 +207,7 @@ class Game:
             game.players.append(player.to_player_proto())
 
         for card in self.__kitty:
-            game.kitty.cards.append(card.to_card_proto())
+            game.kitty.cards.append(card)
 
         return game
 
@@ -227,9 +227,8 @@ class Game:
 
             if len(self.__deck_cards) == 8:
                 self.state = GameState.DEAL_KITTY
-            else:
-                time.sleep(self.__delay)
 
+            time.sleep(self.__delay)
             self.__card_dealt_update(player.player_id, card)
 
     def __deal_kitty(self) -> None:
@@ -241,9 +240,8 @@ class Game:
 
             if len(self.__deck_cards) == 0:
                 self.state = GameState.HIDE_KITTY
-            else:
-                time.sleep(self.__delay)
 
+            time.sleep(self.__delay)
             self.__card_dealt_update(player.player_id, card)
 
     def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:

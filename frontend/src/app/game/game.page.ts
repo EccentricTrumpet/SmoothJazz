@@ -71,7 +71,8 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
     while (j < cardUIs.length) {
       let cardUI = cardUIs[j++];
       let uiProto = toCardProto(cardUI);
-      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank()) {
+      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && cardUI.selected) {
+        cardUI.selected = false;
         found = true;
         resolvedCardUIs.push(cardUI);
         break;
@@ -810,12 +811,12 @@ class Player {
     if (event.type === "click") {
       if (this.selectedCardUIs.has(cardUI)) {
         this.selectedCardUIs.delete(cardUI);
-        cardUI.yAdjustment = 0;
+        cardUI.selected = false;
         this.handUI.render();
         return;
       }
 
-      cardUI.yAdjustment = -this.game.cardHeight()*4/10;
+      cardUI.selected = true;
       this.selectedCardUIs.add(cardUI);
 
       this.handUI.render();
@@ -841,8 +842,6 @@ class Player {
       let response = await this.game.client.playHand(playHandReq, null);
 
       console.log("PlayHand Response: ", response.toObject());
-      this.selectedCardUIs.forEach(ui => { ui.yAdjustment = 0 })
-      this.selectedCardUIs.clear();
     }
   }
 }

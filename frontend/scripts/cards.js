@@ -87,7 +87,7 @@ var cards = (function() {
       this.rank = rank;
       this.name = suit.toUpperCase() + rank;
       this.faceUp = false;
-      this.yAdjustment = 0;
+      this.selected = false;
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
       this.el = $('<div/>').css({
         width: opt.cardSize.width,
@@ -213,8 +213,12 @@ var cards = (function() {
         var top = parseInt($(card.el).css('top'));
         var left = parseInt($(card.el).css('left'));
         if (top != card.targetTop || left != card.targetLeft) {
+          var cardTop = card.targetTop;
+          if (card.selected) {
+            cardTop -= opt.cardSize.height/2;
+          }
           var props = {
-            top: card.targetTop + card.yAdjustment,
+            top: cardTop,
             left: card.targetLeft,
             queue: false
           };
