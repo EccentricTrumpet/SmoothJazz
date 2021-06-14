@@ -5,6 +5,9 @@
       Add AI Player
     </ion-button>
     <br/><div #gameInfo id="game-info"></div>
+    <div>Trump Declarer: {{game?.trumpPlayer}}</div>
+    <div>Trump Suit: {{game?.ranking?.trumpSuit}}</div>
+    <div>Trump Rank: {{game?.ranking?.trumpRank}}</div>
     <div *ngFor="let player of game?.players">
       <div
         [style.position]="'absolute'"
