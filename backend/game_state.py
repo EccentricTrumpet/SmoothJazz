@@ -22,11 +22,12 @@ Suit = CardProto.Suit
 Rank = CardProto.Rank
 
 # Utility functions
+# Aaron: I think we can just get rid of this and use protobuf's constructor directly...
 def create_cardproto(suit: Suit, rank: Rank) -> CardProto:
-    card = CardProto()
-    card.suit = suit
-    card.rank = rank
-    return card
+    return CardProto(suit=suit, rank=rank)
+
+def is_joker(card: CardProto) -> bool:
+    return card.suit == Suit.SMALL_JOKER or card.suit == Suit.BIG_JOKER
 
 """
 Game: All state of the game is stored in this class
@@ -68,7 +69,6 @@ class Player:
             if self.__notify == False:
                 break
             game_state = self.__game_queue.popleft()
-            print(f"AW - yeilding {game_state}")
             yield game_state
 
     def to_player_proto(self) -> PlayerProto:
@@ -112,6 +112,7 @@ class Game:
         # hands on table contains an array of pairs - (id, hand)
         self.__action_count: int = 0
         self.__hands_on_table: List[tuple[str, Hand]] = []
+        self._current_trump_cards: Sequence[CardProto] = [create_cardproto(Suit.SUIT_UNDEFINED, Rank.TWO)]
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
@@ -247,24 +248,44 @@ class Game:
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_id, card)
 
-    def __declare_trump(self, player: Player, cards: Sequence[Card]) -> Tuple[bool, str]:
+    def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         logging.info(f'{player} declares trump as: {cards}')
 
         for card in cards:
             if not player.has_card(card):
                 return False, f'Player does not possess the card {card}'
 
+        if len(cards) == 1:
+            if len(self._current_trump_cards) > 1 or self._current_trump_cards[0].suit != Suit.SUIT_UNDEFINED or cards[0].rank != self._current_trump_cards[0].rank:
+                return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
+        elif len(cards) == 2:
+            if cards[0] != cards[1]:
+                return False, f'Trump declaration cards do not match: {cards}'
+            elif cards[0].suit == Suit.SMALL_JOKER:
+                if len(self._current_trump_cards) == 2 and is_joker(self._current_trump_cards[0]):
+                    return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
+            elif cards[0].suit == Suit.BIG_JOKER:
+                if len(self._current_trump_cards) == 2 and self._current_trump_cards[0].suit == Suit.BIG_JOKER:
+                    return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
+            # For non-joker pair trump declaration
+            elif len(self._current_trump_cards) > 1 or cards[0].rank != self._current_trump_cards[0].rank:
+                    return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
+        else:
+            return False, f'Too many trump declaration cards: {cards}'
+
+        for card in cards:
+            card.rank = self._current_trump_cards[0].rank
         self.__declare_trump_update(player.player_id, cards)
+        self._current_trump_cards = cards
 
         return True, ''
 
-    def __declare_trump_update(self, player_id: str, trump_hand: Sequence[Card]) -> None:
+    def __declare_trump_update(self, player_id: str, trump_hand: Sequence[CardProto]) -> None:
         def action(game: GameProto):
-            print("AW - __declare_trump_update action cb is called")
             game.trump_player_id = player_id
             for card in trump_hand:
                 card_proto = game.trump_cards.cards.add()
-                card_proto.CopyFrom(card.to_card_proto())
+                card_proto.CopyFrom(card)
         self.__update_players(action)
 
     def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
