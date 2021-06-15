@@ -213,12 +213,8 @@ var cards = (function() {
         var top = parseInt($(card.el).css('top'));
         var left = parseInt($(card.el).css('left'));
         if (top != card.targetTop || left != card.targetLeft) {
-          var cardTop = card.targetTop;
-          if (card.selected) {
-            cardTop -= opt.cardSize.height/2;
-          }
           var props = {
-            top: cardTop,
+            top: card.targetTop,
             left: card.targetLeft,
             queue: false
           };
@@ -324,7 +320,7 @@ var cards = (function() {
       var left = Math.round(this.x - width / 2);
       var top = Math.round(this.y - opt.cardSize.height / 2, 0);
       for (var i = 0; i < this.length; i++) {
-        this[i].targetTop = top;
+        this[i].targetTop = this[i].selected ? top - opt.cardSize.height/2 : top;
         this[i].targetLeft = left + i * opt.cardSize.padding;
       }
     },
