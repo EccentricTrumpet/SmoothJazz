@@ -11,16 +11,15 @@ from game_state import (
     Rank,
     Game,
     GameState,
-    Player,
-    create_cardproto)
+    Player)
 
-SPADE_TWO_PROTO = create_cardproto(Suit.SPADES, Rank.TWO)
-SPADE_KING_PROTO = create_cardproto(Suit.SPADES, Rank.KING)
-SMALL_JOKER_PROTO = create_cardproto(Suit.SMALL_JOKER, Rank.RANK_UNDEFINED)
-SMALL_JOKER_RANK_TWO_PROTO = create_cardproto(Suit.SMALL_JOKER, Rank.TWO)
-BIG_JOKER_PROTO = create_cardproto(Suit.BIG_JOKER, Rank.RANK_UNDEFINED)
-BIG_JOKER_RANK_TWO_PROTO = create_cardproto(Suit.BIG_JOKER, Rank.TWO)
-HEART_TWO_PROTO = create_cardproto(Suit.HEARTS, Rank.TWO)
+SPADE_TWO_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TWO)
+SPADE_KING_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.KING)
+SMALL_JOKER_PROTO = CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED)
+SMALL_JOKER_RANK_TWO_PROTO = CardProto(suit=Suit.SMALL_JOKER,rank=Rank.TWO)
+BIG_JOKER_PROTO = CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED)
+BIG_JOKER_RANK_TWO_PROTO = CardProto(suit=Suit.BIG_JOKER,rank=Rank.TWO)
+HEART_TWO_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TWO)
 
 class HandTests(unittest.TestCase):
 

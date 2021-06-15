@@ -22,10 +22,6 @@ Suit = CardProto.Suit
 Rank = CardProto.Rank
 
 # Utility functions
-# Aaron: I think we can just get rid of this and use protobuf's constructor directly...
-def create_cardproto(suit: Suit, rank: Rank) -> CardProto:
-    return CardProto(suit=suit, rank=rank)
-
 def is_joker(card: CardProto) -> bool:
     return card.suit == Suit.SMALL_JOKER or card.suit == Suit.BIG_JOKER
 
@@ -112,16 +108,16 @@ class Game:
         # hands on table contains an array of pairs - (id, hand)
         self.__action_count: int = 0
         self.__hands_on_table: List[tuple[str, Hand]] = []
-        self._current_trump_cards: Sequence[CardProto] = [create_cardproto(Suit.SUIT_UNDEFINED, Rank.TWO)]
+        self._current_trump_cards: Sequence[CardProto] = [CardProto(suit=Suit.SUIT_UNDEFINED, rank=Rank.TWO)]
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
         for i in range(2):
-            self.__deck_cards.append(create_cardproto(Suit.BIG_JOKER, Rank.RANK_UNDEFINED))
-            self.__deck_cards.append(create_cardproto(Suit.SMALL_JOKER, Rank.RANK_UNDEFINED))
+            self.__deck_cards.append(CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED))
+            self.__deck_cards.append(CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED))
             for s in Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS:
                 for r in range(Rank.ACE, Rank.KING + 1):
-                    self.__deck_cards.append(create_cardproto(s, r))
+                    self.__deck_cards.append(CardProto(suit=s,rank=r))
 
         random.shuffle(self.__deck_cards)
 
