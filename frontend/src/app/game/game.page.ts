@@ -825,7 +825,6 @@ class Player {
 
       cardUI.selected = true;
       this.selectedCardUIs.add(cardUI);
-
       this.handUI.render();
     }
     // submit play with right click
@@ -849,6 +848,11 @@ class Player {
       let response = await this.game.client.playHand(playHandReq, null);
 
       console.log("PlayHand Response: ", response.toObject());
+      if (response.getSuccess() == true) {
+        this.selectedCardUIs.delete(cardUI);
+        cardUI.selected = false;
+        this.handUI.render();
+      }
     }
   }
 }
