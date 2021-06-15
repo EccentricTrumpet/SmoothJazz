@@ -6,7 +6,7 @@ import { COOKIE_PLAYER_NAME } from '../app.constants';
 import { CookieService } from 'ngx-cookie-service';
 import { AlertController } from '@ionic/angular';
 import {
-  EnterRoomRequest,
+  JoinGameRequest,
   AddAIPlayerRequest,
   PlayHandRequest,
   Game as GameProto,
@@ -124,7 +124,7 @@ export class GamePage implements AfterViewChecked, OnInit {
 
       if (this.cookieService.check(COOKIE_PLAYER_NAME)) {
         let playerName = this.cookieService.get(COOKIE_PLAYER_NAME);
-        this.enterRoom(playerName, this.gameID);
+        this.joinGame(playerName, this.gameID);
         return;
       }
 
@@ -143,7 +143,7 @@ export class GamePage implements AfterViewChecked, OnInit {
             handler: inputData => {
               console.log(`Player name: ${inputData.playerName}`);
               this.cookieService.set(COOKIE_PLAYER_NAME, inputData.playerName);
-              this.enterRoom(inputData.playerName, this.gameID);
+              this.joinGame(inputData.playerName, this.gameID);
             }
           }
         ]
@@ -169,7 +169,7 @@ export class GamePage implements AfterViewChecked, OnInit {
     console.log('Adding AI Player for: '+this.gameID);
 
     let response = await this.client.addAIPlayer(createAIRequest, null);
-    console.log(`${response.getPlayerName()} is added to the room`);
+    console.log(`${response.getPlayerName()} is added to the game`);
   }
 
   getUIIndex(playerName: string, players: PlayerProto[], player0Name: string): number {
@@ -182,13 +182,13 @@ export class GamePage implements AfterViewChecked, OnInit {
     return uiIndex;
   }
 
-  enterRoom(playerName: string, gameID: string) {
+  joinGame(playerName: string, gameID: string) {
     console.log(`${playerName} is joining game ${gameID}`);
-    const enterRoomRequest = new EnterRoomRequest();
-    enterRoomRequest.setPlayerId(playerName);
-    enterRoomRequest.setGameId(gameID);
+    const joinGameRequest = new JoinGameRequest();
+    joinGameRequest.setPlayerId(playerName);
+    joinGameRequest.setGameId(gameID);
 
-    this.client.enterRoom(enterRoomRequest)
+    this.client.joinGame(joinGameRequest)
       .on('data', (gameProto: GameProto) => {
         console.log("Current game state: ", gameProto.toObject());
         let updateId = gameProto.getUpdateId();

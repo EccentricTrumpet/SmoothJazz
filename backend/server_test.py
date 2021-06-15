@@ -8,7 +8,7 @@ from shengji_pb2 import (
     AddAIPlayerRequest,
     CreateGameRequest,
     DrawCardsRequest,
-    EnterRoomRequest)
+    JoinGameRequest)
 
 # TODO(aaron): Add unit tests for 4 real players
 class ShengjiTest(unittest.TestCase):
@@ -28,11 +28,11 @@ class ShengjiTest(unittest.TestCase):
         req.player_id = "test_creation_id"
         game = sj.createGame(req, None)
 
-        enter_room_req = EnterRoomRequest()
-        enter_room_req.game_id = game.game_id
-        enter_room_req.player_id = req.player_id
+        join_game_req = JoinGameRequest()
+        join_game_req.game_id = game.game_id
+        join_game_req.player_id = req.player_id
 
-        updates = sj.enterRoom(enter_room_req, None)
+        updates = sj.joinGame(join_game_req, None)
         # Need to trigger the iterable to invoke the method
         streaming_result = [next(updates)]
 
@@ -70,11 +70,11 @@ class ShengjiTest(unittest.TestCase):
         sj.addAIPlayer(add_ai_req, None)
         sj.addAIPlayer(add_ai_req, None)
 
-        enter_room_req = EnterRoomRequest()
-        enter_room_req.game_id = game.game_id
-        enter_room_req.player_id = req.player_id
+        join_game_req = JoinGameRequest()
+        join_game_req.game_id = game.game_id
+        join_game_req.player_id = req.player_id
 
-        updates = sj.enterRoom(enter_room_req, None)
+        updates = sj.joinGame(join_game_req, None)
         # Need to trigger the iterable to invoke the method
         streaming_result = [next(updates)]
 
