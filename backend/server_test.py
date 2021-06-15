@@ -19,7 +19,7 @@ class ShengjiTest(unittest.TestCase):
         req = CreateGameRequest()
         req.player_id = "test_creation_id"
         game = sj.createGame(req, None)
-        self.assertEqual(game.creator_player_id, req.player_id)
+        self.assertEqual(game.game_id, str(0))
 
     @timeout_decorator.timeout(5)
     def test_streaming_with_three_ais(self) -> None:
