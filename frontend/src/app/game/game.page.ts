@@ -94,13 +94,14 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
 })
 
 export class GamePage implements AfterViewChecked, OnInit {
-@ViewChild('cardTable') tableElement: ElementRef;
-@ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
+  @ViewChild('cardTable') tableElement: ElementRef;
+  @ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
   private nativeElement: any;
   private started = false;
   private gameID: string;
   private client: ShengjiClient;
   game: Game = null;
+  addAIVisible: boolean = false;
 
   constructor(
     router: Router,
@@ -191,10 +192,15 @@ export class GamePage implements AfterViewChecked, OnInit {
     this.client.enterRoom(enterRoomRequest)
       .on('data', (gameProto: GameProto) => {
         console.log("Current game state: ", gameProto.toObject());
-        let updateId = gameProto.getUpdateId();
+        // Initialization
         if (this.game == null) {
+          if (playerName == gameProto.getCreatorPlayerId()) {
+            this.addAIVisible = true;
+          }
           this.game = new Game(this.client, this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
+
+        let updateId = gameProto.getUpdateId();
         if (updateId - this.game.updateId == 1)
         {
           // Render delta
