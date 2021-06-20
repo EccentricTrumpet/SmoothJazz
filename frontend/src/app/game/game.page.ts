@@ -95,7 +95,6 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
 
 export class GamePage implements AfterViewChecked, OnInit {
   @ViewChild('cardTable') tableElement: ElementRef;
-  @ViewChild('gameInfo', { static: false }) gameInfo: ElementRef;
   private nativeElement: any;
   private started = false;
   private gameID: string;
@@ -211,6 +210,7 @@ export class GamePage implements AfterViewChecked, OnInit {
 
                 if (this.game.playerCount == 4) {
                   this.game.start();
+                  this.addAIVisible = false;
                 }
               break;
             case GameProto.UpdateCase.CARD_DEALT_UPDATE:

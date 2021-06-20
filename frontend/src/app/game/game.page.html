@@ -4,7 +4,6 @@
     <ion-button *ngIf="addAIVisible" color="primary" shape="round" size="small" id="addAIButton" (click) = "addAIPlayer()">
       Add AI Player
     </ion-button>
-    <br/><div #gameInfo id="game-info"></div>
     <div *ngFor="let player of game?.players">
       <div
         [style.position]="'absolute'"
