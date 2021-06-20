@@ -18,9 +18,10 @@ from shengji_pb2 import (
     AddAIPlayerRequest,
     AddAIPlayerResponse,
     CreateGameRequest,
+    CreateGameResponse,
     DrawCardsRequest,
+    JoinGameRequest,
     DrawCardsResponse,
-    EnterRoomRequest,
     PlayHandRequest,
     PlayHandResponse,
     Game as GameProto)
@@ -42,15 +43,11 @@ class SJService(ShengjiServicer):
         logging.info(f'Received a CreateGame request from player_id: {request.player_id}')
 
         game_id = str(next(self.__game_id))
-        game = Game(request.player_id, game_id, self.__delay)
-        self.__games[game_id] = game
+        self.__games[game_id] = Game(request.player_id, game_id, self.__delay)
 
         logging.info(f'Created game with id: {game_id}')
 
-        game_proto = game.to_game_proto(False)
-        game_proto.new_player_update.player_id = request.player_id
-
-        return game_proto
+        return CreateGameResponse(game_id=game_id)
 
     def addAIPlayer(self,
                    request: AddAIPlayerRequest,
@@ -62,17 +59,13 @@ class SJService(ShengjiServicer):
         game = self.__get_game(request.game_id)
         game.add_player(ai_name, False)
 
-        # API: This is ignored by the frontend so is this needed?
-        ai_player = AddAIPlayerResponse()
-        ai_player.player_name = ai_name
+        return AddAIPlayerResponse(player_name=ai_name)
 
-        return ai_player
-
-    def enterRoom(self,
-                  request: EnterRoomRequest,
+    def joinGame(self,
+                  request: JoinGameRequest,
                   context: ServicerContext
                   ) -> Iterable[Game]:
-        logging.info(f'Received a EnterRoom request: {request.player_id} wants to join game {request.game_id}')
+        logging.info(f'Received a JoinGame request: {request.player_id} wants to join game {request.game_id}')
 
         game = self.__get_game(request.game_id)
         player = game.add_player(request.player_id, True)

@@ -5,9 +5,8 @@ service Shengji {
   // Creates a new game.
   rpc createGame(CreateGameRequest) returns (Game);
 
-  // Enters the room if the player has not entered the room yet. Streams back
-  // the game whenever game state changes.
-  rpc enterRoom(EnterRoomRequest) returns (stream Game);
+  // Join the game if the player. Streams back the game whenever game state changes.
+  rpc joinGame(JoinGameRequest) returns (stream Game);
 
   // Plays a hand or tries to claim trump suit.
   rpc playHand(PlayHandRequest) returns (PlayHandResponse);
@@ -34,13 +33,17 @@ message DrawCardsRequest {
 message DrawCardsResponse {
 }
 
-message EnterRoomRequest {
+message JoinGameRequest {
   string game_id = 1;
   string player_id = 2;
 }
 
 message CreateGameRequest {
   string player_id = 1;
+}
+
+message CreateGameResponse {
+  string game_id = 1;
 }
 
 message PlayHandRequest{
