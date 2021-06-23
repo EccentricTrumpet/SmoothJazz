@@ -9,7 +9,7 @@ jobs:
   test-backend:
     working_directory: ~/repo/backend
     docker:
-      - image: circleci/python:3.8
+      - image: cimg/python:3.8
     resource_class: small
     steps:
       - checkout:
@@ -35,7 +35,7 @@ jobs:
   test-frontend:
     working_directory: ~/repo/frontend
     docker:
-      - image: circleci/node:10-browsers
+      - image: cimg/node:lts-browsers
     resource_class: small
     steps:
       - checkout:
@@ -51,7 +51,7 @@ jobs:
       - run: npm test -- --configuration ci --browsers=ChromeHeadlessCI
   deploy-aks:
     docker:
-      - image: circleci/node:10
+      - image: cimg/node:lts
     resource_class: small
     steps:
       - checkout
