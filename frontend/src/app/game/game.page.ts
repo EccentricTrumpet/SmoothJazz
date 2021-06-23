@@ -24,6 +24,16 @@ export const Suit = CardProto.Suit;
 const Rank = CardProto.Rank;
 
 // Global utilities.
+const toFriendlyString = function(cardProto: CardProto): string {
+  switch(cardProto.getSuit()) {
+    case CardProto.Suit.SMALL_JOKER: return 'SMALL JOKER';
+    case CardProto.Suit.BIG_JOKER: return 'BIG JOKER';
+    case CardProto.Suit.SUIT_UNDEFINED: return 'UNDEFINED';
+  }
+
+  return `${Object.keys(CardProto.Rank).find(r => CardProto.Rank[r] === cardProto.getRank())} of ${Object.keys(CardProto.Suit).find(s => CardProto.Suit[s] === cardProto.getSuit())}`
+}
+
 // Convert a Card protobuf definition to cardUI definition in cards.js
 const getCardUISuitFromProto = function(cardProto: CardProto) : any {
   switch(cardProto.getSuit()) {
@@ -971,7 +981,7 @@ class Game {
   }
 
   renderCardDealt(playerId: string, card: CardProto) {
-    console.log(`Dealing card: ${card} to player ${playerId}`);
+    console.log(`Dealing card: ${toFriendlyString(card)} to player ${playerId}`);
     // Manually alter the suit and rank for the last placeholder card to be
     // the one returned from backend. This is done as we don't know what
     // cards are in the deck initially.
