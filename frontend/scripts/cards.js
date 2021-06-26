@@ -86,7 +86,7 @@ var cards = (function() {
       this.suit = suit;
       this.rank = rank;
       this.name = suit.toUpperCase() + rank;
-      this.faceUp = false;
+      this.faceUp = true;
       this.selected = false;
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
       this.el = $('<div/>').css({
@@ -123,11 +123,19 @@ var cards = (function() {
     },
 
     showCard: function() {
+      if (this.faceUp) {
+        return;
+      }
+      this.faceUp = true;
       let shortName = this.suit + this.rank;
       $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
     },
 
-    hideCard: function(position) {
+    hideCard: function() {
+      if (!this.faceUp) {
+        return;
+      }
+      this.faceUp = false;
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
       $(this.el).css('background-image', 'url(' + opt.cardsUrl + card_back + '.svg)');
       this.rotate(0);
@@ -139,7 +147,6 @@ var cards = (function() {
   };
 
   function Container() {
-
   }
 
   Container.prototype = new Array();
@@ -204,45 +211,16 @@ var cards = (function() {
 
     render: function(options) {
       options = options || {};
-      var speed = options.speed || opt.animationSpeed;
       this.calcPosition(options);
       for (var i = 0; i < this.length; i++) {
         var card = this[i];
         zIndexCounter++;
         card.moveToFront();
-        var top = parseInt($(card.el).css('top'));
-        var left = parseInt($(card.el).css('left'));
-        if (top != card.targetTop || left != card.targetLeft) {
-          var props = {
-            top: card.targetTop,
-            left: card.targetLeft,
-            queue: false
-          };
-          if (options.immediate) {
-            $(card.el).css(props);
-          } else {
-            $(card.el).animate(props, speed);
-          }
+        if (this.faceUp) {
+          card.showCard();
+        } else {
+          card.hideCard();
         }
-      }
-      var me = this;
-      var flip = function() {
-        for (var i = 0; i < me.length; i++) {
-          if (me.faceUp) {
-            me[i].showCard();
-          } else {
-            me[i].hideCard();
-          }
-        }
-      }
-      if (options.immediate) {
-        flip();
-      } else {
-        setTimeout(flip, speed / 2);
-      }
-
-      if (options.callback) {
-        setTimeout(options.callback, speed);
       }
     },
 
@@ -279,34 +257,6 @@ var cards = (function() {
     toString: function() {
       return 'Deck';
     },
-
-    deal: function(count, hands, animate, speed, callback) {
-      var me = this;
-      var i = 0;
-      var totalCount = count * hands.length;
-
-      function dealOne() {
-        if (me.length == 0 || i == totalCount) {
-          if (callback) {
-            callback();
-          }
-          return;
-        }
-        var hand = hands[i % hands.length];
-        hand.addCard(me.topCard());
-        i++;
-        if (animate) {
-          hands[i % hands.length].render({
-            callback: dealOne,
-            speed: speed
-          });
-        }
-        else {
-          dealOne();
-        }
-      }
-      dealOne();
-    }
   });
 
   function Hand(options) {

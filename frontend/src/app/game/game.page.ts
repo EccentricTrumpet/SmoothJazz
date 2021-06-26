@@ -5,6 +5,7 @@ import { ActivatedRoute, NavigationStart, Router } from "@angular/router";
 import { COOKIE_PLAYER_NAME } from '../app.constants';
 import { CookieService } from 'ngx-cookie-service';
 import { AlertController } from '@ionic/angular';
+import { gsap } from 'gsap';
 import {
   JoinGameRequest,
   AddAIPlayerRequest,
@@ -15,6 +16,7 @@ import {
   Player as PlayerProto,
   DrawCardsRequest
 } from "proto-gen/shengji_pb";
+import { renderHiddenInput } from '@ionic/core/dist/types/utils/helpers';
 declare var cards:any;
 
 // Aliases
@@ -95,6 +97,15 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
   }
 
   return resolvedCardUIs;
+}
+
+const renderHand = function(handUI: any) {
+  handUI.render();
+  for (let i = 0; i < handUI.length; i++) {
+    const el = handUI[i];
+    console.log(`Element: ${el.targetLeft} ${el.targetTop}`);
+    gsap.to(el.el, {x: el.targetLeft, y: el.targetTop});
+  }
 }
 
 @Component({
@@ -816,7 +827,7 @@ class Player {
 
   render(options?: any) {
     this.handUI.sort((a, b) => this.game.ranking.getUIRank(toCardProto(a)) - this.game.ranking.getUIRank(toCardProto(b)));
-    this.handUI.render(options);
+    renderHand(this.handUI);
   }
 
   async act(cardUI: any, event: any) {
@@ -828,14 +839,14 @@ class Player {
       if (this.selectedCardUIs.has(cardUI)) {
         this.selectedCardUIs.delete(cardUI);
         cardUI.selected = false;
-        this.handUI.render();
+        renderHand(this.handUI);
         return;
       }
 
       cardUI.selected = true;
       this.selectedCardUIs.add(cardUI);
 
-      this.handUI.render();
+      renderHand(this.handUI);
     }
     // submit play with right click
     else if (event.type === "contextmenu") {
@@ -958,7 +969,13 @@ class Game {
     let that = this;
     this.deckUI.click(() => that.draw());
     this.deckUI.addCards(cards.all);
-    this.deckUI.render({immediate: true});
+    this.deckUI.render();
+
+    for (let i = 0; i < this.deckUI.length; i++) {
+      const el = this.deckUI[i];
+      console.log(`Element: ${el.targetLeft} ${el.targetTop}`);
+      gsap.to(el.el, {x: el.targetLeft, y: el.targetTop, immediateRender: true});
+    }
   }
 
   cardHeight(): number {
@@ -991,15 +1008,15 @@ class Game {
     this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
     this.deckUI[this.deckUI.length-1].rank = card.getRank();
     player.handUI.addCard(this.deckUI.topCard());
-    player.render({speed: 50});
+    player.render();
   }
 
   renderKittyHiddenUpdate(kittyPlayerId: string, cards: CardProto[]) {
     let player = this.players.find(player => player.name == kittyPlayerId);
     cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
     this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
-    this.kittyUI.render();
-    player.handUI.render();
+    renderHand(this.kittyUI);
+    renderHand(player.handUI);
   }
 
   async play(playerIndex: number, cards: CardProto[]) : Promise<boolean> {
