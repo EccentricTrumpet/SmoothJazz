@@ -880,7 +880,7 @@ class Player {
       if (response.getSuccess() == true) {
         this.selectedCardUIs.delete(cardUI);
         cardUI.selected = false;
-        this.handUI.render();
+        renderUI(this.handUI);
       }
     }
   }
