@@ -26,7 +26,7 @@ from shengji_pb2 import (
     Game as GameProto)
 
 class SJService(ShengjiServicer):
-    def __init__(self, delay: float = 0.3) -> None:
+    def __init__(self, delay: float = 0.003) -> None:
         # delay for dealing cards
         self.__delay: float = delay
         # Dict that holds game states.

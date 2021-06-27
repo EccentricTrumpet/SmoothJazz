@@ -115,20 +115,23 @@ message Game {
   // Kitty/hidden hand. This is only visible to the dealer.
   Hand kitty = 7;
 
-  // Currently declared trump cards.
-  Hand trump_cards = 8;
+  // Current rank we are playing.
+  Card.Rank current_rank = 8;
 
   // Currently declared trump cards.
-  string trump_player_id = 9;
+  Hand trump_cards = 9;
+
+  // Player ID who declared current trump cards.
+  string trump_player_id = 10;
 
   // Update id, a sequence of natural numbers
-  int32 update_id = 10;
+  int32 update_id = 11;
 
   // Updates that represent the delta since the last update
   oneof update {
-    NewPlayerUpdate new_player_update = 11;
-    CardDealtUpdate card_dealt_update = 12;
-    KittyHiddenUpdate kitty_hidden_update = 13;
+    NewPlayerUpdate new_player_update = 12;
+    CardDealtUpdate card_dealt_update = 13;
+    KittyHiddenUpdate kitty_hidden_update = 14;
   }
 }
 

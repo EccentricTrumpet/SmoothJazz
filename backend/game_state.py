@@ -1,7 +1,7 @@
 import logging
 import random
 import time
-from enum import Enum
+from enum import Enum, IntEnum
 from threading import RLock, Semaphore
 from collections import deque
 from typing import (
@@ -24,6 +24,28 @@ Rank = CardProto.Rank
 # Utility functions
 def is_joker(card: CardProto) -> bool:
     return card.suit == Suit.SMALL_JOKER or card.suit == Suit.BIG_JOKER
+
+class TrumpType(IntEnum):
+    INVALID = 0
+    NONE = 1
+    SINGLE = 2
+    PAIR = 3
+    SMALL_JOKER = 4
+    BIG_JOKER = 5
+
+def get_trump_type(cards: Sequence[CardProto], current_rank: Rank) -> TrumpType:
+    if len(cards) == 0:
+        return TrumpType.NONE
+    if len(cards) == 1 and cards[0].rank == current_rank:
+        return TrumpType.SINGLE
+    if len(cards) == 2:
+        if cards[0].suit == Suit.SMALL_JOKER and cards[1].suit == Suit.SMALL_JOKER:
+            return TrumpType.SMALL_JOKER
+        if cards[0].suit == Suit.BIG_JOKER and cards[1].suit == Suit.BIG_JOKER:
+            return TrumpType.BIG_JOKER
+        if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == current_rank:
+            return TrumpType.PAIR
+    return TrumpType.INVALID
 
 """
 Game: All state of the game is stored in this class
@@ -108,7 +130,9 @@ class Game:
         # hands on table contains an array of pairs - (id, hand)
         self.__action_count: int = 0
         self.__hands_on_table: List[tuple[str, Hand]] = []
-        self._current_trump_cards: Sequence[CardProto] = [CardProto(suit=Suit.SUIT_UNDEFINED, rank=Rank.TWO)]
+        self.__current_rank: Rank = Rank.TWO
+        self.__trump_declarer: str = ''
+        self.__current_trump_cards: Sequence[CardProto] = []
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
@@ -196,6 +220,12 @@ class Game:
         game.game_id = self.__game_id
         game.creator_player_id = self.__creator_id
 
+        game.current_rank = self.__current_rank
+        game.trump_player_id = self.__trump_declarer
+        for card in self.__current_trump_cards:
+            card_proto = game.trump_cards.cards.add()
+            card_proto.CopyFrom(card)
+
         # TODO: Use the real dealer
         game.dealer_player_id = 'UNIMPLEMENTED'
 
@@ -249,38 +279,21 @@ class Game:
             if not player.has_card(card):
                 return False, f'Player does not possess the card {card}'
 
-        if len(cards) == 1:
-            if len(self._current_trump_cards) > 1 or self._current_trump_cards[0].suit != Suit.SUIT_UNDEFINED or cards[0].rank != self._current_trump_cards[0].rank:
-                return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
-        elif len(cards) == 2:
-            if cards[0] != cards[1]:
-                return False, f'Trump declaration cards do not match: {cards}'
-            elif cards[0].suit == Suit.SMALL_JOKER:
-                if len(self._current_trump_cards) == 2 and is_joker(self._current_trump_cards[0]):
-                    return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
-            elif cards[0].suit == Suit.BIG_JOKER:
-                if len(self._current_trump_cards) == 2 and self._current_trump_cards[0].suit == Suit.BIG_JOKER:
-                    return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
-            # For non-joker pair trump declaration
-            elif len(self._current_trump_cards) > 1 or cards[0].rank != self._current_trump_cards[0].rank:
-                    return False, f'{cards} Cannot overwrite current trump: {self._current_trump_cards}'
-        else:
-            return False, f'Too many trump declaration cards: {cards}'
+        current_trump_type = get_trump_type(self.__current_trump_cards, self.__current_rank)
+        assert current_trump_type != TrumpType.INVALID
+        new_trump_type = get_trump_type(cards, self.__current_rank)
 
-        for card in cards:
-            card.rank = self._current_trump_cards[0].rank
-        self.__declare_trump_update(player.player_id, cards)
-        self._current_trump_cards = cards
+        if new_trump_type <= current_trump_type:
+            return False, f'{cards} Cannot overwrite current trump: {self.__current_trump_cards}'
+        # Allow same player to fortify but not change previously declared trump.
+        if player.player_id == self.__trump_declarer and (not (new_trump_type == TrumpType.PAIR and current_trump_type == TrumpType.SINGLE and cards[0].suit == self.__current_trump_cards[0].suit)):
+            return False, f'{player.player_id} Cannot overwrite their previous declaration: {self.__current_trump_cards} with {cards}'
+
+        self.__current_trump_cards = cards
+        self.__trump_declarer = player.player_id
+        self.__update_players(lambda unused_game_proto: None)
 
         return True, ''
-
-    def __declare_trump_update(self, player_id: str, trump_hand: Sequence[CardProto]) -> None:
-        def action(game: GameProto):
-            game.trump_player_id = player_id
-            for card in trump_hand:
-                card_proto = game.trump_cards.cards.add()
-                card_proto.CopyFrom(card)
-        self.__update_players(action)
 
     def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         if (len(cards) != 8):

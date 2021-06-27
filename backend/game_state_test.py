@@ -1,4 +1,5 @@
 import unittest
+import timeout_decorator
 from shengji_pb2 import (
     Hand as HandProto,
     Game as GameProto,
@@ -16,25 +17,26 @@ from game_state import (
 SPADE_TWO_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TWO)
 SPADE_KING_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.KING)
 SMALL_JOKER_PROTO = CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED)
-SMALL_JOKER_RANK_TWO_PROTO = CardProto(suit=Suit.SMALL_JOKER,rank=Rank.TWO)
 BIG_JOKER_PROTO = CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED)
-BIG_JOKER_RANK_TWO_PROTO = CardProto(suit=Suit.BIG_JOKER,rank=Rank.TWO)
 HEART_TWO_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TWO)
 
 class HandTests(unittest.TestCase):
 
+    @timeout_decorator.timeout(5)
     def test_detects_pair(self) -> None:
         hand = Hand([SPADE_KING_PROTO, SPADE_KING_PROTO])
         self.assertEqual(hand.type, "PAIR")
 
 class PlayerTests(unittest.TestCase):
 
+    @timeout_decorator.timeout(5)
     def test_player_has_card(self) -> None:
         player = Player("player", False)
 
         player.add_card(SPADE_KING_PROTO)
         self.assertTrue(player.has_card(SPADE_KING_PROTO))
 
+    @timeout_decorator.timeout(5)
     def test_player_remove_card(self) -> None:
         player = Player("player", False)
 
@@ -63,8 +65,9 @@ class GameTests(unittest.TestCase):
         self.assertEqual(game_proto.trump_player_id, expected_trump_player_id)
         self.assertEqual(game_proto.trump_cards, HandProto(cards=expected_trump_cards))
 
+    @timeout_decorator.timeout(5)
     def test_declare_valid_trump(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO])
 
@@ -73,8 +76,9 @@ class GameTests(unittest.TestCase):
 
         self.__assertUpdateHasTrumpStatus(next(p1.update_stream()), 'player_1', [SPADE_TWO_PROTO])
 
+    @timeout_decorator.timeout(5)
     def test_declare_invalid_trump_card_not_in_hand(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_KING_PROTO])
 
@@ -83,8 +87,9 @@ class GameTests(unittest.TestCase):
         self.assertRegex(err, 'Player does not possess the card suit:.*')
         self.assertFalse(success)
 
+    @timeout_decorator.timeout(5)
     def test_declare_invalid_trump_wrong_rank(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_KING_PROTO])
 
@@ -93,8 +98,9 @@ class GameTests(unittest.TestCase):
         self.assertRegex(err, f'.*Cannot overwrite current trump:.*')
         self.assertFalse(success)
 
+    @timeout_decorator.timeout(5)
     def test_declare_invalid_trump_single_too_small(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO])
 
@@ -107,8 +113,9 @@ class GameTests(unittest.TestCase):
         self.assertRegex(err, f'.*Cannot overwrite current trump:.*')
         self.assertFalse(success)
 
+    @timeout_decorator.timeout(5)
     def test_declare_valid_double_trump_overwrite(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO])
 
@@ -120,17 +127,19 @@ class GameTests(unittest.TestCase):
         self.__playHandAndAssertSuccess(game, 'player_2', [HEART_TWO_PROTO, HEART_TWO_PROTO])
         self.__assertUpdateHasTrumpStatus(next(p2.update_stream()), 'player_2', [HEART_TWO_PROTO, HEART_TWO_PROTO])
 
+    @timeout_decorator.timeout(5)
     def test_declare_invalid_double_trump_diff_cards(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, HEART_TWO_PROTO])
 
         success, err = game.play('player_1', [SPADE_TWO_PROTO, HEART_TWO_PROTO])
-        self.assertRegex(err, 'Trump declaration cards do not match:.*')
+        self.assertRegex(err, f'.*Cannot overwrite current trump:.*')
         self.assertFalse(success)
 
+    @timeout_decorator.timeout(5)
     def test_declare_invalid_double_trump_wrong_rank(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_KING_PROTO, SPADE_KING_PROTO])
 
@@ -138,16 +147,18 @@ class GameTests(unittest.TestCase):
         self.assertRegex(err, f'.*Cannot overwrite current trump:.*')
         self.assertFalse(success)
 
+    @timeout_decorator.timeout(5)
     def test_declare_valid_trump_with_small_jokers(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
 
         self.__playHandAndAssertSuccess(game, 'player_1', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
-        self.__assertUpdateHasTrumpStatus(next(p1.update_stream()), 'player_1', [SMALL_JOKER_RANK_TWO_PROTO, SMALL_JOKER_RANK_TWO_PROTO])
+        self.__assertUpdateHasTrumpStatus(next(p1.update_stream()), 'player_1', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
 
+    @timeout_decorator.timeout(5)
     def test_declare_valid_trump_small_joker_overwrites(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, SPADE_TWO_PROTO])
 
@@ -156,10 +167,11 @@ class GameTests(unittest.TestCase):
 
         p2 = self.__createPlayerWithHand(game, 'player_2', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
         self.__playHandAndAssertSuccess(game, 'player_2', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
-        self.__assertUpdateHasTrumpStatus(next(p2.update_stream()), 'player_2', [SMALL_JOKER_RANK_TWO_PROTO, SMALL_JOKER_RANK_TWO_PROTO])
+        self.__assertUpdateHasTrumpStatus(next(p2.update_stream()), 'player_2', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
 
+    @timeout_decorator.timeout(5)
     def test_declare_valid_trump_big_joker_overwrites(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
 
@@ -168,16 +180,41 @@ class GameTests(unittest.TestCase):
 
         p2 = self.__createPlayerWithHand(game, 'player_2', [BIG_JOKER_PROTO, BIG_JOKER_PROTO])
         self.__playHandAndAssertSuccess(game, 'player_2', [BIG_JOKER_PROTO, BIG_JOKER_PROTO])
-        self.__assertUpdateHasTrumpStatus(next(p2.update_stream()), 'player_2', [BIG_JOKER_RANK_TWO_PROTO, BIG_JOKER_RANK_TWO_PROTO])
+        self.__assertUpdateHasTrumpStatus(next(p2.update_stream()), 'player_2', [BIG_JOKER_PROTO, BIG_JOKER_PROTO])
 
+    @timeout_decorator.timeout(5)
     def test_declare_trump_with_three_cards(self) -> None:
-        game = Game('creator', '0', 0.001)
+        game = Game('creator', '0', 0)
         game.state = GameState.DEAL
-        p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
+        p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, SPADE_TWO_PROTO, SPADE_TWO_PROTO])
 
-        success, err = game.play('player_1', [SPADE_TWO_PROTO, SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
-        self.assertRegex(err, 'Too many trump declaration cards:.*')
+        success, err = game.play('player_1', [SPADE_TWO_PROTO, SPADE_TWO_PROTO, SPADE_TWO_PROTO])
+        self.assertRegex(err, f'.*Cannot overwrite current trump:.*')
         self.assertFalse(success)
+
+    @timeout_decorator.timeout(5)
+    def test_declare_trump_cannot_overwrite_self_declaration(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.DEAL
+        p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, HEART_TWO_PROTO, SPADE_TWO_PROTO])
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [SPADE_TWO_PROTO])
+
+        success, err = game.play('player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
+        self.assertRegex(err, f'.*Cannot overwrite their previous declaration:.*')
+        self.assertFalse(success)
+
+    @timeout_decorator.timeout(5)
+    def test_declare_trump_cannot_overwrite_self_declaration(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.DEAL
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO, SPADE_TWO_PROTO])
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_TWO_PROTO])
+        self.__assertUpdateHasTrumpStatus(next(p1.update_stream()), 'player_1', [HEART_TWO_PROTO])
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
+        self.__assertUpdateHasTrumpStatus(next(p1.update_stream()), 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
 
 
 if __name__ == '__main__':
