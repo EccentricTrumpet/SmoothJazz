@@ -5,6 +5,7 @@ import { ActivatedRoute, NavigationStart, Router } from "@angular/router";
 import { COOKIE_PLAYER_NAME } from '../app.constants';
 import { CookieService } from 'ngx-cookie-service';
 import { AlertController } from '@ionic/angular';
+import { gsap } from 'gsap';
 import {
   JoinGameRequest,
   AddAIPlayerRequest,
@@ -95,6 +96,18 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
   }
 
   return resolvedCardUIs;
+}
+
+const renderUI = function(ui: any, immediate = false) {
+  ui.prepareRender();
+  for (let i = 0; i < ui.length; i++) {
+    const el = ui[i];
+    gsap.to(el.el, {
+      x: el.targetLeft,
+      y: el.targetTop,
+      duration: immediate ? 0 : 0.5
+    });
+  }
 }
 
 @Component({
@@ -814,9 +827,9 @@ class Player {
     this.label_top = y + "px";
   }
 
-  render(options?: any) {
+  render() {
     this.handUI.sort((a, b) => this.game.ranking.getUIRank(toCardProto(a)) - this.game.ranking.getUIRank(toCardProto(b)));
-    this.handUI.render(options);
+    renderUI(this.handUI);
   }
 
   async act(cardUI: any, event: any) {
@@ -828,14 +841,14 @@ class Player {
       if (this.selectedCardUIs.has(cardUI)) {
         this.selectedCardUIs.delete(cardUI);
         cardUI.selected = false;
-        this.handUI.render();
+        renderUI(this.handUI);
         return;
       }
 
       cardUI.selected = true;
       this.selectedCardUIs.add(cardUI);
 
-      this.handUI.render();
+      renderUI(this.handUI);
     }
     // submit play with right click
     else if (event.type === "contextmenu") {
@@ -922,7 +935,7 @@ class Game {
     this.cardSize = {
       width: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight),
       height: Math.min(minCardHeight, minCardWidth * originCardHeight / originCardWidth),
-      padding: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight) / 5,
+      padding: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight) / 4,
     }
     // Create players. Note that x and y coordinates are the central
     // point between hand pile and trickWon pile.
@@ -958,7 +971,7 @@ class Game {
     let that = this;
     this.deckUI.click(() => that.draw());
     this.deckUI.addCards(cards.all);
-    this.deckUI.render({immediate: true});
+    renderUI(this.deckUI, true);
   }
 
   cardHeight(): number {
@@ -991,15 +1004,15 @@ class Game {
     this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
     this.deckUI[this.deckUI.length-1].rank = card.getRank();
     player.handUI.addCard(this.deckUI.topCard());
-    player.render({speed: 50});
+    player.render()
   }
 
   renderKittyHiddenUpdate(kittyPlayerId: string, cards: CardProto[]) {
     let player = this.players.find(player => player.name == kittyPlayerId);
     cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
     this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
-    this.kittyUI.render();
-    player.handUI.render();
+    renderUI(this.kittyUI);
+    renderUI(player.handUI);
   }
 
   async play(playerIndex: number, cards: CardProto[]) : Promise<boolean> {
