@@ -214,6 +214,9 @@ export class GamePage implements AfterViewChecked, OnInit {
           this.game.ranking.resetOrder(trumpCards[0].getSuit());
           this.game.players.forEach(p => p.render());
           this.game.trumpPlayer = gameProto.getTrumpPlayerId();
+          this.game.trumpCardsImgURL = trumpCards.map(tc => {
+            return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
+          });
         }
 
         let updateId = gameProto.getUpdateId();
@@ -884,7 +887,8 @@ class Game {
   // Trump metadata
   declaredTrumps = DeclaredTrump.None;
   trumpRank: Rank = Rank.TWO;
-  trumpPlayer: string = "";
+  trumpPlayer: string = "NONE";
+  trumpCardsImgURL: string[] = [];
   ranking = new CardRanking(this.trumpRank);
 
   // Player metadata
