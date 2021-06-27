@@ -9,8 +9,6 @@ var cards = (function() {
     table: 'body',
     cardback: 'red',
     cardsUrl: 'assets/cards_js_img/',
-    blackJoker: true,
-    redJoker: true,
     loop: 1
   };
   var zIndexCounter = 1;

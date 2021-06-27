@@ -935,7 +935,7 @@ class Game {
     this.cardSize = {
       width: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight),
       height: Math.min(minCardHeight, minCardWidth * originCardHeight / originCardWidth),
-      padding: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight) / 5,
+      padding: Math.min(minCardWidth, minCardHeight * originCardWidth / originCardHeight) / 4,
     }
     // Create players. Note that x and y coordinates are the central
     // point between hand pile and trickWon pile.
