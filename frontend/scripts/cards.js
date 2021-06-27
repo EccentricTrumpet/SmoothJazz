@@ -1,4 +1,3 @@
-
 var cards = (function() {
   //The global options
   var opt = {
@@ -7,18 +6,13 @@ var cards = (function() {
       height: 94,
       padding: 18
     },
-    animationSpeed: 500,
     table: 'body',
     cardback: 'red',
     cardsUrl: 'assets/cards_js_img/',
-    blackJoker: true,
-    redJoker: true,
     loop: 1
   };
   var zIndexCounter = 1;
   var all = []; //All the cards created.
-  var start = 1;
-  var end = start + 12;
 
   function mouseEvent(ev) {
     var card = $(this).data('card');
@@ -43,38 +37,14 @@ var cards = (function() {
     if ($(opt.table).css('position') == 'static') {
       $(opt.table).css('position', 'relative');
     }
-    for (let l = 0; l < opt.loop; l++) {
-      for (var i = start; i <= end; i++) {
-        all.push(new Card('h', i, opt.table));
-        all.push(new Card('s', i, opt.table));
-        all.push(new Card('d', i, opt.table));
-        all.push(new Card('c', i, opt.table));
-      }
-      if (opt.blackJoker) {
-        all.push(new Card('bj', 0, opt.table));
-      }
-      if (opt.redJoker) {
-        all.push(new Card('rj', 0, opt.table));
-      }
+    for (let l = 0; l < opt.loop * 54; l++) {
+      // We rely on the backend to resolve actual cards so we just add placeholder cards here
+      all.push(new Card('bj', 0, opt.table));
     }
 
     // Not a fan of specifying individual events. How do we handle mobile where right click might not be an option?
     $('.card').on('click', mouseEvent);
     $('.card').on('contextmenu', mouseEvent);
-    shuffle(all);
-  }
-
-  function shuffle(deck) {
-    //Fisher yates shuffle
-    var i = deck.length;
-    if (i == 0) return;
-    while (--i) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var tempi = deck[i];
-      var tempj = deck[j];
-      deck[i] = tempj;
-      deck[j] = tempi;
-    }
   }
 
   function Card(suit, rank, table) {
@@ -97,20 +67,10 @@ var cards = (function() {
         position: 'absolute',
         cursor: 'pointer'
       }).addClass('card').data('card', this).appendTo($(table));
-      this.showCard();
-      this.moveToFront();
     },
 
     toString: function() {
       return this.name;
-    },
-
-    moveTo: function(x, y, speed, callback) {
-      var props = {
-        top: y - (opt.cardSize.height / 2),
-        left: x - (opt.cardSize.width / 2)
-      };
-      $(this.el).animate(props, speed || opt.animationSpeed, callback);
     },
 
     rotate: function(angle) {
@@ -123,11 +83,19 @@ var cards = (function() {
     },
 
     showCard: function() {
+      if (this.faceUp) {
+        return;
+      }
+      this.faceUp = true;
       let shortName = this.suit + this.rank;
       $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
     },
 
-    hideCard: function(position) {
+    hideCard: function() {
+      if (!this.faceUp) {
+        return;
+      }
+      this.faceUp = false;
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
       $(this.el).css('background-image', 'url(' + opt.cardsUrl + card_back + '.svg)');
       this.rotate(0);
@@ -138,9 +106,7 @@ var cards = (function() {
     }
   };
 
-  function Container() {
-
-  }
+  function Container() { }
 
   Container.prototype = new Array();
   Container.prototype.extend = function(obj) {
@@ -202,47 +168,18 @@ var cards = (function() {
       };
     },
 
-    render: function(options) {
+    prepareRender: function(options) {
       options = options || {};
-      var speed = options.speed || opt.animationSpeed;
       this.calcPosition(options);
       for (var i = 0; i < this.length; i++) {
         var card = this[i];
         zIndexCounter++;
         card.moveToFront();
-        var top = parseInt($(card.el).css('top'));
-        var left = parseInt($(card.el).css('left'));
-        if (top != card.targetTop || left != card.targetLeft) {
-          var props = {
-            top: card.targetTop,
-            left: card.targetLeft,
-            queue: false
-          };
-          if (options.immediate) {
-            $(card.el).css(props);
-          } else {
-            $(card.el).animate(props, speed);
-          }
+        if (this.faceUp) {
+          card.showCard();
+        } else {
+          card.hideCard();
         }
-      }
-      var me = this;
-      var flip = function() {
-        for (var i = 0; i < me.length; i++) {
-          if (me.faceUp) {
-            me[i].showCard();
-          } else {
-            me[i].hideCard();
-          }
-        }
-      }
-      if (options.immediate) {
-        flip();
-      } else {
-        setTimeout(flip, speed / 2);
-      }
-
-      if (options.callback) {
-        setTimeout(options.callback, speed);
       }
     },
 
@@ -279,34 +216,6 @@ var cards = (function() {
     toString: function() {
       return 'Deck';
     },
-
-    deal: function(count, hands, animate, speed, callback) {
-      var me = this;
-      var i = 0;
-      var totalCount = count * hands.length;
-
-      function dealOne() {
-        if (me.length == 0 || i == totalCount) {
-          if (callback) {
-            callback();
-          }
-          return;
-        }
-        var hand = hands[i % hands.length];
-        hand.addCard(me.topCard());
-        i++;
-        if (animate) {
-          hands[i % hands.length].render({
-            callback: dealOne,
-            speed: speed
-          });
-        }
-        else {
-          dealOne();
-        }
-      }
-      dealOne();
-    }
   });
 
   function Hand(options) {
@@ -333,12 +242,8 @@ var cards = (function() {
   return {
     init: init,
     all: all,
-    options: opt,
-    SIZE: opt.cardSize,
     Card: Card,
-    Container: Container,
     Deck: Deck,
     Hand: Hand,
-    shuffle: shuffle
   };
 })();
