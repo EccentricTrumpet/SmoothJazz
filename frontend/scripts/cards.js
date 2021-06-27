@@ -38,6 +38,7 @@ var cards = (function() {
       $(opt.table).css('position', 'relative');
     }
     for (let l = 0; l < opt.loop * 54; l++) {
+      // We rely on the backend to resolve actual cards so we just add placeholder cards here
       all.push(new Card('bj', 0, opt.table));
     }
 
