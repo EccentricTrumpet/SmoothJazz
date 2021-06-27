@@ -1,10 +1,8 @@
 <ion-content id="main-content">
   <div #cardTable id="card-table">
-    <!-- TODO(Aaron): Make this available for room owner only. -->
-    <ion-button color="primary" shape="round" size="small" id="addAIButton" (click) = "addAIPlayer()">
+    <ion-button *ngIf="addAIVisible" color="primary" shape="round" size="small" id="addAIButton" (click) = "addAIPlayer()">
       Add AI Player
     </ion-button>
-    <br/><div #gameInfo id="game-info"></div>
     <div>Trump Declarer: {{game?.trumpPlayer}}</div>
     <div>Trump Suit: {{game?.ranking?.trumpSuit}}</div>
     <div>Trump Rank: {{game?.ranking?.trumpRank}}</div>

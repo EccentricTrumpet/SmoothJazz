@@ -56,7 +56,7 @@ Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 
 ## Protobuf regeneration
 
-1. `npm prebuild`
+1. `npm run prebuild`
 
 ## Launch with docker
 

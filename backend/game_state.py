@@ -98,7 +98,7 @@ class Player:
 
 
 class GameState(Enum):
-    # Waiting for players to join the room
+    # Waiting for players to join the game
     AWAIT_JOIN = 0
     # Waiting to deal/draw
     AWAIT_DEAL = 1
