@@ -90,14 +90,16 @@ class GameState(Enum):
     AWAIT_DEAL = 1
     # Dealing/drawing
     DEAL = 2
+    # Finished dealing but before dealer clicks to see the kitty
+    AWAIT_TRUMP_DECLARATION = 3
     # Dealing Kitty
-    DEAL_KITTY = 3
-    # Dealing Kitty
-    HIDE_KITTY = 4
+    DEAL_KITTY = 4
+    # Hiding Kitty
+    HIDE_KITTY = 5
     # Playing
-    PLAY = 5
+    PLAY = 6
     # Round ended
-    ROUND_END = 6
+    ROUND_END = 7
 
 class Game:
     def __init__(self, creator_id: str, game_id: str, delay: float) -> None:
@@ -155,7 +157,7 @@ class Game:
         if player_id != self.__next_player_id and self.state != GameState.DEAL:
             return False, f'Not the turn of player {player_id}'
         logging.info(f'Game state: {self.state}')
-        if (self.state == GameState.DEAL):
+        if self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION:
             return self.__declare_trump(self.__players[player_id], cards)
 
         if (self.state == GameState.HIDE_KITTY):
@@ -191,7 +193,7 @@ class Game:
     def drawCards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_id:
             self.__deal_hands()
-        elif self.state == GameState.DEAL and player_name == self.__kitty_id:
+        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_id:
             self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
 
@@ -241,6 +243,9 @@ class Game:
             player.add_card(card)
             logging.info(f'Dealt card {card} to {player.player_id}')
             deal_index = (deal_index + 1) % 4
+
+            if len(self.__deck_cards) == 8:
+                self.state = GameState.AWAIT_TRUMP_DECLARATION
 
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_id, card)
