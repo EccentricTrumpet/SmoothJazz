@@ -1,7 +1,7 @@
 import logging
 import random
 import time
-from enum import Enum
+from enum import Enum, IntEnum
 from threading import RLock, Semaphore
 from collections import deque
 from typing import (
@@ -13,6 +13,7 @@ from typing import (
     Tuple)
 from shengji_pb2 import (
     Card as CardProto,
+    Hand as HandProto,
     Game as GameProto,
     Player as PlayerProto)
 
@@ -21,11 +22,16 @@ Suit = CardProto.Suit
 Rank = CardProto.Rank
 
 # Utility functions
-def create_cardproto(suit: Suit, rank: Rank) -> CardProto:
-    card = CardProto()
-    card.suit = suit
-    card.rank = rank
-    return card
+def is_joker(card: CardProto) -> bool:
+    return card.suit == Suit.SMALL_JOKER or card.suit == Suit.BIG_JOKER
+
+class TrumpType(IntEnum):
+    INVALID = 0
+    NONE = 1
+    SINGLE = 2
+    PAIR = 3
+    SMALL_JOKER = 4
+    BIG_JOKER = 5
 
 """
 Game: All state of the game is stored in this class
@@ -84,14 +90,16 @@ class GameState(Enum):
     AWAIT_DEAL = 1
     # Dealing/drawing
     DEAL = 2
+    # Finished dealing but before dealer clicks to see the kitty
+    AWAIT_TRUMP_DECLARATION = 3
     # Dealing Kitty
-    DEAL_KITTY = 3
-    # Dealing Kitty
-    HIDE_KITTY = 4
+    DEAL_KITTY = 4
+    # Hiding Kitty
+    HIDE_KITTY = 5
     # Playing
-    PLAY = 5
+    PLAY = 6
     # Round ended
-    ROUND_END = 6
+    ROUND_END = 7
 
 class Game:
     def __init__(self, creator_id: str, game_id: str, delay: float) -> None:
@@ -110,15 +118,18 @@ class Game:
         # hands on table contains an array of pairs - (id, hand)
         self.__action_count: int = 0
         self.__hands_on_table: List[tuple[str, Hand]] = []
+        self.__current_rank: Rank = Rank.TWO
+        self.__trump_declarer: str = ''
+        self.__current_trump_cards: Sequence[CardProto] = []
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
         for i in range(2):
-            self.__deck_cards.append(create_cardproto(Suit.BIG_JOKER, Rank.RANK_UNDEFINED))
-            self.__deck_cards.append(create_cardproto(Suit.SMALL_JOKER, Rank.RANK_UNDEFINED))
+            self.__deck_cards.append(CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED))
+            self.__deck_cards.append(CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED))
             for s in Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS:
                 for r in range(Rank.ACE, Rank.KING + 1):
-                    self.__deck_cards.append(create_cardproto(s, r))
+                    self.__deck_cards.append(CardProto(suit=s,rank=r))
 
         random.shuffle(self.__deck_cards)
 
@@ -143,10 +154,11 @@ class Game:
             player.complete_update_stream()
 
     def play(self, player_id: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        # Check turn
-        # TODO (https://github.com/EccentricTrumpet/SmoothJazz/issues/49): Handle out of turn play for trump declarations
-        if player_id != self.__next_player_id:
+        if player_id != self.__next_player_id and self.state != GameState.DEAL:
             return False, f'Not the turn of player {player_id}'
+        logging.info(f'Game state: {self.state}')
+        if self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION:
+            return self.__declare_trump(self.__players[player_id], cards)
 
         if (self.state == GameState.HIDE_KITTY):
             return self.__hide_kitty(self.__players[player_id], cards)
@@ -181,7 +193,8 @@ class Game:
     def drawCards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_id:
             self.__deal_hands()
-        elif self.state == GameState.DEAL_KITTY and player_name == self.__kitty_id:
+        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_id:
+            self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
 
     def to_game_proto(self, increment_update_id: bool = True) -> GameProto:
@@ -194,6 +207,12 @@ class Game:
         game.update_id = update_id
         game.game_id = self.__game_id
         game.creator_player_id = self.__creator_id
+
+        game.current_rank = self.__current_rank
+        game.trump_player_id = self.__trump_declarer
+        for card in self.__current_trump_cards:
+            card_proto = game.trump_cards.cards.add()
+            card_proto.CopyFrom(card)
 
         # TODO: Use the real dealer
         game.dealer_player_id = 'UNIMPLEMENTED'
@@ -226,7 +245,7 @@ class Game:
             deal_index = (deal_index + 1) % 4
 
             if len(self.__deck_cards) == 8:
-                self.state = GameState.DEAL_KITTY
+                self.state = GameState.AWAIT_TRUMP_DECLARATION
 
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_id, card)
@@ -243,6 +262,43 @@ class Game:
 
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_id, card)
+
+    def __get_trump_type(self, cards):
+        if len(cards) == 0:
+            return TrumpType.NONE
+        if len(cards) == 1 and cards[0].rank == self.__current_rank:
+            return TrumpType.SINGLE
+        if len(cards) == 2:
+            if cards[0].suit == Suit.SMALL_JOKER and cards[1].suit == Suit.SMALL_JOKER:
+                return TrumpType.SMALL_JOKER
+            if cards[0].suit == Suit.BIG_JOKER and cards[1].suit == Suit.BIG_JOKER:
+                return TrumpType.BIG_JOKER
+            if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == self.__current_rank:
+                return TrumpType.PAIR
+        return TrumpType.INVALID
+
+    def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
+        logging.info(f'{player} declares trump as: {cards}')
+
+        for card in cards:
+            if not player.has_card(card):
+                return False, f'Player does not possess the card {card}'
+
+        current_trump_type = self.__get_trump_type(self.__current_trump_cards)
+        assert current_trump_type != TrumpType.INVALID
+        new_trump_type = self.__get_trump_type(cards)
+
+        if new_trump_type <= current_trump_type:
+            return False, f'{cards} Cannot overwrite current trump: {self.__current_trump_cards}'
+        # Allow same player to fortify but not change previously declared trump.
+        if player.player_id == self.__trump_declarer and (not (new_trump_type == TrumpType.PAIR and current_trump_type == TrumpType.SINGLE and cards[0].suit == self.__current_trump_cards[0].suit)):
+            return False, f'{player.player_id} Cannot overwrite their previous declaration: {self.__current_trump_cards} with {cards}'
+
+        self.__current_trump_cards = cards
+        self.__trump_declarer = player.player_id
+        self.__update_players(lambda unused_game_proto: None)
+
+        return True, ''
 
     def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         if (len(cards) != 8):

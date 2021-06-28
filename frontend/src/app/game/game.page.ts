@@ -221,6 +221,16 @@ export class GamePage implements AfterViewChecked, OnInit {
           }
           this.game = new Game(this.client, this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
+        const trumpCards = gameProto.getTrumpCards()?.getCardsList();
+        if (trumpCards?.length > 0 && trumpCards[0].getSuit() != this.game.ranking.trumpSuit) {
+          console.log(gameProto.getTrumpPlayerId() + " declared " + trumpCards[0].getSuit()) + " as trump suit.";
+          this.game.ranking.resetOrder(trumpCards[0].getSuit());
+          this.game.players.forEach(p => p.render());
+          this.game.trumpPlayer = gameProto.getTrumpPlayerId();
+          this.game.trumpCardsImgURL = trumpCards.map(tc => {
+            return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
+          });
+        }
 
         let updateId = gameProto.getUpdateId();
         if (updateId - this.game.updateId == 1)
@@ -847,7 +857,6 @@ class Player {
 
       cardUI.selected = true;
       this.selectedCardUIs.add(cardUI);
-
       renderUI(this.handUI);
     }
     // submit play with right click
@@ -871,6 +880,11 @@ class Player {
       let response = await this.game.client.playHand(playHandReq, null);
 
       console.log("PlayHand Response: ", response.toObject());
+      if (response.getSuccess() == true) {
+        this.selectedCardUIs.delete(cardUI);
+        cardUI.selected = false;
+        renderUI(this.handUI);
+      }
     }
   }
 }
@@ -886,6 +900,8 @@ class Game {
   // Trump metadata
   declaredTrumps = DeclaredTrump.None;
   trumpRank: Rank = Rank.TWO;
+  trumpPlayer: string = "NONE";
+  trumpCardsImgURL: string[] = [];
   ranking = new CardRanking(this.trumpRank);
 
   // Player metadata
