@@ -65,6 +65,8 @@ var cards = (function() {
         "background-image": 'url(' + opt.cardsUrl + card_back + '.svg)',
         "background-size": '100%',
         position: 'absolute',
+        left: '0px',
+        top: '0px',
         cursor: 'pointer'
       }).addClass('card').data('card', this).appendTo($(table));
     },
