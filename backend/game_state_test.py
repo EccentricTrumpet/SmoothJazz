@@ -63,6 +63,7 @@ class GameTests(unittest.TestCase):
 
     def __assertUpdateHasTrumpStatus(self, game_proto: GameProto, expected_trump_player_id: str, expected_trump_cards: Sequence[CardProto]) -> None:
         self.assertEqual(game_proto.trump_player_id, expected_trump_player_id)
+        self.assertEqual(game_proto.kitty_player_id, expected_trump_player_id)
         self.assertEqual(game_proto.trump_cards, HandProto(cards=expected_trump_cards))
 
     @timeout_decorator.timeout(5)
@@ -205,7 +206,7 @@ class GameTests(unittest.TestCase):
         self.assertFalse(success)
 
     @timeout_decorator.timeout(5)
-    def test_declare_trump_cannot_overwrite_self_declaration(self) -> None:
+    def test_declare_trump_fortify_self_declaration(self) -> None:
         game = Game('creator', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO, SPADE_TWO_PROTO])

@@ -97,7 +97,7 @@ message Game {
 
   // Dealer of this round. The dealer is the first player to play a hand and
   // has RO access to kitty.
-  string dealer_player_id = 3;
+  string kitty_player_id = 3;
 
   // Player who needs to play a hand.
   // Either "ANYONE" or a specific user id.
