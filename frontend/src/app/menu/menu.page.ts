@@ -33,7 +33,6 @@ export class MenuPage {
     console.log('Creating new game');
     let playerName = this.cookieService.get(COOKIE_PLAYER_NAME);
     const alert = await this.alertController.create({
-      // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
       header: 'Please Enter Your Name:',
       inputs: [
         {
@@ -70,7 +69,6 @@ export class MenuPage {
     console.log('Joining existing game!');
     let playerName = this.cookieService.get(COOKIE_PLAYER_NAME);
     const alert = await this.alertController.create({
-      // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
       header: 'Please Enter Game Room ID and Your Name:',
       inputs: [
         {
