@@ -106,7 +106,7 @@ class Game:
         self.state = GameState.AWAIT_JOIN
         self.__game_id: str = game_id
         self.__creator_id: str = creator_id
-        self.__kitty_id: str = creator_id
+        self.__kitty_player_id: str = creator_id
         self.__delay: float = delay
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
@@ -193,7 +193,7 @@ class Game:
     def drawCards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_id:
             self.__deal_hands()
-        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_id:
+        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_id:
             self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
 
@@ -214,8 +214,7 @@ class Game:
             card_proto = game.trump_cards.cards.add()
             card_proto.CopyFrom(card)
 
-        # TODO: Use the real dealer
-        game.dealer_player_id = 'UNIMPLEMENTED'
+        game.kitty_player_id = self.__kitty_player_id
 
         # Hack to communicate state
         game.next_turn_player_id = self.state.name
@@ -296,6 +295,8 @@ class Game:
 
         self.__current_trump_cards = cards
         self.__trump_declarer = player.player_id
+        if self.__current_rank == Rank.TWO:
+            self.__kitty_player_id = self.__trump_declarer
         self.__update_players(lambda unused_game_proto: None)
 
         return True, ''
