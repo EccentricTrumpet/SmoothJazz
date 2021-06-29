@@ -251,7 +251,7 @@ class Game:
 
     def __deal_kitty(self) -> None:
         while (len(self.__deck_cards) > 0):
-            player = self.__players[self.__next_player_id]
+            player = self.__players[self.__kitty_player_id]
             card = self.__deck_cards.pop()
             player.add_card(card)
             logging.info(f'Dealt kitty card {card} to {player.player_id}')
