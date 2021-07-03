@@ -121,6 +121,7 @@ class Game:
         self.__current_rank: Rank = Rank.TWO
         self.__trump_declarer: str = ''
         self.__current_trump_cards: Sequence[CardProto] = []
+        self.__play_order: Sequence[str] = []
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
@@ -144,7 +145,7 @@ class Game:
                 self.state = GameState.AWAIT_DEAL
 
             self.__new_player_update(player_id)
-
+        self.__play_order.append(player_id)
         return player
 
     def complete_player_stream(self) -> None:
@@ -162,6 +163,14 @@ class Game:
 
         if (self.state == GameState.HIDE_KITTY):
             return self.__hide_kitty(self.__players[player_id], cards)
+        
+        if (self.state == GameState.PLAY):
+            self.__hands_on_table.append(Hand(player_id, cards))
+            self.__next_player_id = self.__play_order[(self.__play_order.index(player_id) + 1) % 4]
+            if len(self.__hands_on_table) == 4:
+                self.__next_player_id = random.choice(self.__players.keys())
+                self.__hands_on_table = []
+            return True, ""
 
         # TODO: Update players if play is valid
 
