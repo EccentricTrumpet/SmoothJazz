@@ -152,7 +152,6 @@ export class GamePage implements AfterViewChecked, OnInit {
       }
 
       const alert = await this.alertController.create({
-        // TODO(Aaron): Add better css to the prompt like cssClass: 'my-custom-class',
         header: 'Please Enter Your Name:',
         inputs: [
           {
@@ -294,13 +293,6 @@ enum GameStage {
   HideKitty,
   Play,
   Busy
-}
-
-enum DeclaredTrump {
-  None,
-  Single,
-  Pair,
-  Jokers
 }
 
 export class CardRanking {
@@ -898,7 +890,6 @@ class Game {
   updateId =-1;
 
   // Trump metadata
-  declaredTrumps = DeclaredTrump.None;
   trumpRank: Rank = Rank.TWO;
   trumpPlayer: string = "NONE";
   trumpCardsImgURL: string[] = [];
@@ -1034,42 +1025,7 @@ class Game {
   async play(playerIndex: number, cards: CardProto[]) : Promise<boolean> {
     // TODO: Check that player isn't lying and actually has the cards
     cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
-
-    if (this.gameStage === GameStage.Deal) {
-      let that = this;
-      let declareTrump = function(declaredTrump: DeclaredTrump) {
-        that.declaredTrumps = declaredTrump;
-        that.ranking.resetOrder(cards[0].getSuit());
-
-        if (that.trumpRank === 2) {
-          that.kittyPlayer = playerIndex;
-        }
-
-        that.players.forEach(p => p.render());
-
-        console.log("player " + playerIndex + " declared " + Suit[that.ranking.trumpSuit]);
-      }
-
-       // Single trump
-      if (this.declaredTrumps < DeclaredTrump.Single && cards.length === 1 && cards[0].getRank() === this.trumpRank) {
-        declareTrump(DeclaredTrump.Single);
-        return true;
-      }
-      // TODO: Can you revoke your own declarations?
-      if (cards.length === 2 && cards[0].toString() === cards[1].toString()) {
-         // Pair of trumps
-        if (this.declaredTrumps < DeclaredTrump.Pair && cards[0].getRank() === this.trumpRank) {
-          declareTrump(DeclaredTrump.Pair);
-          return true;
-        }
-        // Pair of Jokers (TODO: should big jokers over trump small jokers? What about three player games e.g. 3 2's vs 2 Jokers?)
-        if (this.declaredTrumps < DeclaredTrump.Jokers && (cards[0].getSuit() === Suit.BIG_JOKER || cards[0].getSuit() === Suit.SMALL_JOKER)) {
-          declareTrump(DeclaredTrump.Jokers);
-          return true;
-        }
-      }
-    }
-    else if (this.gameStage === GameStage.Play && playerIndex === this.currentPlayer) {
+    if (this.gameStage === GameStage.Play && playerIndex === this.currentPlayer) {
       if (!this.trickPile.play(this.currentPlayer, cards)) {
         return false;
       }
