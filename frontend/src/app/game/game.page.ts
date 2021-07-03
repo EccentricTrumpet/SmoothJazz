@@ -138,6 +138,13 @@ export class GamePage implements AfterViewChecked, OnInit {
     });
 
     this.client = new ShengjiClient(environment.grpcUrl);
+
+    window.addEventListener("beforeunload", (event) => {
+      event.preventDefault();
+      // This message does not show in modern browsers like Chrome, see https://developers.google.com/web/updates/2016/04/chrome-51-deprecations#remove_custom_messages_in_onbeforeunload_dialogs
+      event.returnValue = "Exit will leave the page in a non-recoverable state, are you sure about this?";
+      return event;
+    });
   }
 
   ngOnInit() {
