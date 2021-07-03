@@ -154,7 +154,7 @@ class Game:
             player.complete_update_stream()
 
     def play(self, player_id: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        if player_id != self.__next_player_id and self.state != GameState.DEAL:
+        if player_id != self.__next_player_id and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
             return False, f'Not the turn of player {player_id}'
         logging.info(f'Game state: {self.state}')
         if self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION:
