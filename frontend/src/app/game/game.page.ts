@@ -846,6 +846,11 @@ class Player {
     // prevent context menu on right click
     event.preventDefault();
 
+    // do nothing if player tries to play someone else's card.
+    if (this.name != this.game.playerId) {
+      return;
+    }
+
     // select or deselect with click
     if (event.type === "click") {
       if (this.selectedCardUIs.has(cardUI)) {
