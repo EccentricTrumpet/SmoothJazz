@@ -138,6 +138,13 @@ export class GamePage implements AfterViewChecked, OnInit {
     });
 
     this.client = new ShengjiClient(environment.grpcUrl);
+
+    window.addEventListener("beforeunload", (event) => {
+      event.preventDefault();
+      // This message does not show in modern browsers like Chrome, see https://developers.google.com/web/updates/2016/04/chrome-51-deprecations#remove_custom_messages_in_onbeforeunload_dialogs
+      event.returnValue = "Exit will leave the page in a non-recoverable state, are you sure about this?";
+      return event;
+    });
   }
 
   ngOnInit() {
@@ -221,14 +228,15 @@ export class GamePage implements AfterViewChecked, OnInit {
           this.game = new Game(this.client, this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
         const trumpCards = gameProto.getTrumpCards()?.getCardsList();
-        if (trumpCards?.length > 0 && trumpCards[0].getSuit() != this.game.ranking.trumpSuit) {
+        const trumpCardsImgURL = trumpCards?.map(tc => {
+          return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
+        });
+        if (trumpCards?.length > 0 && trumpCardsImgURL != this.game.trumpCardsImgURL) {
           console.log(gameProto.getTrumpPlayerId() + " declared " + trumpCards[0].getSuit()) + " as trump suit.";
           this.game.ranking.resetOrder(trumpCards[0].getSuit());
           this.game.players.forEach(p => p.render());
           this.game.trumpPlayer = gameProto.getTrumpPlayerId();
-          this.game.trumpCardsImgURL = trumpCards.map(tc => {
-            return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
-          });
+          this.game.trumpCardsImgURL = trumpCardsImgURL;
         }
 
         let updateId = gameProto.getUpdateId();
@@ -838,6 +846,11 @@ class Player {
     // prevent context menu on right click
     event.preventDefault();
 
+    // do nothing if player tries to play someone else's card.
+    if (this.name != this.game.playerId) {
+      return;
+    }
+
     // select or deselect with click
     if (event.type === "click") {
       if (this.selectedCardUIs.has(cardUI)) {
@@ -872,11 +885,14 @@ class Player {
       let response = await this.game.client.playHand(playHandReq, null);
 
       console.log("PlayHand Response: ", response.toObject());
-      if (response.getSuccess() == true) {
-        this.selectedCardUIs.delete(cardUI);
-        cardUI.selected = false;
-        renderUI(this.handUI);
+      if (response.getSuccess() == false) {
+        alert(response.getErrorMessage());
       }
+      for (let selectedCard of this.selectedCardUIs.values()) {
+        selectedCard.selected = false;
+      }
+      this.selectedCardUIs.clear();
+      renderUI(this.handUI);
     }
   }
 }
