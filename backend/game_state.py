@@ -102,16 +102,16 @@ class GameState(Enum):
     ROUND_END = 7
 
 class Game:
-    def __init__(self, creator_id: str, game_id: str, delay: float) -> None:
+    def __init__(self, creator_name: str, game_id: str, delay: float) -> None:
         self.state = GameState.AWAIT_JOIN
         self.__game_id: str = game_id
-        self.__creator_id: str = creator_id
-        self.__kitty_player_name: str = creator_id
+        self.__creator_name: str = creator_name
+        self.__kitty_player_name: str = creator_name
         self.__delay: float = delay
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
         self.__metadata: GameMetadata = None
-        self.__next_player_name: str = creator_id
+        self.__next_player_name: str = creator_name
         self.__kitty: List[CardProto] = []
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
@@ -191,7 +191,7 @@ class Game:
         return True, ''
 
     def drawCards(self, player_name: str) -> None:
-        if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_id:
+        if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
             self.__deal_hands()
         elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_name:
             self.state = GameState.DEAL_KITTY
@@ -206,7 +206,7 @@ class Game:
         game = GameProto()
         game.update_id = update_id
         game.game_id = self.__game_id
-        game.creator_player_name = self.__creator_id
+        game.creator_player_name = self.__creator_name
 
         game.current_rank = self.__current_rank
         game.trump_player_name = self.__trump_declarer
