@@ -40,10 +40,10 @@ class SJService(ShengjiServicer):
             context: ServicerContext
             ) -> GameProto:
 
-        logging.info(f'Received a CreateGame request from player_id: {request.player_id}')
+        logging.info(f'Received a CreateGame request from player_name: {request.player_name}')
 
         game_id = str(next(self.__game_id))
-        self.__games[game_id] = Game(request.player_id, game_id, self.__delay)
+        self.__games[game_id] = Game(request.player_name, game_id, self.__delay)
 
         logging.info(f'Created game with id: {game_id}')
 
@@ -65,10 +65,10 @@ class SJService(ShengjiServicer):
                   request: JoinGameRequest,
                   context: ServicerContext
                   ) -> Iterable[Game]:
-        logging.info(f'Received a JoinGame request: {request.player_id} wants to join game {request.game_id}')
+        logging.info(f'Received a JoinGame request: {request.player_name} wants to join game {request.game_id}')
 
         game = self.__get_game(request.game_id)
-        player = game.add_player(request.player_id, True)
+        player = game.add_player(request.player_name, True)
 
         for update in player.update_stream():
             yield update
@@ -76,7 +76,7 @@ class SJService(ShengjiServicer):
     def playHand(self,
             request: PlayHandRequest,
             context: ServicerContext) -> PlayHandResponse:
-        logging.info(f'Received a playHand request [{request.hand}] from player_id [{request.player_id}], game_id [{request.game_id}]')
+        logging.info(f'Received a playHand request [{request.hand}] from player_name [{request.player_name}], game_id [{request.game_id}]')
 
         try:
             game = self.__get_game(request.game_id)
@@ -86,7 +86,7 @@ class SJService(ShengjiServicer):
             response.error_message = f'Game {request.game_id} does not exist'
             return response
 
-        (success, error_message) = game.play(request.player_id, request.hand.cards)
+        (success, error_message) = game.play(request.player_name, request.hand.cards)
 
         response = PlayHandResponse()
         response.success = success

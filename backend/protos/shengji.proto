@@ -35,11 +35,11 @@ message DrawCardsResponse {
 
 message JoinGameRequest {
   string game_id = 1;
-  string player_id = 2;
+  string player_name = 2;
 }
 
 message CreateGameRequest {
-  string player_id = 1;
+  string player_name = 1;
 }
 
 message CreateGameResponse {
@@ -47,7 +47,7 @@ message CreateGameResponse {
 }
 
 message PlayHandRequest{
-  string player_id = 1;
+  string player_name = 1;
   string game_id = 2;
 
   enum Intention {
@@ -73,7 +73,7 @@ message PlayHandResponse{
 // Player
 message Player {
   // ID of the player
-  string player_id = 1;
+  string player_name = 1;
 
   // Cards you have on your hand
   Hand cards_on_hand = 2;
@@ -93,21 +93,21 @@ message Game {
   string game_id = 1;
 
   // Creator of the game.
-  string creator_player_id = 2;
+  string creator_player_name = 2;
 
   // Dealer of this round. The dealer is the first player to play a hand and
   // has RO access to kitty.
-  string kitty_player_id = 3;
+  string kitty_player_name = 3;
 
   // Player who needs to play a hand.
   // Either "ANYONE" or a specific user id.
   //
   // ANYONE: Anyone can claim trump
   // specific user id: Only that user can play (hide kitty or play a hand)
-  string next_turn_player_id = 4;
+  string next_turn_player_name = 4;
 
   // Player who wins the current round.
-  string current_round_winner_player_id = 5;
+  string current_round_winner_player_name = 5;
 
   // All players. Private states will be redacted by the server (e.g.
   // other players' hand cards).
@@ -125,7 +125,7 @@ message Game {
   Hand trump_cards = 9;
 
   // Player ID who declared current trump cards.
-  string trump_player_id = 10;
+  string trump_player_name = 10;
 
   // Update id, a sequence of natural numbers
   int32 update_id = 11;
@@ -140,18 +140,18 @@ message Game {
 
 message NewPlayerUpdate {
   // Player who joined.
-  string player_id = 1;
+  string player_name = 1;
 }
 
 message CardDealtUpdate {
   // Player to whom the card was dealt.
-  string player_id = 1;
+  string player_name = 1;
   Card card = 2;
 }
 
 message KittyHiddenUpdate {
   // Kitty player.
-  string kitty_player_id = 1;
+  string kitty_player_name = 1;
 }
 
 message Card {
