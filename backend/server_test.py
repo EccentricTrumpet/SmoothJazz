@@ -17,7 +17,7 @@ class ShengjiTest(unittest.TestCase):
     def test_create_game(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
-        req.player_id = "test_creation_id"
+        req.player_name = "test_creation_id"
         game = sj.createGame(req, None)
         self.assertEqual(game.game_id, str(0))
 
@@ -25,12 +25,12 @@ class ShengjiTest(unittest.TestCase):
     def test_streaming_with_three_ais(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
-        req.player_id = "test_creation_id"
+        req.player_name = "test_creation_id"
         game = sj.createGame(req, None)
 
         join_game_req = JoinGameRequest()
         join_game_req.game_id = game.game_id
-        join_game_req.player_id = req.player_id
+        join_game_req.player_name = req.player_name
 
         updates = sj.joinGame(join_game_req, None)
         # Need to trigger the iterable to invoke the method
@@ -46,20 +46,20 @@ class ShengjiTest(unittest.TestCase):
 
         for update in updates:
             streaming_result.append(update)
-            if update.next_turn_player_id == GameState.AWAIT_DEAL.name:
+            if update.next_turn_player_name == GameState.AWAIT_DEAL.name:
                 break
 
         sj.terminate_game(game.game_id)
 
         self.assertEqual(streaming_result[-1].game_id, game.game_id)
-        self.assertEqual(streaming_result[-1].creator_player_id, req.player_id)
+        self.assertEqual(streaming_result[-1].creator_player_name, req.player_name)
         self.assertEqual(len(streaming_result[-1].players), 4)
 
     @timeout_decorator.timeout(5)
     def test_deal_cards(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
-        req.player_id = "test_creation_id"
+        req.player_name = "test_creation_id"
         game = sj.createGame(req, None)
 
         add_ai_req = AddAIPlayerRequest()
@@ -72,7 +72,7 @@ class ShengjiTest(unittest.TestCase):
 
         join_game_req = JoinGameRequest()
         join_game_req.game_id = game.game_id
-        join_game_req.player_id = req.player_id
+        join_game_req.player_name = req.player_name
 
         updates = sj.joinGame(join_game_req, None)
         # Need to trigger the iterable to invoke the method
@@ -80,7 +80,7 @@ class ShengjiTest(unittest.TestCase):
 
         draw_req = DrawCardsRequest()
         draw_req.game_id = game.game_id
-        draw_req.player_name = req.player_id
+        draw_req.player_name = req.player_name
 
         # Draw hands
         sj.drawCards(draw_req, None)
@@ -90,7 +90,7 @@ class ShengjiTest(unittest.TestCase):
 
         for update in updates:
             streaming_result.append(update)
-            if update.next_turn_player_id == GameState.HIDE_KITTY.name:
+            if update.next_turn_player_name == GameState.HIDE_KITTY.name:
                 break
 
         # Terminate game
@@ -103,7 +103,7 @@ class ShengjiTest(unittest.TestCase):
         self.assertEqual(len(streaming_result), 109)
 
         self.assertEqual(streaming_result[0].game_id, game.game_id)
-        self.assertEqual(streaming_result[0].creator_player_id, req.player_id)
+        self.assertEqual(streaming_result[0].creator_player_name, req.player_name)
 
         self.assertEqual(len(streaming_result[-1].players), 4)
         self.assertEqual(len(streaming_result[-1].players[0].cards_on_hand.cards), 25)

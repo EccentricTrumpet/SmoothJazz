@@ -49,21 +49,21 @@ class PlayerTests(unittest.TestCase):
 
 class GameTests(unittest.TestCase):
 
-    def __createPlayerWithHand(self, game: Game, player_id: str, hand: Sequence[CardProto]) -> Player:
-        new_player = game.add_player(player_id, True)
+    def __createPlayerWithHand(self, game: Game, player_name: str, hand: Sequence[CardProto]) -> Player:
+        new_player = game.add_player(player_name, True)
         next(new_player.update_stream()) # ignore the add_player update
         for card in hand:
             new_player.add_card(card)
         return new_player
 
-    def __playHandAndAssertSuccess(self, game: Game, player_id: str, cards: Sequence[CardProto]) -> None:
-        success, err = game.play(player_id, cards)
+    def __playHandAndAssertSuccess(self, game: Game, player_name: str, cards: Sequence[CardProto]) -> None:
+        success, err = game.play(player_name, cards)
         self.assertEqual(err, '')
         self.assertTrue(success)
 
-    def __assertUpdateHasTrumpStatus(self, game_proto: GameProto, expected_trump_player_id: str, expected_trump_cards: Sequence[CardProto]) -> None:
-        self.assertEqual(game_proto.trump_player_id, expected_trump_player_id)
-        self.assertEqual(game_proto.kitty_player_id, expected_trump_player_id)
+    def __assertUpdateHasTrumpStatus(self, game_proto: GameProto, expected_trump_player_name: str, expected_trump_cards: Sequence[CardProto]) -> None:
+        self.assertEqual(game_proto.trump_player_name, expected_trump_player_name)
+        self.assertEqual(game_proto.kitty_player_name, expected_trump_player_name)
         self.assertEqual(game_proto.trump_cards, HandProto(cards=expected_trump_cards))
 
     @timeout_decorator.timeout(5)
