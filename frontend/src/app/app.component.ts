@@ -54,7 +54,7 @@ export class AppComponent {
             this.cookieService.set(COOKIE_PLAYER_NAME, playerName);
 
             let createGameRequest = new CreateGameRequest();
-            createGameRequest.setPlayerId(playerName);
+            createGameRequest.setPlayerName(playerName);
 
             let response = await this.client.createGame(createGameRequest, null);
             this.router.navigate([`game/${response.getGameId()}`]);

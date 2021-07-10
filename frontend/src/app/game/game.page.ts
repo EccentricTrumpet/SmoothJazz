@@ -138,6 +138,13 @@ export class GamePage implements AfterViewChecked, OnInit {
     });
 
     this.client = new ShengjiClient(environment.grpcUrl);
+
+    window.addEventListener("beforeunload", (event) => {
+      event.preventDefault();
+      // This message does not show in modern browsers like Chrome, see https://developers.google.com/web/updates/2016/04/chrome-51-deprecations#remove_custom_messages_in_onbeforeunload_dialogs
+      event.returnValue = "Exit will leave the page in a non-recoverable state, are you sure about this?";
+      return event;
+    });
   }
 
   ngOnInit() {
@@ -195,8 +202,8 @@ export class GamePage implements AfterViewChecked, OnInit {
   }
 
   getUIIndex(playerName: string, players: PlayerProto[], player0Name: string): number {
-    let player0Index = players.findIndex(p => p.getPlayerId() == player0Name);
-    let playerIndex = players.findIndex(p => p.getPlayerId() == playerName);
+    let player0Index = players.findIndex(p => p.getPlayerName() == player0Name);
+    let playerIndex = players.findIndex(p => p.getPlayerName() == playerName);
     let uiIndex = playerIndex - player0Index;
     if (uiIndex < 0) {
       uiIndex += 4;
@@ -207,7 +214,7 @@ export class GamePage implements AfterViewChecked, OnInit {
   joinGame(playerName: string, gameID: string) {
     console.log(`${playerName} is joining game ${gameID}`);
     const joinGameRequest = new JoinGameRequest();
-    joinGameRequest.setPlayerId(playerName);
+    joinGameRequest.setPlayerName(playerName);
     joinGameRequest.setGameId(gameID);
 
     this.client.joinGame(joinGameRequest)
@@ -215,20 +222,21 @@ export class GamePage implements AfterViewChecked, OnInit {
         console.log("Current game state: ", gameProto.toObject());
         // Initialization
         if (this.game == null) {
-          if (playerName == gameProto.getCreatorPlayerId()) {
+          if (playerName == gameProto.getCreatorPlayerName()) {
             this.addAIVisible = true;
           }
           this.game = new Game(this.client, this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
         const trumpCards = gameProto.getTrumpCards()?.getCardsList();
-        if (trumpCards?.length > 0 && trumpCards[0].getSuit() != this.game.ranking.trumpSuit) {
-          console.log(gameProto.getTrumpPlayerId() + " declared " + trumpCards[0].getSuit()) + " as trump suit.";
+        const trumpCardsImgURL = trumpCards?.map(tc => {
+          return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
+        });
+        if (trumpCards?.length > 0 && trumpCardsImgURL != this.game.trumpCardsImgURL) {
+          console.log(gameProto.getTrumpPlayerName() + " declared " + trumpCards[0].getSuit()) + " as trump suit.";
           this.game.ranking.resetOrder(trumpCards[0].getSuit());
           this.game.players.forEach(p => p.render());
-          this.game.trumpPlayer = gameProto.getTrumpPlayerId();
-          this.game.trumpCardsImgURL = trumpCards.map(tc => {
-            return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
-          });
+          this.game.trumpPlayer = gameProto.getTrumpPlayerName();
+          this.game.trumpCardsImgURL = trumpCardsImgURL;
         }
 
         let updateId = gameProto.getUpdateId();
@@ -237,7 +245,7 @@ export class GamePage implements AfterViewChecked, OnInit {
           // Render delta
           switch (gameProto.getUpdateCase()) {
             case GameProto.UpdateCase.NEW_PLAYER_UPDATE:
-                let newPlayer = gameProto.getNewPlayerUpdate().getPlayerId();
+                let newPlayer = gameProto.getNewPlayerUpdate().getPlayerName();
                 this.game.addPlayer(newPlayer, this.getUIIndex(newPlayer, gameProto.getPlayersList(), playerName));
 
                 if (this.game.playerCount == 4) {
@@ -247,11 +255,11 @@ export class GamePage implements AfterViewChecked, OnInit {
               break;
             case GameProto.UpdateCase.CARD_DEALT_UPDATE:
               let cardDealtUpdate = gameProto.getCardDealtUpdate();
-              this.game.renderCardDealt(cardDealtUpdate.getPlayerId(), cardDealtUpdate.getCard())
+              this.game.renderCardDealt(cardDealtUpdate.getPlayerName(), cardDealtUpdate.getCard())
               break;
             case GameProto.UpdateCase.KITTY_HIDDEN_UPDATE:
               let kittyHiddenUpdate = gameProto.getKittyHiddenUpdate();
-              this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerId(), gameProto.getKitty().getCardsList());
+              this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerName(), gameProto.getKitty().getCardsList());
               break;
             default:
               console.log("Invalid update");
@@ -268,7 +276,7 @@ export class GamePage implements AfterViewChecked, OnInit {
             let players = gameProto.getPlayersList();
 
             for (let i = 0; i < players.length; i++) {
-              let name = players[i].getPlayerId();
+              let name = players[i].getPlayerName();
               let uiIndex = this.getUIIndex(name, players, playerName);
 
               this.game.addPlayer(name, uiIndex);
@@ -838,6 +846,11 @@ class Player {
     // prevent context menu on right click
     event.preventDefault();
 
+    // do nothing if player tries to play someone else's card.
+    if (this.name != this.game.playerId) {
+      return;
+    }
+
     // select or deselect with click
     if (event.type === "click") {
       if (this.selectedCardUIs.has(cardUI)) {
@@ -858,7 +871,7 @@ class Player {
 
       // Set all proto field for the PlayHandRequest.
       const playHandReq = new PlayHandRequest();
-      playHandReq.setPlayerId(this.game.playerId);
+      playHandReq.setPlayerName(this.game.playerId);
       playHandReq.setGameId(this.game.gameId);
       // TODO: Set the real intention somehow...
       playHandReq.setIntention(PlayHandRequest.Intention.HIDE_KITTY);
@@ -872,11 +885,14 @@ class Player {
       let response = await this.game.client.playHand(playHandReq, null);
 
       console.log("PlayHand Response: ", response.toObject());
-      if (response.getSuccess() == true) {
-        this.selectedCardUIs.delete(cardUI);
-        cardUI.selected = false;
-        renderUI(this.handUI);
+      if (response.getSuccess() == false) {
+        alert(response.getErrorMessage());
       }
+      for (let selectedCard of this.selectedCardUIs.values()) {
+        selectedCard.selected = false;
+      }
+      this.selectedCardUIs.clear();
+      renderUI(this.handUI);
     }
   }
 }
@@ -1014,8 +1030,8 @@ class Game {
     player.render()
   }
 
-  renderKittyHiddenUpdate(kittyPlayerId: string, cards: CardProto[]) {
-    let player = this.players.find(player => player.name == kittyPlayerId);
+  renderKittyHiddenUpdate(kittyPlayerName: string, cards: CardProto[]) {
+    let player = this.players.find(player => player.name == kittyPlayerName);
     cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
     this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
     renderUI(this.kittyUI);

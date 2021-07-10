@@ -42,8 +42,8 @@ Hand: A playable hand of cards.
 """
 
 class Player:
-    def __init__(self, player_id: str, notify: bool) -> None:
-        self.player_id: str = player_id
+    def __init__(self, player_name: str, notify: bool) -> None:
+        self.player_name: str = player_name
         self.__notify: bool = notify
         self.__game_queue: deque[GameProto]  = deque()
         self.__game_queue_sem: Semaphore= Semaphore(0)
@@ -77,7 +77,7 @@ class Player:
 
     def to_player_proto(self) -> PlayerProto:
         player_proto = PlayerProto()
-        player_proto.player_id = self.player_id
+        player_proto.player_name = self.player_name
         for card in self.cards_on_hand:
             player_proto.cards_on_hand.cards.append(card)
         return player_proto
@@ -102,16 +102,16 @@ class GameState(Enum):
     ROUND_END = 7
 
 class Game:
-    def __init__(self, creator_id: str, game_id: str, delay: float) -> None:
+    def __init__(self, creator_name: str, game_id: str, delay: float) -> None:
         self.state = GameState.AWAIT_JOIN
         self.__game_id: str = game_id
-        self.__creator_id: str = creator_id
-        self.__kitty_player_id: str = creator_id
+        self.__creator_name: str = creator_name
+        self.__kitty_player_name: str = creator_name
         self.__delay: float = delay
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
         self.__metadata: GameMetadata = None
-        self.__next_player_id: str = creator_id
+        self.__next_player_name: str = creator_name
         self.__kitty: List[CardProto] = []
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
@@ -134,18 +134,19 @@ class Game:
 
         random.shuffle(self.__deck_cards)
 
-    def add_player(self, player_id: str, notify: bool) -> Player:
+    def add_player(self, player_name: str, notify: bool) -> Player:
         with self.__players_lock:
-            if player_id in self.__players.keys() or len(self.__players) == 4:
+            if player_name in self.__players.keys() or len(self.__players) == 4:
                 return None
-            player = Player(player_id, notify)
-            self.__players[player_id] = player
+            player = Player(player_name, notify)
+            self.__players[player_name] = player
 
             if len(self.__players) == 4:
                 self.state = GameState.AWAIT_DEAL
 
-            self.__new_player_update(player_id)
-        self.__play_order.append(player_id)
+            self.__new_player_update(player_name)
+        self.__play_order.append(player_name)
+
         return player
 
     def complete_player_stream(self) -> None:
@@ -154,19 +155,19 @@ class Game:
         for player in players:
             player.complete_update_stream()
 
-    def play(self, player_id: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        if player_id != self.__next_player_id and self.state != GameState.DEAL:
-            return False, f'Not the turn of player {player_id}'
+    def play(self, player_name: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
+        if player_name != self.__next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
+            return False, f'Not the turn of player {player_name}'
         logging.info(f'Game state: {self.state}')
         if self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION:
-            return self.__declare_trump(self.__players[player_id], cards)
+            return self.__declare_trump(self.__players[player_name], cards)
 
         if (self.state == GameState.HIDE_KITTY):
-            return self.__hide_kitty(self.__players[player_id], cards)
+            return self.__hide_kitty(self.__players[player_name], cards)
         
         if (self.state == GameState.PLAY):
-            self.__hands_on_table.append(Hand(player_id, cards))
-            self.__next_player_id = self.__play_order[(self.__play_order.index(player_id) + 1) % 4]
+            self.__hands_on_table.append(Hand(player_name, cards))
+            self.__next_player_id = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
             if len(self.__hands_on_table) == 4:
                 self.__next_player_id = random.choice(self.__players.keys())
                 self.__hands_on_table = []
@@ -182,27 +183,27 @@ class Game:
         if len(self.__hands_on_table) > 0:
             prev_hand = self.__hands_on_table[0][1]
 
-        if not self.players[player_id].CanPlayHand(hand, prev_hand, self.__metadata):
+        if not self.players[player_name].CanPlayHand(hand, prev_hand, self.__metadata):
             return False, 'Invalid hand'
 
         # play this hand and update cards on table
-        self.hands_on_table.append((player_id, hand))
-        self.__players[player_id].PlayHand(hand)
+        self.hands_on_table.append((player_name, hand))
+        self.__players[player_name].PlayHand(hand)
 
         # Compute winner of this round if needed
         if len(self.__hands_on_table) == 4:
-            self.__next_player_id = GetWinnerAndAccumulateScore()
+            self.__next_player_name = GetWinnerAndAccumulateScore()
         else:
-            self.__next_player_id = self.NextPlayer()
+            self.__next_player_name = self.NextPlayer()
 
         # Check to see if the game has ended
         self.__action_count += 1
         return True, ''
 
     def drawCards(self, player_name: str) -> None:
-        if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_id:
+        if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
             self.__deal_hands()
-        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_id:
+        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_name:
             self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
 
@@ -215,18 +216,18 @@ class Game:
         game = GameProto()
         game.update_id = update_id
         game.game_id = self.__game_id
-        game.creator_player_id = self.__creator_id
+        game.creator_player_name = self.__creator_name
 
         game.current_rank = self.__current_rank
-        game.trump_player_id = self.__trump_declarer
+        game.trump_player_name = self.__trump_declarer
         for card in self.__current_trump_cards:
             card_proto = game.trump_cards.cards.add()
             card_proto.CopyFrom(card)
 
-        game.kitty_player_id = self.__kitty_player_id
+        game.kitty_player_name = self.__kitty_player_name
 
         # Hack to communicate state
-        game.next_turn_player_id = self.state.name
+        game.next_turn_player_name = self.state.name
 
         with self.__players_lock:
             players = self.__players.values()
@@ -249,27 +250,27 @@ class Game:
             player = players[deal_index]
             card = self.__deck_cards.pop()
             player.add_card(card)
-            logging.info(f'Dealt card {card} to {player.player_id}')
+            logging.info(f'Dealt card {card} to {player.player_name}')
             deal_index = (deal_index + 1) % 4
 
             if len(self.__deck_cards) == 8:
                 self.state = GameState.AWAIT_TRUMP_DECLARATION
 
             time.sleep(self.__delay)
-            self.__card_dealt_update(player.player_id, card)
+            self.__card_dealt_update(player.player_name, card)
 
     def __deal_kitty(self) -> None:
         while (len(self.__deck_cards) > 0):
-            player = self.__players[self.__kitty_player_id]
+            player = self.__players[self.__kitty_player_name]
             card = self.__deck_cards.pop()
             player.add_card(card)
-            logging.info(f'Dealt kitty card {card} to {player.player_id}')
+            logging.info(f'Dealt kitty card {card} to {player.player_name}')
 
             if len(self.__deck_cards) == 0:
                 self.state = GameState.HIDE_KITTY
 
             time.sleep(self.__delay)
-            self.__card_dealt_update(player.player_id, card)
+            self.__card_dealt_update(player.player_name, card)
 
     def __get_trump_type(self, cards):
         if len(cards) == 0:
@@ -299,13 +300,13 @@ class Game:
         if new_trump_type <= current_trump_type:
             return False, f'{cards} Cannot overwrite current trump: {self.__current_trump_cards}'
         # Allow same player to fortify but not change previously declared trump.
-        if player.player_id == self.__trump_declarer and (not (new_trump_type == TrumpType.PAIR and current_trump_type == TrumpType.SINGLE and cards[0].suit == self.__current_trump_cards[0].suit)):
-            return False, f'{player.player_id} Cannot overwrite their previous declaration: {self.__current_trump_cards} with {cards}'
+        if player.player_name == self.__trump_declarer and (not (new_trump_type == TrumpType.PAIR and current_trump_type == TrumpType.SINGLE and cards[0].suit == self.__current_trump_cards[0].suit)):
+            return False, f'{player.player_name} Cannot overwrite their previous declaration: {self.__current_trump_cards} with {cards}'
 
         self.__current_trump_cards = cards
-        self.__trump_declarer = player.player_id
+        self.__trump_declarer = player.player_name
         if self.__current_rank == Rank.TWO:
-            self.__kitty_player_id = self.__trump_declarer
+            self.__kitty_player_name = self.__trump_declarer
         self.__update_players(lambda unused_game_proto: None)
 
         return True, ''
@@ -324,23 +325,23 @@ class Game:
 
         self.state = GameState.PLAY
 
-        self.__kitty_hidden_update(player.player_id)
+        self.__kitty_hidden_update(player.player_name)
 
         return True, ''
 
-    def __kitty_hidden_update(self, kitty_player_id: str) -> None:
+    def __kitty_hidden_update(self, kitty_player_name: str) -> None:
         def action(game: GameProto):
-            game.kitty_hidden_update.kitty_player_id = kitty_player_id
+            game.kitty_hidden_update.kitty_player_name = kitty_player_name
         self.__update_players(action)
 
-    def __new_player_update(self, player_id: str) -> None:
+    def __new_player_update(self, player_name: str) -> None:
         def action(game: GameProto):
-            game.new_player_update.player_id = player_id
+            game.new_player_update.player_name = player_name
         self.__update_players(action)
 
-    def __card_dealt_update(self, player_id: str, card: CardProto) -> None:
+    def __card_dealt_update(self, player_name: str, card: CardProto) -> None:
         def action(game: GameProto):
-            game.card_dealt_update.player_id = player_id
+            game.card_dealt_update.player_name = player_name
             game.card_dealt_update.card.CopyFrom(card)
         self.__update_players(action)
 
