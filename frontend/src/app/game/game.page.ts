@@ -72,7 +72,7 @@ const toCardProto = function(cardUI: any) : CardProto {
 }
 
 // cards and cardUIs must be in order.
-const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
+const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentPlayer: boolean) : any[] {
   let resolvedCardUIs: any[] = [];
   let i = 0;
   let j = 0;
@@ -82,7 +82,7 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
     while (j < cardUIs.length) {
       let cardUI = cardUIs[j++];
       let uiProto = toCardProto(cardUI);
-      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && cardUI.selected) {
+      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && (cardUI.selected || !fromCurrentPlayer)) {
         cardUI.selected = false;
         found = true;
         resolvedCardUIs.push(cardUI);
@@ -90,7 +90,9 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[]) : any[] {
       }
     }
     if (!found) {
-      throw Error("Could not resolve " + cards[i] + " from players hand");
+      let error_msg = "Could not resolve " + cards[i] + "from players hand; fromCurrentPlayer is " + fromCurrentPlayer;
+      console.log(error_msg);
+      throw Error(error_msg);
     }
     i++;
   }
@@ -231,8 +233,8 @@ export class GamePage implements AfterViewChecked, OnInit {
         const trumpCardsImgURL = trumpCards?.map(tc => {
           return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
         });
-        if (trumpCards?.length > 0 && trumpCardsImgURL != this.game.trumpCardsImgURL) {
-          console.log(gameProto.getTrumpPlayerName() + " declared " + trumpCards[0].getSuit()) + " as trump suit.";
+        if (trumpCards?.length > 0 && JSON.stringify(trumpCardsImgURL) !== JSON.stringify(this.game.trumpCardsImgURL)) {
+          console.log(gameProto.getTrumpPlayerName() + " declared " + trumpCards[0].getSuit() + " as trump suit.");
           this.game.ranking.resetOrder(trumpCards[0].getSuit());
           this.game.players.forEach(p => p.render());
           this.game.trumpPlayer = gameProto.getTrumpPlayerName();
@@ -259,7 +261,7 @@ export class GamePage implements AfterViewChecked, OnInit {
               break;
             case GameProto.UpdateCase.KITTY_HIDDEN_UPDATE:
               let kittyHiddenUpdate = gameProto.getKittyHiddenUpdate();
-              this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerName(), gameProto.getKitty().getCardsList());
+              this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerName(), gameProto.getKitty().getCardsList(), playerName);
               break;
             default:
               console.log("Invalid update");
@@ -723,7 +725,7 @@ class TrickPile {
       return false;
     }
 
-    this.cardsPlayedUI[playerIndex].addCards(resolveCardUIs(cards, this.players[playerIndex].handUI));
+    this.cardsPlayedUI[playerIndex].addCards(resolveCardUIs(cards, this.players[playerIndex].handUI, true));
     this.cardsPlayedUI[playerIndex].render();
     this.players[playerIndex].handUI.render();
 
@@ -1030,10 +1032,11 @@ class Game {
     player.render()
   }
 
-  renderKittyHiddenUpdate(kittyPlayerName: string, cards: CardProto[]) {
+  renderKittyHiddenUpdate(kittyPlayerName: string, cards: CardProto[], playerName: string) {
     let player = this.players.find(player => player.name == kittyPlayerName);
     cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
-    this.kittyUI.addCards(resolveCardUIs(cards, player.handUI));
+    let cardUIs = resolveCardUIs(cards, player.handUI, playerName == kittyPlayerName);
+    this.kittyUI.addCards(cardUIs);
     renderUI(this.kittyUI);
     renderUI(player.handUI);
   }

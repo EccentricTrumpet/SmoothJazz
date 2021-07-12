@@ -1,3 +1,4 @@
+from aaron_ai import AaronAI
 import asyncio
 import logging
 import random
@@ -57,7 +58,9 @@ class SJService(ShengjiServicer):
         logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
 
         game = self.__get_game(request.game_id)
-        game.add_player(ai_name, False)
+        player = game.add_player(ai_name, True)
+        ai = AaronAI(game, player)
+        asyncio.run(ai.play())
 
         return AddAIPlayerResponse(player_name=ai_name)
 

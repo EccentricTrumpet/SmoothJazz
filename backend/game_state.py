@@ -33,6 +33,20 @@ class TrumpType(IntEnum):
     SMALL_JOKER = 4
     BIG_JOKER = 5
 
+def get_trump_type(cards: Sequence[CardProto], current_rank: Rank) -> TrumpType:
+    if len(cards) == 0:
+        return TrumpType.NONE
+    if len(cards) == 1 and cards[0].rank == current_rank:
+        return TrumpType.SINGLE
+    if len(cards) == 2:
+        if cards[0].suit == Suit.SMALL_JOKER and cards[1].suit == Suit.SMALL_JOKER:
+            return TrumpType.SMALL_JOKER
+        if cards[0].suit == Suit.BIG_JOKER and cards[1].suit == Suit.BIG_JOKER:
+            return TrumpType.BIG_JOKER
+        if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == current_rank:
+            return TrumpType.PAIR
+    return TrumpType.INVALID
+
 """
 Game: All state of the game is stored in this class
 GameMetadata: Stores states related to the currently playing game
@@ -156,21 +170,22 @@ class Game:
             player.complete_update_stream()
 
     def play(self, player_name: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
+        logging.info(f'Game state: {self.state}')
         if player_name != self.__next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
             return False, f'Not the turn of player {player_name}'
-        logging.info(f'Game state: {self.state}')
         if self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION:
             return self.__declare_trump(self.__players[player_name], cards)
 
         if (self.state == GameState.HIDE_KITTY):
             return self.__hide_kitty(self.__players[player_name], cards)
-        
+
         if (self.state == GameState.PLAY):
-            self.__hands_on_table.append(Hand(player_name, cards))
-            self.__next_player_id = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
-            if len(self.__hands_on_table) == 4:
-                self.__next_player_id = random.choice(self.__players.keys())
-                self.__hands_on_table = []
+            # The following code crashes, uncomment when we fix the crash.
+            # self.__hands_on_table.append(Hand(cards))
+            # self.__next_player_id = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
+            # if len(self.__hands_on_table) == 4:
+            #     self.__next_player_id = random.choice(self.__players.keys())
+            #     self.__hands_on_table = []
             return True, ""
 
         # TODO: Update players if play is valid
@@ -206,6 +221,7 @@ class Game:
         elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_name:
             self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
+            self.__next_player_name = self.__kitty_player_name
 
     def to_game_proto(self, increment_update_id: bool = True) -> GameProto:
         with self.__update_lock:
@@ -272,20 +288,6 @@ class Game:
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_name, card)
 
-    def __get_trump_type(self, cards):
-        if len(cards) == 0:
-            return TrumpType.NONE
-        if len(cards) == 1 and cards[0].rank == self.__current_rank:
-            return TrumpType.SINGLE
-        if len(cards) == 2:
-            if cards[0].suit == Suit.SMALL_JOKER and cards[1].suit == Suit.SMALL_JOKER:
-                return TrumpType.SMALL_JOKER
-            if cards[0].suit == Suit.BIG_JOKER and cards[1].suit == Suit.BIG_JOKER:
-                return TrumpType.BIG_JOKER
-            if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == self.__current_rank:
-                return TrumpType.PAIR
-        return TrumpType.INVALID
-
     def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         logging.info(f'{player} declares trump as: {cards}')
 
@@ -293,9 +295,9 @@ class Game:
             if not player.has_card(card):
                 return False, f'Player does not possess the card {card}'
 
-        current_trump_type = self.__get_trump_type(self.__current_trump_cards)
+        current_trump_type = get_trump_type(self.__current_trump_cards, self.__current_rank)
         assert current_trump_type != TrumpType.INVALID
-        new_trump_type = self.__get_trump_type(cards)
+        new_trump_type = get_trump_type(cards, self.__current_rank)
 
         if new_trump_type <= current_trump_type:
             return False, f'{cards} Cannot overwrite current trump: {self.__current_trump_cards}'
