@@ -512,8 +512,7 @@ class Hand:
     def __init__(self, cards: Sequence[CardProto]) -> None:
         self.__cards: Sequence[CardProto] = cards
         # Type is SINGLE, PAIR, TOAK, FOAK, STRAIGHT, DOUBLE_STRAIGHT or INVALID
-        # detect_type currently crashes for invalid cards, uncomment for now.
-        # self.type = self.__detect_type()
+        self.type = self.__detect_type()
 
     def __verify_all_cards_eq(self, cards: Sequence[CardProto]) -> bool:
         c = cards[0]
@@ -561,8 +560,9 @@ class Hand:
             return 'SINGLE'
         elif len(self.__cards) == 2 and self.__verify_all_cards_eq(self.__cards):
             return 'PAIR'
-        elif len(self.__cards) >= 4 and self.__is_double_straight(self.__cards):
-            return 'DOUBLE_STRAIGHT'
+        # self.__is_double_straight current crashes
+        # elif len(self.__cards) >= 4 and self.__is_double_straight(self.__cards):
+        #     return 'DOUBLE_STRAIGHT'
         else:
             return 'OTHER'
 
