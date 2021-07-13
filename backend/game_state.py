@@ -180,12 +180,15 @@ class Game:
             return self.__hide_kitty(self.__players[player_name], cards)
 
         if (self.state == GameState.PLAY):
-            # The following code crashes, uncomment when we fix the crash.
-            # self.__hands_on_table.append(Hand(cards))
-            # self.__next_player_id = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
-            # if len(self.__hands_on_table) == 4:
-            #     self.__next_player_id = random.choice(self.__players.keys())
-            #     self.__hands_on_table = []
+
+            for card in cards:
+                if not self.__players[player_name].has_card(card):
+                    return False, f'Player does not possess the card {card}'
+            self.__hands_on_table.append(Hand(cards))
+            self.__next_player_id = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
+            if len(self.__hands_on_table) == 4:
+                self.__next_player_id = random.choice(self.__players.keys())
+                self.__hands_on_table = []
             return True, ""
 
         # TODO: Update players if play is valid
@@ -509,7 +512,8 @@ class Hand:
     def __init__(self, cards: Sequence[CardProto]) -> None:
         self.__cards: Sequence[CardProto] = cards
         # Type is SINGLE, PAIR, TOAK, FOAK, STRAIGHT, DOUBLE_STRAIGHT or INVALID
-        self.type = self.__detect_type()
+        # detect_type currently crashes for invalid cards, uncomment for now.
+        # self.type = self.__detect_type()
 
     def __verify_all_cards_eq(self, cards: Sequence[CardProto]) -> bool:
         c = cards[0]

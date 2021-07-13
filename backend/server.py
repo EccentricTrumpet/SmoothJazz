@@ -1,4 +1,4 @@
-from aaron_ai import AaronAI
+from ai import AaronAI
 import asyncio
 import logging
 import random
