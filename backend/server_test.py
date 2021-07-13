@@ -37,8 +37,8 @@ class ShengjiTest(unittest.TestCase):
         streaming_result = [next(updates)]
 
         # Add three AI players
-        add_ai_req = AddAIPlayerRequest()
-        add_ai_req.game_id = game.game_id
+        add_ai_req = AddAIPlayerRequest(
+            game_id=game.game_id, ai_type=AddAIPlayerRequest.AIType.NONE)
 
         sj.addAIPlayer(add_ai_req, None)
         sj.addAIPlayer(add_ai_req, None)
@@ -62,8 +62,8 @@ class ShengjiTest(unittest.TestCase):
         req.player_name = "test_creation_id"
         game = sj.createGame(req, None)
 
-        add_ai_req = AddAIPlayerRequest()
-        add_ai_req.game_id = game.game_id
+        add_ai_req = AddAIPlayerRequest(
+            game_id=game.game_id, ai_type=AddAIPlayerRequest.AIType.NONE)
 
         # Add three AI players
         sj.addAIPlayer(add_ai_req, None)

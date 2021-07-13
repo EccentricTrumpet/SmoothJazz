@@ -24,7 +24,7 @@ class AIBase():
     def makePlayDecision(self, gameProto: GameProto) -> None:
         assert False, "makePlayDecision() must be overwritten!"
 
-    async def play(self):
+    def play(self):
         for gameProto in self._player.update_stream():
             self.makePlayDecision(gameProto)
 

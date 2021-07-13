@@ -197,6 +197,7 @@ export class GamePage implements AfterViewChecked, OnInit {
   async addAIPlayer() {
     const createAIRequest = new AddAIPlayerRequest();
     createAIRequest.setGameId(this.gameID);
+    createAIRequest.setAiType(AddAIPlayerRequest.AIType.AARON_AI);
     console.log('Adding AI Player for: '+this.gameID);
 
     let response = await this.client.addAIPlayer(createAIRequest, null);
