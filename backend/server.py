@@ -63,7 +63,7 @@ class SJService(ShengjiServicer):
 
         if request.ai_type == AddAIPlayerRequest.AARON_AI:
             my_ai = AaronAI(game, player)
-            threading.Thread(target=my_ai.play, daemon=True).start()
+            threading.Thread(target=my_ai.start, daemon=True).start()
 
         logging.info(f'Returning AddAIPlayerRequest for {ai_name}')
 

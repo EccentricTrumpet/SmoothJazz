@@ -135,17 +135,17 @@ class Game:
         random.shuffle(self.__deck_cards)
 
     @staticmethod
-    def get_trump_type(cards: Sequence[CardProto], current_rank: Rank) -> TrumpType:
+    def get_trump_type(cards: Sequence[CardProto]) -> TrumpType:
         if len(cards) == 0:
             return TrumpType.NONE
-        if len(cards) == 1 and cards[0].rank == current_rank:
+        if len(cards) == 1 and cards[0].rank == self.__current_rank:
             return TrumpType.SINGLE
         if len(cards) == 2:
             if cards[0].suit == Suit.SMALL_JOKER and cards[1].suit == Suit.SMALL_JOKER:
                 return TrumpType.SMALL_JOKER
             if cards[0].suit == Suit.BIG_JOKER and cards[1].suit == Suit.BIG_JOKER:
                 return TrumpType.BIG_JOKER
-            if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == current_rank:
+            if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == self.__current_rank:
                 return TrumpType.PAIR
         return TrumpType.INVALID
 
@@ -299,9 +299,9 @@ class Game:
             if not player.has_card(card):
                 return False, f'Player does not possess the card {card}'
 
-        current_trump_type = self.get_trump_type(self.__current_trump_cards, self.__current_rank)
+        current_trump_type = self.get_trump_type(self.__current_trump_cards)
         assert current_trump_type != TrumpType.INVALID
-        new_trump_type = self.get_trump_type(cards, self.__current_rank)
+        new_trump_type = self.get_trump_type(cards)
 
         if new_trump_type <= current_trump_type:
             return False, f'{cards} Cannot overwrite current trump: {self.__current_trump_cards}'

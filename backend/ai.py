@@ -20,21 +20,22 @@ class AIBase():
         self._player_name = player.player_name
         self._game = game
 
-    def makePlayDecision(self, gameProto: GameProto) -> None:
-        assert False, "makePlayDecision() must be overwritten!"
+    def takeAction(self, gameProto: GameProto) -> None:
+        assert False, "takeAction() must be overwritten!"
 
-    def play(self):
+    def start(self):
         for gameProto in self._player.update_stream():
-            self.makePlayDecision(gameProto)
+            self.takeAction(gameProto)
 
 class AaronAI(AIBase):
     def __init__(self, game: Game, player: Player) -> None:
         super().__init__(game, player)
         self.__my_cards = dict()
         self.__card_count = 0
+        self.__action_delay = 1
 
     def __try_declare_trump(self, gameProto: GameProto) -> None:
-        current_trump_type = Game.get_trump_type(gameProto.trump_cards.cards, gameProto.current_rank)
+        current_trump_type = self._game.get_trump_type(gameProto.trump_cards.cards)
         card = gameProto.card_dealt_update.card
         card_as_num = getCardNum(card)
         self.__my_cards[card_as_num] = self.__my_cards.get(card_as_num, 0) + 1
@@ -47,17 +48,17 @@ class AaronAI(AIBase):
             success, err_str = self._game.play(self._player_name, cards_to_play)
             logging.info(f'Aaron AI {self._player_name} tries to declare trump as {cards_to_play[0].rank}. Success: {success}; Error: {err_str}')
 
-    def makePlayDecision(self, gameProto: GameProto) -> None:
+    def takeAction(self, gameProto: GameProto) -> None:
         if gameProto.HasField('card_dealt_update'):
             self.__card_count += 1
             logging.info(f'Card count: {self.__card_count} - {gameProto.card_dealt_update.player_name} - {self._player_name} - {gameProto.trump_player_name}')
             if gameProto.card_dealt_update.player_name == self._player_name:
                 self.__try_declare_trump(gameProto)
         if self.__card_count == 100 and gameProto.trump_player_name == self._player_name:
-            time.sleep(1)
+            time.sleep(self.__action_delay)
             self._game.drawCards(self._player_name)
         if self.__card_count == 108 and gameProto.trump_player_name == self._player_name:
-            time.sleep(1)
+            time.sleep(self.__action_delay)
             cards_to_play = []
             for card_number, count in self.__my_cards.items():
                 if len(cards_to_play) == 8:
