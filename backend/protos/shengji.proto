@@ -19,6 +19,13 @@ service Shengji {
 // Request and response protos
 message AddAIPlayerRequest {
   string game_id = 1;
+  enum AIType {
+    // Dummy AI that does nothing
+    NONE = 0;
+    // Smart AI that declares trump and play randome cards
+    AARON_AI = 1;
+  }
+  AIType ai_type = 2;
 }
 
 message AddAIPlayerResponse {

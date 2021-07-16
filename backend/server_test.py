@@ -13,7 +13,7 @@ from shengji_pb2 import (
 # TODO(aaron): Add unit tests for 4 real players
 class ShengjiTest(unittest.TestCase):
 
-    @timeout_decorator.timeout(5)
+    @timeout_decorator.timeout(20)
     def test_create_game(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
@@ -21,7 +21,7 @@ class ShengjiTest(unittest.TestCase):
         game = sj.createGame(req, None)
         self.assertEqual(game.game_id, str(0))
 
-    @timeout_decorator.timeout(5)
+    @timeout_decorator.timeout(20)
     def test_streaming_with_three_ais(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
@@ -37,8 +37,8 @@ class ShengjiTest(unittest.TestCase):
         streaming_result = [next(updates)]
 
         # Add three AI players
-        add_ai_req = AddAIPlayerRequest()
-        add_ai_req.game_id = game.game_id
+        add_ai_req = AddAIPlayerRequest(
+            game_id=game.game_id, ai_type=AddAIPlayerRequest.AIType.NONE)
 
         sj.addAIPlayer(add_ai_req, None)
         sj.addAIPlayer(add_ai_req, None)
@@ -55,15 +55,15 @@ class ShengjiTest(unittest.TestCase):
         self.assertEqual(streaming_result[-1].creator_player_name, req.player_name)
         self.assertEqual(len(streaming_result[-1].players), 4)
 
-    @timeout_decorator.timeout(5)
+    @timeout_decorator.timeout(20)
     def test_deal_cards(self) -> None:
         sj = SJService(delay=0)
         req = CreateGameRequest()
         req.player_name = "test_creation_id"
         game = sj.createGame(req, None)
 
-        add_ai_req = AddAIPlayerRequest()
-        add_ai_req.game_id = game.game_id
+        add_ai_req = AddAIPlayerRequest(
+            game_id=game.game_id, ai_type=AddAIPlayerRequest.AIType.NONE)
 
         # Add three AI players
         sj.addAIPlayer(add_ai_req, None)

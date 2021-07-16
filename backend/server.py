@@ -1,4 +1,6 @@
+from ai import AaronAI
 import asyncio
+import threading
 import logging
 import random
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -57,7 +59,13 @@ class SJService(ShengjiServicer):
         logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
 
         game = self.__get_game(request.game_id)
-        game.add_player(ai_name, False)
+        player = game.add_player(ai_name, True)
+
+        if request.ai_type == AddAIPlayerRequest.AARON_AI:
+            my_ai = AaronAI(game, player)
+            threading.Thread(target=my_ai.start, daemon=True).start()
+
+        logging.info(f'Returning AddAIPlayerRequest for {ai_name}')
 
         return AddAIPlayerResponse(player_name=ai_name)
 
