@@ -3,7 +3,6 @@ import time
 from game_state import (
     Player,
     Game,
-    get_trump_type,
     TrumpType)
 from shengji_pb2 import (
     Card as CardProto,
@@ -35,7 +34,7 @@ class AaronAI(AIBase):
         self.__card_count = 0
 
     def __try_declare_trump(self, gameProto: GameProto) -> None:
-        current_trump_type = get_trump_type(gameProto.trump_cards.cards, gameProto.current_rank)
+        current_trump_type = Game.get_trump_type(gameProto.trump_cards.cards, gameProto.current_rank)
         card = gameProto.card_dealt_update.card
         card_as_num = getCardNum(card)
         self.__my_cards[card_as_num] = self.__my_cards.get(card_as_num, 0) + 1
