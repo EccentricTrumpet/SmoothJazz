@@ -90,7 +90,7 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentP
       }
     }
     if (!found) {
-      let error_msg = "Could not resolve " + cards[i] + "from players hand; fromCurrentPlayer is " + fromCurrentPlayer;
+      let error_msg = "Could not resolve " + toFriendlyString(cards[i]) + "from players hand; fromCurrentPlayer is " + fromCurrentPlayer;
       console.log(error_msg);
       throw Error(error_msg);
     }

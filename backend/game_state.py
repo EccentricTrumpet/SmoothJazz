@@ -134,8 +134,7 @@ class Game:
 
         random.shuffle(self.__deck_cards)
 
-    @staticmethod
-    def get_trump_type(cards: Sequence[CardProto]) -> TrumpType:
+    def get_trump_type(self, cards: Sequence[CardProto]) -> TrumpType:
         if len(cards) == 0:
             return TrumpType.NONE
         if len(cards) == 1 and cards[0].rank == self.__current_rank:
