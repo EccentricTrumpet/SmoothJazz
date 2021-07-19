@@ -30,11 +30,18 @@ class HandTests(unittest.TestCase):
 class PlayerTests(unittest.TestCase):
 
     @timeout_decorator.timeout(20)
-    def test_player_has_card(self) -> None:
+    def test_player_can_play_card(self) -> None:
         player = Player("player", False)
 
         player.add_card(SPADE_KING_PROTO)
-        self.assertTrue(player.has_card(SPADE_KING_PROTO))
+        self.assertTrue(player.can_play_cards([SPADE_KING_PROTO]))
+
+    @timeout_decorator.timeout(20)
+    def test_player_can_play_card(self) -> None:
+        player = Player("player", False)
+
+        player.add_card(SPADE_KING_PROTO)
+        self.assertFalse(player.can_play_cards([SPADE_KING_PROTO, SPADE_KING_PROTO]))
 
     @timeout_decorator.timeout(20)
     def test_player_remove_card(self) -> None:
@@ -85,7 +92,7 @@ class GameTests(unittest.TestCase):
 
         # player_1 declares a trump card that they don't have.
         success, err = game.play('player_1', [SPADE_TWO_PROTO])
-        self.assertRegex(err, 'Player does not possess the card suit:.*')
+        self.assertRegex(err, 'Player does not possess the cards.*')
         self.assertFalse(success)
 
     @timeout_decorator.timeout(20)
@@ -197,7 +204,7 @@ class GameTests(unittest.TestCase):
     def test_declare_trump_cannot_overwrite_self_declaration(self) -> None:
         game = Game('creator', '0', 0)
         game.state = GameState.DEAL
-        p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, HEART_TWO_PROTO, SPADE_TWO_PROTO])
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO, SPADE_TWO_PROTO])
 
         self.__playHandAndAssertSuccess(game, 'player_1', [SPADE_TWO_PROTO])
 
@@ -209,13 +216,24 @@ class GameTests(unittest.TestCase):
     def test_declare_trump_fortify_self_declaration(self) -> None:
         game = Game('creator', '0', 0)
         game.state = GameState.DEAL
-        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO, SPADE_TWO_PROTO])
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
 
         self.__playHandAndAssertSuccess(game, 'player_1', [HEART_TWO_PROTO])
         self.__assertUpdateHasTrumpStatus(next(p1.update_stream()), 'player_1', [HEART_TWO_PROTO])
 
         self.__playHandAndAssertSuccess(game, 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
         self.__assertUpdateHasTrumpStatus(next(p1.update_stream()), 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
+
+    @timeout_decorator.timeout(20)
+    def test_declare_trump_pair_with_only_one_card_in_hand(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.DEAL
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
+
+        success, err = game.play('player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
+
+        self.assertFalse(success)
+        self.assertRegex(err, 'Player does not possess the cards.*')
 
 
 if __name__ == '__main__':
