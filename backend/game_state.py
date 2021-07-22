@@ -25,6 +25,12 @@ Rank = CardProto.Rank
 def is_joker(card: CardProto) -> bool:
     return card.suit == Suit.SMALL_JOKER or card.suit == Suit.BIG_JOKER
 
+def getCardNum(card: CardProto) -> int:
+    return card.suit * 100 + card.rank
+
+def toCardProto(cardNum: int) -> CardProto:
+    return CardProto(suit = cardNum // 100, rank = cardNum % 100)
+
 class TrumpType(IntEnum):
     INVALID = 0
     NONE = 1
@@ -47,16 +53,30 @@ class Player:
         self.__notify: bool = notify
         self.__game_queue: deque[GameProto]  = deque()
         self.__game_queue_sem: Semaphore= Semaphore(0)
-        self.cards_on_hand: list[CardProto] = []
+        self.cards_on_hand: Dict[CardProto, int] = dict()
 
-    def has_card(self, card: CardProto) -> bool:
-        return card in self.cards_on_hand
+    # def has_card(self, card: CardProto) -> bool:
+    #     return card in self.cards_on_hand
+
+    def can_play_cards(self, cards: Sequence[CardProto]) -> bool:
+        card_as_dict = dict()
+        for card in cards:
+            hashable_card = getCardNum(card)
+            card_as_dict[hashable_card] = card_as_dict.get(hashable_card, 0) + 1
+        for key in card_as_dict:
+            if card_as_dict.get(key, 0) > self.cards_on_hand.get(key, 0):
+                return False
+        return True
 
     def remove_card(self, card: CardProto) -> None:
-        self.cards_on_hand.remove(card)
+        hashable_card = getCardNum(card)
+        self.cards_on_hand[hashable_card] = max(0, self.cards_on_hand[hashable_card] - 1)
+        if self.cards_on_hand[hashable_card] == 0:
+            del self.cards_on_hand[hashable_card]
 
     def add_card(self, card: CardProto) -> None:
-        self.cards_on_hand.append(card)
+        hashable_card = getCardNum(card)
+        self.cards_on_hand[hashable_card] = self.cards_on_hand.get(hashable_card, 0) + 1
 
     def queue_update(self, game: GameProto) -> None:
         if self.__notify:
@@ -78,8 +98,9 @@ class Player:
     def to_player_proto(self) -> PlayerProto:
         player_proto = PlayerProto()
         player_proto.player_name = self.player_name
-        for card in self.cards_on_hand:
-            player_proto.cards_on_hand.cards.append(card)
+        for card,count in self.cards_on_hand.items():
+            for _ in range(count):
+                player_proto.cards_on_hand.cards.append(toCardProto(card))
         return player_proto
 
 
@@ -181,9 +202,8 @@ class Game:
 
         if (self.state == GameState.PLAY):
 
-            for card in cards:
-                if not self.__players[player_name].has_card(card):
-                    return False, f'Player does not possess the card {card}'
+            if not self.__players[player_name].can_play_cards(cards):
+                return False, f'Player does not possess the cards: {cards}'
             self.__hands_on_table.append(Hand(cards))
             self.__next_player_id = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
             if len(self.__hands_on_table) == 4:
@@ -294,9 +314,8 @@ class Game:
     def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         logging.info(f'{player} declares trump as: {cards}')
 
-        for card in cards:
-            if not player.has_card(card):
-                return False, f'Player does not possess the card {card}'
+        if not player.can_play_cards(cards):
+            return False, f'Player does not possess the cards: {cards}'
 
         current_trump_type = self.get_trump_type(self.__current_trump_cards)
         assert current_trump_type != TrumpType.INVALID
@@ -320,9 +339,8 @@ class Game:
         if (len(cards) != 8):
             return False, 'Incorrect number of cards to hide'
 
-        for card in cards:
-            if not player.has_card(card):
-                return False, f'Player does not possess the card {card}'
+        if not player.can_play_cards(cards):
+            return False, f'Player does not possess the cards: {cards}'
 
         for card in cards:
             player.remove_card(card)

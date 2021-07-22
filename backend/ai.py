@@ -3,16 +3,12 @@ import time
 from game_state import (
     Player,
     Game,
-    TrumpType)
+    TrumpType,
+    getCardNum,
+    toCardProto)
 from shengji_pb2 import (
     Card as CardProto,
     Game as GameProto)
-
-def getCardNum(card: CardProto) -> int:
-    return card.suit * 100 + card.rank
-
-def toCardProto(cardNum: int) -> CardProto:
-    return CardProto(suit = cardNum // 100, rank = cardNum % 100)
 
 class AIBase():
     def __init__(self, game: Game, player: Player) -> None:
