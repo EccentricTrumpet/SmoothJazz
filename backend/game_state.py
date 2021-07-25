@@ -28,6 +28,12 @@ def getCardNum(card: CardProto) -> int:
 def toCardProto(cardNum: int) -> CardProto:
     return CardProto(suit = cardNum // 100, rank = cardNum % 100)
 
+def getCardNum(card: CardProto) -> int:
+    return card.suit * 100 + card.rank
+
+def toCardProto(cardNum: int) -> CardProto:
+    return CardProto(suit = cardNum // 100, rank = cardNum % 100)
+
 class TrumpType(IntEnum):
     INVALID = 0
     NONE = 1
