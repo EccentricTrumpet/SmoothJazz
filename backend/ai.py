@@ -3,12 +3,18 @@ import time
 from game_state import (
     Player,
     Game,
+    GameState,
     TrumpType,
     getCardNum,
     toCardProto)
 from shengji_pb2 import (
     Card as CardProto,
     Game as GameProto)
+
+
+def isJoker(card: CardProto) -> bool:
+    return card.suit == CardProto.Suit.SMALL_JOKER or card.suit == CardProto.Suit.BIG_JOKER
+
 
 class AIBase():
     def __init__(self, game: Game, player: Player) -> None:
@@ -27,7 +33,6 @@ class AaronAI(AIBase):
     def __init__(self, game: Game, player: Player) -> None:
         super().__init__(game, player)
         self.__my_cards = dict()
-        self.__card_count = 0
         self.__action_delay = 1
 
     def __try_declare_trump(self, gameProto: GameProto) -> None:
@@ -44,19 +49,33 @@ class AaronAI(AIBase):
             success, err_str = self._game.play(self._player_name, cards_to_play)
             logging.info(f'Aaron AI {self._player_name} tries to declare trump as {cards_to_play[0].rank}. Success: {success}; Error: {err_str}')
 
+    def __getCardValue(self, cardNum: int) -> int:
+        card_proto = toCardProto(cardNum)
+        current_trump_cards = self.__latest_game_proto.trump_cards.cards
+        current_trump_suit = CardProto.Suit.SUIT_UNDEFINED
+        if current_trump_cards:
+            current_trump_suit = current_trump_cards[0].suit
+        is_trump_card = isJoker(card_proto) or (card_proto.rank == self.__latest_game_proto.current_rank) or (card_proto.suit == current_trump_suit)
+        card_value = 14 if card_proto.rank == 1 else card_proto.rank
+        card_value += 10000 if is_trump_card else 0
+        card_value += 20 if (card_proto.rank == 13 or card_proto.rank == 10) else 0
+        card_value += 10 if (card_proto.rank == 5) else 0
+        return card_value
+
     def takeAction(self, gameProto: GameProto) -> None:
+        self.__latest_game_proto = gameProto
         if gameProto.HasField('card_dealt_update'):
-            self.__card_count += 1
-            logging.info(f'Card count: {self.__card_count} - {gameProto.card_dealt_update.player_name} - {self._player_name} - {gameProto.trump_player_name}')
+            logging.info(f'Deal card {gameProto.card_dealt_update.card} to {gameProto.card_dealt_update.player_name}. Updating {self._player_name}. Trump player: {gameProto.trump_player_name}')
             if gameProto.card_dealt_update.player_name == self._player_name:
                 self.__try_declare_trump(gameProto)
-        if self.__card_count == 100 and gameProto.trump_player_name == self._player_name:
+        if self._game.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.trump_player_name == self._player_name:
             time.sleep(self.__action_delay)
             self._game.drawCards(self._player_name)
-        if self.__card_count == 108 and gameProto.trump_player_name == self._player_name:
+        if self._game.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
             time.sleep(self.__action_delay)
             cards_to_play = []
-            for card_number, count in self.__my_cards.items():
+            for card_number in sorted(self.__my_cards.keys(), key=self.__getCardValue):
+                count = self.__my_cards[card_number]
                 if len(cards_to_play) == 8:
                     break
                 if count == 1:
