@@ -28,12 +28,6 @@ def getCardNum(card: CardProto) -> int:
 def toCardProto(cardNum: int) -> CardProto:
     return CardProto(suit = cardNum // 100, rank = cardNum % 100)
 
-def getCardNum(card: CardProto) -> int:
-    return card.suit * 100 + card.rank
-
-def toCardProto(cardNum: int) -> CardProto:
-    return CardProto(suit = cardNum // 100, rank = cardNum % 100)
-
 class TrumpType(IntEnum):
     INVALID = 0
     NONE = 1
@@ -194,7 +188,7 @@ class Game:
         logging.info(f'Game state: {self.state}')
         if player_name != self.__next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
             return False, f'Not the turn of player {player_name}'
-        if self.can_declare_trump():
+        if self.__can_declare_trump():
             return self.__declare_trump(self.__players[player_name], cards)
 
         if (self.state == GameState.HIDE_KITTY):
@@ -311,7 +305,7 @@ class Game:
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_name, card)
 
-    def can_declare_trump(self) -> bool:
+    def __can_declare_trump(self) -> bool:
         return self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION
 
     def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
