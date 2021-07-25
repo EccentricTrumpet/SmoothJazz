@@ -22,9 +22,6 @@ Suit = CardProto.Suit
 Rank = CardProto.Rank
 
 # Utility functions
-def is_joker(card: CardProto) -> bool:
-    return card.suit == Suit.SMALL_JOKER or card.suit == Suit.BIG_JOKER
-
 def getCardNum(card: CardProto) -> int:
     return card.suit * 100 + card.rank
 
@@ -54,9 +51,6 @@ class Player:
         self.__game_queue: deque[GameProto]  = deque()
         self.__game_queue_sem: Semaphore= Semaphore(0)
         self.cards_on_hand: Dict[CardProto, int] = dict()
-
-    # def has_card(self, card: CardProto) -> bool:
-    #     return card in self.cards_on_hand
 
     def can_play_cards(self, cards: Sequence[CardProto]) -> bool:
         card_as_dict = dict()
@@ -194,7 +188,7 @@ class Game:
         logging.info(f'Game state: {self.state}')
         if player_name != self.__next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
             return False, f'Not the turn of player {player_name}'
-        if self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION:
+        if self.can_declare_trump():
             return self.__declare_trump(self.__players[player_name], cards)
 
         if (self.state == GameState.HIDE_KITTY):
@@ -310,6 +304,9 @@ class Game:
 
             time.sleep(self.__delay)
             self.__card_dealt_update(player.player_name, card)
+
+    def can_declare_trump(self) -> bool:
+        return self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION
 
     def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         logging.info(f'{player} declares trump as: {cards}')

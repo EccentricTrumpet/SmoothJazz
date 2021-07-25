@@ -75,10 +75,10 @@ const toCardProto = function(cardUI: any) : CardProto {
 const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentPlayer: boolean) : any[] {
   let resolvedCardUIs: any[] = [];
   let i = 0;
-  let j = 0;
 
   while (i < cards.length) {
     let found = false;
+    let j = 0;
     while (j < cardUIs.length) {
       let cardUI = cardUIs[j++];
       let uiProto = toCardProto(cardUI);
@@ -91,6 +91,8 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentP
     }
     if (!found) {
       let error_msg = "Could not resolve " + toFriendlyString(cards[i]) + "from players hand; fromCurrentPlayer is " + fromCurrentPlayer;
+      console.log(cards);
+      console.log(cardUIs);
       console.log(error_msg);
       throw Error(error_msg);
     }
