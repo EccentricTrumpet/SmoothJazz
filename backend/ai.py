@@ -30,10 +30,10 @@ class AIBase():
             self.takeAction(gameProto)
 
 class AaronAI(AIBase):
-    def __init__(self, game: Game, player: Player) -> None:
+    def __init__(self, game: Game, player: Player, action_delay_sec=1) -> None:
         super().__init__(game, player)
         self.__my_cards = dict()
-        self.__action_delay = 1
+        self.__action_delay_sec = action_delay_sec
 
     def __try_declare_trump(self, gameProto: GameProto) -> None:
         current_trump_type = self._game.get_trump_type(gameProto.trump_cards.cards)
@@ -69,10 +69,10 @@ class AaronAI(AIBase):
             if gameProto.card_dealt_update.player_name == self._player_name:
                 self.__try_declare_trump(gameProto)
         if self._game.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.trump_player_name == self._player_name:
-            time.sleep(self.__action_delay)
+            time.sleep(self.__action_delay_sec)
             self._game.drawCards(self._player_name)
         if self._game.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
-            time.sleep(self.__action_delay)
+            time.sleep(self.__action_delay_sec)
             cards_to_play = []
             for card_number in sorted(self.__my_cards.keys(), key=self.__getCardValue):
                 count = self.__my_cards[card_number]

@@ -1,4 +1,5 @@
 from ai import AaronAI
+import argparse
 import asyncio
 import threading
 import logging
@@ -27,6 +28,7 @@ from shengji_pb2 import (
     PlayHandRequest,
     PlayHandResponse,
     Game as GameProto)
+
 
 class SJService(ShengjiServicer):
     def __init__(self, delay: float = 0.3) -> None:
@@ -62,7 +64,7 @@ class SJService(ShengjiServicer):
         player = game.add_player(ai_name, True)
 
         if request.ai_type == AddAIPlayerRequest.AARON_AI:
-            my_ai = AaronAI(game, player)
+            my_ai = AaronAI(game, player, self.__delay * 3)
             threading.Thread(target=my_ai.start, daemon=True).start()
 
         logging.info(f'Returning AddAIPlayerRequest for {ai_name}')
@@ -122,9 +124,9 @@ class SJService(ShengjiServicer):
             raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')
         return game
 
-async def serve(address: str) -> None:
+async def serve(address: str, delay_sec: float) -> None:
     server = GrpcServer(ThreadPoolExecutor(max_workers=100))
-    add_ShengjiServicer_to_server(SJService(), server)
+    add_ShengjiServicer_to_server(SJService(delay_sec), server)
     server.add_insecure_port(address)
     await server.start()
     logging.info(f'Server serving at {address}')
@@ -140,4 +142,9 @@ async def serve(address: str) -> None:
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
             format='%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s')
-    asyncio.run(serve('[::]:50051'))
+
+    parser = argparse.ArgumentParser(description='Configuration for server.')
+    parser.add_argument('--delay_sec', metavar='N', type=float, default=0.3, required=False,
+                        help='A float, in seconds, for server delay')
+    args = parser.parse_args()
+    asyncio.run(serve('[::]:50051', args.delay_sec))
