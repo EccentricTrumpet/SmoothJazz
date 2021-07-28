@@ -134,14 +134,37 @@ message Game {
   // Player ID who declared current trump cards.
   string trump_player_name = 10;
 
+  enum GameState {
+    SUIT_UNDEFINED = 0;
+    // Waiting for players to join the game
+    AWAIT_JOIN = 1;
+    // Waiting to deal/draw
+    AWAIT_DEAL = 2;
+    // Dealing/drawing
+    DEAL = 3;
+    // Finished dealing but before dealer clicks to see the kitty
+    AWAIT_TRUMP_DECLARATION = 4;
+    // Dealing Kitty
+    DEAL_KITTY = 5;
+    // Hiding Kitty
+    HIDE_KITTY = 6;
+    // Playing
+    PLAY = 7;
+    // Round ended
+    ROUND_END = 8;
+  }
+
+  // Game State.
+  GameState state = 11;
+
   // Update id, a sequence of natural numbers
-  int32 update_id = 11;
+  int32 update_id = 12;
 
   // Updates that represent the delta since the last update
   oneof update {
-    NewPlayerUpdate new_player_update = 12;
-    CardDealtUpdate card_dealt_update = 13;
-    KittyHiddenUpdate kitty_hidden_update = 14;
+    NewPlayerUpdate new_player_update = 13;
+    CardDealtUpdate card_dealt_update = 14;
+    KittyHiddenUpdate kitty_hidden_update = 15;
   }
 }
 
