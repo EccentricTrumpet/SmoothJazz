@@ -16,3 +16,6 @@ test: proto game_state_test server_test
 
 run: proto
 	python server.py
+
+run_local_testing: proto
+	python server.py --delay_sec=0

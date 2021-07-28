@@ -13,6 +13,7 @@ http://smoothjazz.ddns.net
 ## Launch
 
 1. Start server: `make run`
+1. Local testing with no server delay: `make run_local_testing`
 
 ## Launch with docker
 
