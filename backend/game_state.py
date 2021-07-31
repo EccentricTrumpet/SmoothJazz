@@ -18,6 +18,7 @@ from shengji_pb2 import (
     Player as PlayerProto)
 
 # Type aliases
+GameState = GameProto.GameState
 Suit = CardProto.Suit
 Rank = CardProto.Rank
 
@@ -86,8 +87,8 @@ class Player:
             self.__game_queue_sem.acquire()
             if self.__notify == False:
                 break
-            game_state = self.__game_queue.popleft()
-            yield game_state
+            game_proto = self.__game_queue.popleft()
+            yield game_proto
 
     def to_player_proto(self) -> PlayerProto:
         player_proto = PlayerProto()
@@ -98,27 +99,9 @@ class Player:
         return player_proto
 
 
-class GameState(Enum):
-    # Waiting for players to join the game
-    AWAIT_JOIN = 0
-    # Waiting to deal/draw
-    AWAIT_DEAL = 1
-    # Dealing/drawing
-    DEAL = 2
-    # Finished dealing but before dealer clicks to see the kitty
-    AWAIT_TRUMP_DECLARATION = 3
-    # Dealing Kitty
-    DEAL_KITTY = 4
-    # Hiding Kitty
-    HIDE_KITTY = 5
-    # Playing
-    PLAY = 6
-    # Round ended
-    ROUND_END = 7
-
 class Game:
     def __init__(self, creator_name: str, game_id: str, delay: float) -> None:
-        self.state = GameState.AWAIT_JOIN
+        self.state: GameState = GameState.AWAIT_JOIN
         self.__game_id: str = game_id
         self.__creator_name: str = creator_name
         self.__kitty_player_name: str = creator_name
@@ -185,7 +168,7 @@ class Game:
             player.complete_update_stream()
 
     def play(self, player_name: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        logging.info(f'Game state: {self.state}')
+        logging.info(f'{player_name} plays {cards} at state: {self.state}')
         if player_name != self.__next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
             return False, f'Not the turn of player {player_name}'
         if self.__can_declare_trump():
@@ -259,8 +242,7 @@ class Game:
 
         game.kitty_player_name = self.__kitty_player_name
 
-        # Hack to communicate state
-        game.next_turn_player_name = self.state.name
+        game.state = self.state
 
         with self.__players_lock:
             players = self.__players.values()
