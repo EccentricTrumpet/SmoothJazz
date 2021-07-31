@@ -109,7 +109,7 @@ class Game:
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
         self.__metadata: GameMetadata = None
-        self.__next_player_name: str = creator_name
+        self._next_player_name: str = creator_name
         self.__kitty: List[CardProto] = []
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
@@ -169,8 +169,8 @@ class Game:
 
     def play(self, player_name: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         logging.info(f'{player_name} plays {cards} at state: {self.state}')
-        if player_name != self.__next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
-            return False, f'Not the turn of player {player_name}'
+        if player_name != self._next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
+            return False, f'Not the turn of player {player_name}. Next player: {self._next_player_name}'
         if self.__can_declare_trump():
             return self.__declare_trump(self.__players[player_name], cards)
 
@@ -178,13 +178,12 @@ class Game:
             return self.__hide_kitty(self.__players[player_name], cards)
 
         if (self.state == GameState.PLAY):
-
             if not self.__players[player_name].can_play_cards(cards):
                 return False, f'Player does not possess the cards: {cards}'
             self.__hands_on_table.append(Hand(cards))
-            self.__next_player_id = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
+            self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
             if len(self.__hands_on_table) == 4:
-                self.__next_player_id = random.choice(self.__players.keys())
+                self._next_player_name = random.choice(self.__players.keys())
                 self.__hands_on_table = []
             return True, ""
 
@@ -207,9 +206,9 @@ class Game:
 
         # Compute winner of this round if needed
         if len(self.__hands_on_table) == 4:
-            self.__next_player_name = GetWinnerAndAccumulateScore()
+            self._next_player_name = GetWinnerAndAccumulateScore()
         else:
-            self.__next_player_name = self.NextPlayer()
+            self._next_player_name = self.NextPlayer()
 
         # Check to see if the game has ended
         self.__action_count += 1
@@ -221,7 +220,7 @@ class Game:
         elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_name:
             self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
-            self.__next_player_name = self.__kitty_player_name
+            self._next_player_name = self.__kitty_player_name
 
     def to_game_proto(self, increment_update_id: bool = True) -> GameProto:
         with self.__update_lock:
@@ -236,21 +235,17 @@ class Game:
 
         game.current_rank = self.__current_rank
         game.trump_player_name = self.__trump_declarer
-        for card in self.__current_trump_cards:
-            card_proto = game.trump_cards.cards.add()
-            card_proto.CopyFrom(card)
+        game.next_turn_player_name = self._next_player_name
+        game.trump_cards.cards.extend(self.__current_trump_cards)
 
         game.kitty_player_name = self.__kitty_player_name
-
         game.state = self.state
 
         with self.__players_lock:
             players = self.__players.values()
-        for player in players:
-            game.players.append(player.to_player_proto())
+        game.players.extend([p.to_player_proto() for p in players])
 
-        for card in self.__kitty:
-            game.kitty.cards.append(card)
+        game.kitty.cards.extend(self.__kitty)
 
         return game
 

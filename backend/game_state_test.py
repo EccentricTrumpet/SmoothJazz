@@ -1,3 +1,4 @@
+# To run individual test cases, do `python3 backend/game_state_test.py GameTests.test_hide_kitty_incorrect_number_of_cards`
 import unittest
 import timeout_decorator
 from shengji_pb2 import (
@@ -235,6 +236,54 @@ class GameTests(unittest.TestCase):
         self.assertFalse(success)
         self.assertRegex(err, 'Player does not possess the cards.*')
 
+    @timeout_decorator.timeout(20)
+    def test_hide_kitty_not_turn_of_player(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.HIDE_KITTY
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
+
+        game._next_player_name = 'creator'
+        success, err = game.play('player_1', [HEART_TWO_PROTO])
+
+        self.assertFalse(success)
+        self.assertRegex(err, 'Not the turn of player player_1')
+
+    @timeout_decorator.timeout(20)
+    def test_hide_kitty_incorrect_number_of_cards(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.HIDE_KITTY
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
+        game._next_player_name = 'player_1'
+
+        success, err = game.play('player_1', [HEART_TWO_PROTO])
+
+        self.assertFalse(success)
+        self.assertRegex(err, 'Incorrect number of cards to hide')
+
+    @timeout_decorator.timeout(20)
+    def test_hide_kitty_player_not_possess_cards(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.HIDE_KITTY
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
+        game._next_player_name = 'player_1'
+
+        success, err = game.play('player_1', [HEART_TWO_PROTO]*8)
+
+        self.assertFalse(success)
+        self.assertRegex(err, 'Player does not possess the cards:.*')
+
+    @timeout_decorator.timeout(20)
+    def test_hide_kitty_valid(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.HIDE_KITTY
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO]*8)
+        game._next_player_name = 'player_1'
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_TWO_PROTO]*8)
+
+        game_proto = next(p1.update_stream())
+        self.assertEqual(list(game_proto.kitty.cards), [HEART_TWO_PROTO]*8)
+        self.assertEqual(game_proto.next_turn_player_name, 'player_1')
 
 if __name__ == '__main__':
     unittest.main()

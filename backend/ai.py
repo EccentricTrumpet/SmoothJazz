@@ -1,5 +1,7 @@
 import logging
+import random
 import time
+from typing import List
 from game_state import (
     Player,
     Game,
@@ -32,6 +34,7 @@ class AIBase():
 class AaronAI(AIBase):
     def __init__(self, game: Game, player: Player, action_delay_sec=1) -> None:
         super().__init__(game, player)
+        # Dictionary mapping card to number
         self.__my_cards = dict()
         self.__action_delay_sec = action_delay_sec
 
@@ -62,6 +65,17 @@ class AaronAI(AIBase):
         card_value += 10 if (card_proto.rank == 5) else 0
         return card_value
 
+    def __try_play_cards(self, cards_to_play: List[CardProto]) -> bool:
+        success, err_str = self._game.play(self._player_name, cards_to_play)
+        logging.info(f'Aaron AI {self._player_name} tries to play {cards_to_play}. Success: {success}; Error: {err_str}')
+        if success:
+            for card_proto in cards_to_play:
+                card_num = getCardNum(card_proto)
+                self.__my_cards[card_num] -= 1
+                if self.__my_cards[card_num] <= 0:
+                    del self.__my_cards[card_num]
+        return success
+
     def takeAction(self, gameProto: GameProto) -> None:
         self.__latest_game_proto = gameProto
         if gameProto.HasField('card_dealt_update'):
@@ -81,5 +95,13 @@ class AaronAI(AIBase):
                     break
                 if count == 1:
                     cards_to_play.append(toCardProto(card_number))
-            success, err_str = self._game.play(self._player_name, cards_to_play)
-            logging.info(f'Aaron AI {self._player_name} plays {cards_to_play}. Success: {success}; Error: {err_str}')
+            self.__try_play_cards(cards_to_play)
+        # Keep randomly play cards (up to six), until succeed.
+        if gameProto.state == GameState.PLAY and gameProto.next_turn_player_name == self._player_name:
+            cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]
+            while True:
+                # Assuming no tractor more than 6 cards in real life
+                k = random.randint(1, 6)
+                cards_to_play = random.sample(list(cards_on_hand.cards), k=k)
+                if self.__try_play_cards(cards_to_play):
+                    break
