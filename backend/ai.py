@@ -96,7 +96,7 @@ class AaronAI(AIBase):
                 if count == 1:
                     cards_to_play.append(toCardProto(card_number))
             self.__try_play_cards(cards_to_play)
-        # Keep randomly play a card until succeed.
+        # Keep randomly play cards (up to six), until succeed.
         if gameProto.state == GameState.PLAY and gameProto.next_turn_player_name == self._player_name:
             cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]
             while True:
