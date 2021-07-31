@@ -2,13 +2,13 @@ import unittest
 import logging
 import sys
 import timeout_decorator
-from game_state import GameState
 from server import SJService
 from shengji_pb2 import (
     AddAIPlayerRequest,
     CreateGameRequest,
     DrawCardsRequest,
-    JoinGameRequest)
+    JoinGameRequest,
+    Game as GameProto)
 
 # TODO(aaron): Add unit tests for 4 real players
 class ShengjiTest(unittest.TestCase):
@@ -46,7 +46,7 @@ class ShengjiTest(unittest.TestCase):
 
         for update in updates:
             streaming_result.append(update)
-            if update.next_turn_player_name == GameState.AWAIT_DEAL.name:
+            if update.state == GameProto.GameState.AWAIT_DEAL:
                 break
 
         sj.terminate_game(game.game_id)
@@ -90,7 +90,7 @@ class ShengjiTest(unittest.TestCase):
 
         for update in updates:
             streaming_result.append(update)
-            if update.next_turn_player_name == GameState.HIDE_KITTY.name:
+            if update.state == GameProto.GameState.HIDE_KITTY:
                 break
 
         # Terminate game
