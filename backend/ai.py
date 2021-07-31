@@ -72,6 +72,7 @@ class AaronAI(AIBase):
             time.sleep(self.__action_delay_sec)
             self._game.drawCards(self._player_name)
         if gameProto.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
+
             time.sleep(self.__action_delay_sec)
             cards_to_play = []
             for card_number in sorted(self.__my_cards.keys(), key=self.__getCardValue):
