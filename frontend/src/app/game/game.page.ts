@@ -723,6 +723,70 @@ class TrickPile {
     return TrickFormat.invalid;
   }
 
+    play(playerIndex: number, cards: CardProto[]): boolean {
+    let resolvedFormat = this.resolveLegalFormat(playerIndex, cards);
+    console.log(resolvedFormat);
+
+    if (resolvedFormat === TrickFormat.invalid) {
+      return false;
+    }
+
+    this.cardsPlayedUI[playerIndex].addCards(resolveCardUIs(cards, this.players[playerIndex].handUI, true));
+    this.cardsPlayedUI[playerIndex].render();
+    this.players[playerIndex].handUI.render();
+
+    if (resolvedFormat.suit !== Suit.SUIT_UNDEFINED) {
+      // Leading play
+      if (this.winningHand === null) {
+        this.winningHand = resolvedFormat;
+        this.winningPlayer = playerIndex;
+      }
+      // Following play
+      else {
+        let that = this;
+        let champDefends = function(champCards: CardProto[], challengerCards: CardProto[]) : boolean {
+          champCards.sort((a, b) => that.game.ranking.getFunctionRank(a) - that.game.ranking.getFunctionRank(b));
+          challengerCards.sort((a, b) => that.game.ranking.getFunctionRank(a) - that.game.ranking.getFunctionRank(b));
+          for (let i = 0; i < champCards.length; i++) {
+            if (that.game.ranking.getFunctionRank(challengerCards[i]) >= that.game.ranking.getFunctionRank(champCards[i])) {
+              return true;
+            }
+          }
+          return false;
+        }
+
+        // TODO: this trick winning logic is too strict according to wiki, though in my experience it's different.
+        for (let i = 0; i < this.winningHand.tractorGroups.length; i++) {
+          let winningTractors = this.winningHand.tractorGroups[i].tractors.map(t => t.highCard);
+          let challengerTractors = resolvedFormat.tractorGroups[i].tractors.map(t => t.highCard);
+
+          if (champDefends(winningTractors, challengerTractors)) {
+            // Challenger did not win
+            console.log("Challenger lost on tractor");
+            return true;
+          }
+        }
+
+        if (champDefends(this.winningHand.pairs, resolvedFormat.pairs)) {
+          console.log("Challenger lost on pair");
+          return true;
+        }
+
+        if (champDefends(this.winningHand.singles, resolvedFormat.singles)) {
+          console.log("Challenger lost on single");
+          return true;
+        }
+
+        // Challenger won
+        console.log("Challenger won");
+        this.winningHand = resolvedFormat;
+        this.winningPlayer = playerIndex;
+      }
+    }
+
+    return true;
+  }
+
   async getWinner() : Promise<number | null> {
     if (Array.from(this.cardsPlayedUI.keys()).some(p => p.length === 0)) {
       return null;
