@@ -162,9 +162,10 @@ message Game {
 
   // Updates that represent the delta since the last update
   oneof update {
-    NewPlayerUpdate new_player_update = 13;
-    CardDealtUpdate card_dealt_update = 14;
-    KittyHiddenUpdate kitty_hidden_update = 15;
+    NewPlayerUpdate new_player_update = 101;
+    CardDealtUpdate card_dealt_update = 102;
+    KittyHiddenUpdate kitty_hidden_update = 103;
+    TrickPlayedUpdate trick_played_update = 104;
   }
 }
 
@@ -182,6 +183,12 @@ message CardDealtUpdate {
 message KittyHiddenUpdate {
   // Kitty player.
   string kitty_player_name = 1;
+}
+
+message TrickPlayedUpdate {
+  // Player who plays hands
+  string player_name = 1;
+  Hand hand_played = 2;
 }
 
 message Card {

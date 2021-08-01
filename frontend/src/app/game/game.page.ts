@@ -266,6 +266,10 @@ export class GamePage implements AfterViewChecked, OnInit {
               let kittyHiddenUpdate = gameProto.getKittyHiddenUpdate();
               this.game.renderKittyHiddenUpdate(kittyHiddenUpdate.getKittyPlayerName(), gameProto.getKitty().getCardsList(), playerName);
               break;
+            case GameProto.UpdateCase.TRICK_PLAYED_UPDATE:
+              let trickPlayedUpdate = gameProto.getTrickPlayedUpdate();
+              this.game.renderTrickPlayedUpdate(trickPlayedUpdate.getPlayerName(), trickPlayedUpdate.getHandPlayed().getCardsList())
+              break;
             default:
               console.log("Invalid update");
               break;
@@ -486,7 +490,7 @@ class TrickFormat {
 class TrickPile {
   game: Game;
   players: Player[];
-  cardsPlayedUI: any[];
+  cardsPlayedUI: Map<string, any> = new Map();
   trickFormat: TrickFormat | null = null;
   winningPlayer: number | null = null;
   winningHand: TrickFormat | null = null;
@@ -494,14 +498,13 @@ class TrickPile {
   constructor(game: Game, players: Player[], x: number, y: number) {
     this.game = game;
     this.players = players;
-    this.cardsPlayedUI = [players.length];
     for (let i = 0; i < players.length; i++) {
       let vector = [players[i].x - x, players[i].y - y];
       let magnitude = Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
-      this.cardsPlayedUI[i] = new cards.Hand({faceUp: true,
+      this.cardsPlayedUI.set(players[i].name, new cards.Hand({faceUp: true,
         x:x + vector[0]*this.game.cardWidth()/magnitude,
         y:y + vector[1]*this.game.cardHeight()/magnitude
-      })
+      }));
     }
   }
 
@@ -720,7 +723,7 @@ class TrickPile {
     return TrickFormat.invalid;
   }
 
-  play(playerIndex: number, cards: CardProto[]): boolean {
+    play(playerIndex: number, cards: CardProto[]): boolean {
     let resolvedFormat = this.resolveLegalFormat(playerIndex, cards);
     console.log(resolvedFormat);
 
@@ -785,7 +788,7 @@ class TrickPile {
   }
 
   async getWinner() : Promise<number | null> {
-    if (this.cardsPlayedUI.some(p => p.length === 0)) {
+    if (Array.from(this.cardsPlayedUI.keys()).some(p => p.length === 0)) {
       return null;
     }
 
@@ -1035,6 +1038,16 @@ class Game {
     player.render()
   }
 
+  renderTrickPlayedUpdate(playerId: string, cards: CardProto[]) {
+    console.log(`Player ${playerId} plays ${cards}`);
+    let player = this.players.find(player => player.name == playerId);
+    let cardUIs = resolveCardUIs(cards, player.handUI, false);
+    let trickPlayedUI = this.trickPile.cardsPlayedUI.get(playerId);
+    trickPlayedUI.addCards(cardUIs);
+    renderUI(player.handUI);
+    renderUI(trickPlayedUI);
+  }
+
   renderKittyHiddenUpdate(kittyPlayerName: string, cards: CardProto[], playerName: string) {
     let player = this.players.find(player => player.name == kittyPlayerName);
     cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
@@ -1048,10 +1061,6 @@ class Game {
     // TODO: Check that player isn't lying and actually has the cards
     cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
     if (this.gameStage === GameStage.Play && playerIndex === this.currentPlayer) {
-      if (!this.trickPile.play(this.currentPlayer, cards)) {
-        return false;
-      }
-
       // Stage change to prevent UI issues. This is probably not strictly threadsafe.
       this.gameStage = GameStage.Busy;
       let winner = await this.trickPile.getWinner();

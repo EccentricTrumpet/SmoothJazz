@@ -182,9 +182,15 @@ class Game:
                 return False, f'Player does not possess the cards: {cards}'
             self.__hands_on_table.append(Hand(cards))
             self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
+            round_winner = None
             if len(self.__hands_on_table) == 4:
-                self._next_player_name = random.choice(self.__players.keys())
+                round_winner= random.choice(list(self.__players.keys()))
+                self._next_player_name = round_winner
                 self.__hands_on_table = []
+            player = self.__players[player_name]
+            for card in cards:
+                player.remove_card(card)
+            self.__trick_played_update(player_name, cards)
             return True, ""
 
         # TODO: Update players if play is valid
@@ -341,6 +347,13 @@ class Game:
             game.card_dealt_update.player_name = player_name
             game.card_dealt_update.card.CopyFrom(card)
         self.__update_players(action)
+
+    def __trick_played_update(self, player_name: str, cards: Sequence[CardProto]) -> None:
+        def action(game: GameProto):
+            game.trick_played_update.player_name = player_name
+            game.trick_played_update.hand_played.cards.extend(list(cards))
+        self.__update_players(action)
+
 
     def __update_players(self, appendUpdate: Callable[[GameProto], None]) -> None:
         game_proto = self.to_game_proto()
