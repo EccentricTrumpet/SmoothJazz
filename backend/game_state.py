@@ -37,12 +37,65 @@ class TrumpType(IntEnum):
     SMALL_JOKER = 4
     BIG_JOKER = 5
 
-"""
-Game: All state of the game is stored in this class
-Player class: Contains all player-related states, including cards etc.
-CardCollection: Organizes cards into useful structures
-Hand: A playable hand of cards.
-"""
+
+# Functional ranking
+class Ranking:
+    def __init__(self, rank: int) -> None:
+        self.trumpRank: int = rank
+        self.trumpSuit: Suit = Suit.SUIT_UNDEFINED
+        self.__ranking: Dict[CardProto, int] = dict()
+        self.resetOrder(self.trumpSuit)
+
+    def resetOrder(self, suit: Suit):
+        self.trumpSuit = suit
+        nonTrumpSuits = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS].remove(suit)
+        ranking = 0
+
+        # Jokers
+        self.__ranking[CardProto(suit=Suit.BIG_JOKER, rank=Rank.RANK_UNDEFINED)] = ranking
+        ranking += 1
+        self.__ranking[CardProto(suit=Suit.SMALL_JOKER, rank=Rank.RANK_UNDEFINED)] = ranking
+        ranking += 1
+
+        # Trump suit + rank
+        if self.trumpSuit != Suit.SUIT_UNDEFINED \
+            and self.trumpSuit != Suit.BIG_JOKER \
+            and self.trumpSuit != Suit.SMALL_JOKER:
+                self.__ranking[CardProto(suit=self.trumpSuit, rank=self.trumpRank)] = ranking
+                ranking += 1
+
+        # Trump rank
+        for suit in nonTrumpSuits:
+            self.__ranking[CardProto(suit=suit, rank=self.trumpRank)] = ranking
+        ranking += 1
+
+        # Trump suit
+        if self.trumpSuit != Suit.SUIT_UNDEFINED \
+            and self.trumpSuit != Suit.BIG_JOKER \
+            and self.trumpSuit != Suit.SMALL_JOKER:
+                for rank in range(Rank.KING, Rank.TWO, -1):
+                    if rank != self.trumpRank:
+                        self.__ranking[CardProto(suit=self.trumpSuit, rank=self.trumpRank)] = ranking
+                        ranking += 1
+
+        # Others
+        for rank in range(Rank.KING, Rank.TWO, -1):
+            if rank != self.trumpRank:
+                for suit in nonTrumpSuits:
+                    self.__ranking[CardProto(suit=suit, rank=self.trumpRank)] = ranking
+                ranking += 1
+
+    # For trick resolution
+    def getRank(self, card: CardProto) -> int:
+        return self.__ranking[str(card)]
+
+    def isTrump(self, card: CardProto) -> bool:
+        return card.suit == Suit.BIG_JOKER \
+            or card.suit == Suit.SMALL_JOKER \
+            or card.rank == self.trumpRank \
+            or (card.suit == self.trumpSuit \
+                and self.trumpSuit != Suit.SUIT_UNDEFINED)
+
 
 class Tractor:
     def __init__(self, card: CardProto, length: int) -> None:
@@ -108,8 +161,8 @@ class TrickFormat:
         return format
 
 class Trick:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, game: Game) -> None:
+        self.__game = game
 
 
 class Player:
