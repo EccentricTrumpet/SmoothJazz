@@ -1,7 +1,8 @@
+from __future__ import annotations
 import logging
 import random
 import time
-from enum import Enum, IntEnum
+from enum import IntEnum
 from threading import RLock, Semaphore
 from collections import deque
 from typing import (
@@ -13,7 +14,6 @@ from typing import (
     Tuple)
 from shengji_pb2 import (
     Card as CardProto,
-    Hand as HandProto,
     Game as GameProto,
     Player as PlayerProto)
 
@@ -39,11 +39,78 @@ class TrumpType(IntEnum):
 
 """
 Game: All state of the game is stored in this class
-GameMetadata: Stores states related to the currently playing game
 Player class: Contains all player-related states, including cards etc.
 CardCollection: Organizes cards into useful structures
 Hand: A playable hand of cards.
 """
+
+class Tractor:
+    def __init__(self, card: CardProto, length: int) -> None:
+        self.card: CardProto = card
+        self.length: int = length
+
+    def __str__(self) -> str:
+        return f'{self.card}:{self.length}'
+
+class TrickFormat:
+    def __init__(self, suit: Suit, length: int, isTrump: bool) -> None:
+        self.suit = suit
+        self.length = length
+        self.isTrump = isTrump
+        self.tractors: List[Tractor] = []
+        self.pairs: List[CardProto] = []
+        self.singles: List[CardProto] = []
+
+    """
+        TODO: Greedy isn't completely accurate, DP is likely necessary
+        For example, tractors [3, 2, 2] is satisfied by [4, 3] but not vice versa
+        Currently, exact format is required
+    """
+    def verify(self, format: TrickFormat) -> bool:
+        if len(self.tractors) != len(format.tractors):
+            logging.info('Number of tractors do not match')
+            return False
+
+        self.tractors.sort(key = lambda t: t.length)
+        format.tractors.sort(key = lambda t: t.length)
+
+        for selfTractor, formatTractor in zip(self.tractors, format.tractors):
+            if selfTractor.length != formatTractor.length:
+                logging.info('Tractors lengths do not match')
+                return False
+
+        if len(self.pairs) != len(format.pairs):
+            logging.info('Number of pairs do not match')
+            return False
+
+        if len(self.singles) != len(format.singles):
+            logging.info('Number of singles do not match')
+            return False
+
+        return True
+
+    def __str__(self) -> str:
+        if self.length == 0:
+            return 'Invalid format'
+        if self.suit == Suit.SUIT_UNDEFINED:
+            return 'Mixed format'
+
+        format = 'Suit: ' + self.suit
+        format += '\nTractor: '
+        for tractor in self.tractors:
+            format += f'{tractor}, '
+        format += '\nPairs: '
+        for pair in self.pairs:
+            format += f'{pair}, '
+        format += '\Singles: '
+        for single in self.singles:
+            format += f'{single}, '
+        return format
+
+class Trick:
+    def __init__(self) -> None:
+        pass
+
 
 class Player:
     def __init__(self, player_name: str, notify: bool) -> None:
@@ -108,7 +175,6 @@ class Game:
         self.__delay: float = delay
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
-        self.__metadata: GameMetadata = None
         self._next_player_name: str = creator_name
         self.__kitty: List[CardProto] = []
         self.__update_id: int = 0
@@ -191,7 +257,7 @@ class Game:
             for card in cards:
                 player.remove_card(card)
             self.__trick_played_update(player_name, cards)
-            return True, ""
+            return True, ''
 
         # TODO: Update players if play is valid
 
@@ -354,7 +420,6 @@ class Game:
             game.trick_played_update.hand_played.cards.extend(list(cards))
         self.__update_players(action)
 
-
     def __update_players(self, appendUpdate: Callable[[GameProto], None]) -> None:
         game_proto = self.to_game_proto()
         appendUpdate(game_proto)
@@ -364,212 +429,3 @@ class Game:
 
         for player in players:
             player.queue_update(game_proto)
-
-
-# This class needs to be refactored to follow coding styles
-class GameMetadata:
-    def __init__(self):
-        self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
-        self.trump_rank = 2
-
-    def NextGame(self):
-        self.trump_suit = random.choice(['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES'])
-
-
-# This class needs to be refactored to follow coding styles
-def IsTrumpCard(card, metadata):
-    if card.is_small_joker or card.is_big_joker:
-        return True
-    if metadata.trump_suit == card.suit:
-        return True
-    if metadata.trump_rank == card.rank:
-        return True
-    return False
-
-
-# This class needs to be refactored to follow coding styles
-def GetSuit(card, metadata):
-    if card.is_small_joker or card.is_big_joker:
-        return metadata.trump_suit
-    return card.suit
-
-
-# This class needs to be refactored to follow coding styles
-class CardCollection:
-    def __init__(self):
-        self.cards = dict()
-        self.card_count = 0
-
-        # Index cards by suit and num
-        self.by_suit = dict()
-        self.by_rank = dict()
-
-        self.small_joker_count = 0
-        self.big_joker_count = 0
-
-        for i in range(54):
-            self.cards[i] = 0
-
-        for suit in ['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES']:
-            self.by_suit[suit] = dict()
-            for rank in range(1, 14):
-                self.by_suit[suit][rank] = 0
-
-        for rank in range(1, 14):
-            self.by_rank[rank] = dict()
-            for suit in ['HEARTS', 'CLUBS', 'DIAMONDS', 'SPADES']:
-                self.by_rank[rank][suit] = 0
-
-    def add_cards(self, cards):
-        for card in cards:
-            self.add_card(card)
-
-    # What does this do?
-    def SuitCount(self, suit):
-        count = 0
-        # Linear scan at suit
-        for num in self.by_suit[suit]:
-            count += self.by_suit[num]
-        return count
-
-    def HasTrump(metadata):
-        if self.small_joker_count > 0 or self.big_joker_count > 0:
-            return True
-        return self.HasSuit(metadata.trump_suit)
-
-    def HasMultipleCards(self, count=2):
-        for c in self.cards.keys():
-            if self.cards[c] >= count:
-                return True
-        return False
-
-    def HasSuit(self, suit, metadata, count=1):
-        # Linear scan at suit
-        for c in self.by_suit[suit].keys():
-            if self.by_suit[suit] >= count:
-                return True
-
-        # Also need to scan joker and off-suit trumps
-        if suit == metadata.trump_suit:
-            if self.small_joker_count >= count:
-                return  True
-            if self.big_joker_count >= count:
-                return  True
-        return False
-
-
-    def add_card(self, card):
-        self.cards[card.GetIndex()] += 1
-        self.card_count += 1
-        if card.is_small_joker:
-            self.small_joker_count += 1
-            return
-        if card.is_big_joker:
-            self.big_joker_count += 1
-            return
-        self.by_num[card.GetNum()][card.GetSuit()] += 1
-        self.by_num[card.GetNum()][card.GetSuit()] += 1
-        self.by_suit[card.GetSuit()][card.GetNum()] += 1
-
-    def RemoveCard(self, card):
-        if self.cards[card.GetIndex()] < 1:
-            return False
-        self.cards[card.GetIndex()] -= 1
-        self.card_count -= 1
-        if card.is_small_joker:
-            self.small_joker_count -= 1
-            return True
-        if card.is_big_joker:
-            self.big_joker_count -= 1
-            return True
-        self.by_num[card.GetNum()][card.GetSuit()] -= 1
-        self.by_suit[card.GetSuit()][card.GetNum()] -= 1
-        return True
-
-    def CanRemoveCards(self, cards):
-        current_cards = self.cards
-        for card in cards:
-            if current_cards[card.GetIndex()] < 1:
-                return False
-            current_cards[card.GetIndex()] -= 1
-        return True
-
-    def RemoveCards(self, cards):
-        for card in cards:
-            if not self.RemoveCard(card):
-                return False
-        return True
-
-    def __str__(self):
-        string = ''
-        for c in self.cards.keys():
-            if self.cards[c] > 0:
-                string += ', ' + str(CardProto(c)) + 'x' + str(self.cards[c])
-
-        return string
-
-""" A hand represents a valid shengji move, which consists of one of the following
-1- A single card of any kind
-2- A pair of cards of the same suit
-3- Double straight within the same suit with more than 6 cards (straight of pairs, e.g. 334455)
-"""
-class Hand:
-    def __init__(self, cards: Sequence[CardProto]) -> None:
-        self.__cards: Sequence[CardProto] = cards
-        # Type is SINGLE, PAIR, TOAK, FOAK, STRAIGHT, DOUBLE_STRAIGHT or INVALID
-        self.type = self.__detect_type()
-
-    def __verify_all_cards_eq(self, cards: Sequence[CardProto]) -> bool:
-        c = cards[0]
-        for card in cards:
-            if card != c:
-                return False
-        return True
-
-    def __is_straight(self, cards: Sequence[CardProto]) -> bool:
-        if len(cards) < 3:
-            return False
-        min_card = cards[0].GetNum()
-        max_card = cards[0].GetNum()
-        suit = cards[0].GetSuit()
-        seen_nums = []
-
-        for card in cards:
-            if card.GetSuit() != suit:
-                return False
-            if card.GetNum() in seen_nums:
-                return False
-            seen_nums.append(card.GetNum())
-            min_card = min(min_card, card.GetNum())
-            max_card = max(max_card, card.GetNum())
-        return (max_card - min_card) == len(cards) - 1
-
-    def __is_double_straight(self, cards) -> bool:
-        grouped_cards = dict()
-        for card in cards:
-            if card.index not in grouped_cards.keys():
-                grouped_cards[card.index] = 0
-            grouped_cards[card.index] += 1
-        count = None
-
-        # equal #s of cards
-        for index in grouped_cards.keys():
-            if count is None:
-                count = grouped_cards[index]
-            if count != grouped_cards[index]:
-                return False
-        return self.__is_straight([CardProto(c) for c in grouped_cards.keys()])
-
-    def __detect_type(self) -> str:
-        if len(self.__cards) == 1:
-            return 'SINGLE'
-        elif len(self.__cards) == 2 and self.__verify_all_cards_eq(self.__cards):
-            return 'PAIR'
-        # self.__is_double_straight current crashes
-        # elif len(self.__cards) >= 4 and self.__is_double_straight(self.__cards):
-        #     return 'DOUBLE_STRAIGHT'
-        else:
-            return 'OTHER'
-
-    def __str__(self) -> str:
-        return self.type + ': ' + ','.join([str(c) for c in self.__cards])

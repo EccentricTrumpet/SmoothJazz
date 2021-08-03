@@ -7,13 +7,14 @@ from shengji_pb2 import (
     Card as CardProto)
 from typing import Sequence
 from game_state import (
-    Hand,
     Player,
     Suit,
     Rank,
     Game,
     GameState,
-    Player)
+    Player,
+    Tractor,
+    TrickFormat)
 
 SPADE_TWO_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TWO)
 SPADE_KING_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.KING)
@@ -21,12 +22,70 @@ SMALL_JOKER_PROTO = CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED)
 BIG_JOKER_PROTO = CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED)
 HEART_TWO_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TWO)
 
-class HandTests(unittest.TestCase):
+class TrickFormatTests(unittest.TestCase):
 
     @timeout_decorator.timeout(20)
-    def test_detects_pair(self) -> None:
-        hand = Hand([SPADE_KING_PROTO, SPADE_KING_PROTO])
-        self.assertEqual(hand.type, "PAIR")
+    def verify_equivalent_format(self) -> None:
+        format1 = TrickFormat(Suit.SPADES, 7, True)
+        format1.tractors.append(Tractor(SPADE_KING_PROTO, 2))
+        format1.pairs.append()
+        format1.singles.append(HEART_TWO_PROTO)
+        format2 = TrickFormat(Suit.SPADES, 7, True)
+        format2.tractors.append(Tractor(HEART_TWO_PROTO, 2))
+        format2.pairs.append(BIG_JOKER_PROTO)
+        format2.singles.append(SMALL_JOKER_PROTO)
+        self.assertTrue(format1.verify(format2))
+
+    @timeout_decorator.timeout(20)
+    def verify_unequal_tractors_lengths(self) -> None:
+        format1 = TrickFormat(Suit.SPADES, 7, True)
+        format1.tractors.append(Tractor(SPADE_KING_PROTO, 2))
+        format1.pairs.append()
+        format1.singles.append(HEART_TWO_PROTO)
+        format2 = TrickFormat(Suit.SPADES, 7, True)
+        format2.tractors.append(Tractor(HEART_TWO_PROTO, 2))
+        format2.tractors.append(Tractor(SPADE_TWO_PROTO, 2))
+        format2.pairs.append(BIG_JOKER_PROTO)
+        format2.singles.append(SMALL_JOKER_PROTO)
+        self.assertFalse(format1.verify(format2))
+
+    @timeout_decorator.timeout(20)
+    def verify_unequal_tractor_lengths(self) -> None:
+        format1 = TrickFormat(Suit.SPADES, 7, True)
+        format1.tractors.append(Tractor(SPADE_KING_PROTO, 2))
+        format1.pairs.append()
+        format1.singles.append(HEART_TWO_PROTO)
+        format2 = TrickFormat(Suit.SPADES, 7, True)
+        format2.tractors.append(Tractor(HEART_TWO_PROTO, 3))
+        format2.pairs.append(BIG_JOKER_PROTO)
+        format2.singles.append(SMALL_JOKER_PROTO)
+        self.assertFalse(format1.verify(format2))
+
+    @timeout_decorator.timeout(20)
+    def verify_unequal_pairs_lengths(self) -> None:
+        format1 = TrickFormat(Suit.SPADES, 7, True)
+        format1.tractors.append(Tractor(SPADE_KING_PROTO, 2))
+        format1.pairs.append()
+        format1.singles.append(HEART_TWO_PROTO)
+        format2 = TrickFormat(Suit.SPADES, 7, True)
+        format2.tractors.append(Tractor(HEART_TWO_PROTO, 2))
+        format2.pairs.append(BIG_JOKER_PROTO)
+        format2.pairs.append(SPADE_TWO_PROTO)
+        format2.singles.append(SMALL_JOKER_PROTO)
+        self.assertFalse(format1.verify(format2))
+
+    @timeout_decorator.timeout(20)
+    def verify_unequal_singles_lengths(self) -> None:
+        format1 = TrickFormat(Suit.SPADES, 7, True)
+        format1.tractors.append(Tractor(SPADE_KING_PROTO, 2))
+        format1.pairs.append()
+        format1.singles.append(HEART_TWO_PROTO)
+        format2 = TrickFormat(Suit.SPADES, 7, True)
+        format2.tractors.append(Tractor(HEART_TWO_PROTO, 2))
+        format2.pairs.append(BIG_JOKER_PROTO)
+        format2.singles.append(SMALL_JOKER_PROTO)
+        format2.singles.append(SPADE_TWO_PROTO)
+        self.assertFalse(format1.verify(format2))
 
 class PlayerTests(unittest.TestCase):
 
