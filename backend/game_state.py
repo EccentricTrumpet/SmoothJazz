@@ -40,17 +40,17 @@ class TrumpType(IntEnum):
 
 # Functional ranking
 class Ranking:
-    def __init__(self, rank: int) -> None:
-        self.trump_rank: int = rank
+    def __init__(self, trump_rank: int) -> None:
+        self.trump_rank: int = trump_rank
         self.trump_suit: Suit = Suit.SUIT_UNDEFINED
         self.__ranking: Dict[str, int] = dict()
         self.resetOrder(self.trump_suit)
 
-    def resetOrder(self, suit: Suit):
-        self.trump_suit = suit
+    def resetOrder(self, trump_suit: Suit):
+        self.trump_suit = trump_suit
         non_trump_suits: List[Suit] = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS]
-        if suit in non_trump_suits:
-            non_trump_suits.remove(suit)
+        if trump_suit in non_trump_suits:
+            non_trump_suits.remove(trump_suit)
         ranks: List[Rank] = [Rank.ACE]
         for rank in range(Rank.KING, Rank.TWO, -1):
             ranks.append(rank)
