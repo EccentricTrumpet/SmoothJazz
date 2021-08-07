@@ -150,28 +150,28 @@ class TrickTests(unittest.TestCase):
 class PlayerTests(unittest.TestCase):
 
     @timeout_decorator.timeout(20)
-    def test_player_can_play_card(self) -> None:
-        player = Player("player", False)
+    def test_player_has_card(self) -> None:
+        player = Player(Ranking(2), "player", False)
 
         player.add_card(SPADE_KING_PROTO)
-        self.assertTrue(player.can_play_cards([SPADE_KING_PROTO]))
+        self.assertTrue(player.has_cards([SPADE_KING_PROTO]))
 
     @timeout_decorator.timeout(20)
-    def test_player_can_play_card(self) -> None:
-        player = Player("player", False)
+    def test_player_does_not_have_cards(self) -> None:
+        player = Player(Ranking(2), "player", False)
 
         player.add_card(SPADE_KING_PROTO)
-        self.assertFalse(player.can_play_cards([SPADE_KING_PROTO, SPADE_KING_PROTO]))
+        self.assertFalse(player.has_cards([SPADE_KING_PROTO, SPADE_KING_PROTO]))
 
     @timeout_decorator.timeout(20)
     def test_player_remove_card(self) -> None:
-        player = Player("player", False)
+        player = Player(Ranking(2), "player", False)
 
         player.add_card(SPADE_KING_PROTO)
-        self.assertEqual(1, len(player.cards_on_hand))
+        self.assertEqual(1, len(player.hand))
 
         player.remove_card(SPADE_KING_PROTO)
-        self.assertEqual(0, len(player.cards_on_hand))
+        self.assertEqual(0, len(player.hand))
 
 
 class GameTests(unittest.TestCase):

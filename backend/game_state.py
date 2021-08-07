@@ -41,16 +41,19 @@ class TrumpType(IntEnum):
 # Functional ranking
 class Ranking:
     def __init__(self, rank: int) -> None:
-        self.trumpRank: int = rank
-        self.trumpSuit: Suit = Suit.SUIT_UNDEFINED
+        self.trump_rank: int = rank
+        self.trump_suit: Suit = Suit.SUIT_UNDEFINED
         self.__ranking: Dict[str, int] = dict()
-        self.resetOrder(self.trumpSuit)
+        self.resetOrder(self.trump_suit)
 
     def resetOrder(self, suit: Suit):
-        self.trumpSuit = suit
-        nonTrumpSuits = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS]
-        if suit in nonTrumpSuits:
-            nonTrumpSuits.remove(suit)
+        self.trump_suit = suit
+        non_trump_suits: List[Suit] = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS]
+        if suit in non_trump_suits:
+            non_trump_suits.remove(suit)
+        ranks: List[Rank] = [Rank.ACE]
+        for rank in range(Rank.KING, Rank.TWO, -1):
+            ranks.append(rank)
         ranking = 0
 
         # Jokers
@@ -60,43 +63,43 @@ class Ranking:
         ranking += 1
 
         # Trump suit + rank
-        if self.trumpSuit != Suit.SUIT_UNDEFINED \
-            and self.trumpSuit != Suit.BIG_JOKER \
-            and self.trumpSuit != Suit.SMALL_JOKER:
-                self.__ranking[str(CardProto(suit=self.trumpSuit, rank=self.trumpRank))] = ranking
+        if self.trump_suit != Suit.SUIT_UNDEFINED \
+            and self.trump_suit != Suit.BIG_JOKER \
+            and self.trump_suit != Suit.SMALL_JOKER:
+                self.__ranking[str(CardProto(suit=self.trump_suit, rank=self.trump_rank))] = ranking
                 ranking += 1
 
         # Trump rank
-        for suit in nonTrumpSuits:
-            self.__ranking[str(CardProto(suit=suit, rank=self.trumpRank))] = ranking
+        for suit in non_trump_suits:
+            self.__ranking[str(CardProto(suit=suit, rank=self.trump_rank))] = ranking
         ranking += 1
 
         # Trump suit
-        if self.trumpSuit != Suit.SUIT_UNDEFINED \
-            and self.trumpSuit != Suit.BIG_JOKER \
-            and self.trumpSuit != Suit.SMALL_JOKER:
-                for rank in range(Rank.KING, Rank.TWO, -1):
-                    if rank != self.trumpRank:
-                        self.__ranking[str(CardProto(suit=self.trumpSuit, rank=self.trumpRank))] = ranking
+        if self.trump_suit != Suit.SUIT_UNDEFINED \
+            and self.trump_suit != Suit.BIG_JOKER \
+            and self.trump_suit != Suit.SMALL_JOKER:
+                for rank in ranks:
+                    if rank != self.trump_rank:
+                        self.__ranking[str(CardProto(suit=self.trump_suit, rank=rank))] = ranking
                         ranking += 1
 
         # Others
-        for rank in range(Rank.KING, Rank.TWO, -1):
-            if rank != self.trumpRank:
-                for suit in nonTrumpSuits:
-                    self.__ranking[str(CardProto(suit=suit, rank=self.trumpRank))] = ranking
-                ranking += 1
+        for suit in non_trump_suits:
+            for rank in ranks:
+                if rank != self.trump_rank:
+                    self.__ranking[str(CardProto(suit=suit, rank=rank))] = ranking
+                    ranking += 1
 
     # For trick resolution
-    def getRank(self, card: CardProto) -> int:
+    def get_rank(self, card: CardProto) -> int:
         return self.__ranking[str(card)]
 
-    def isTrump(self, card: CardProto) -> bool:
+    def is_trump(self, card: CardProto) -> bool:
         return card.suit == Suit.BIG_JOKER \
             or card.suit == Suit.SMALL_JOKER \
-            or card.rank == self.trumpRank \
-            or (card.suit == self.trumpSuit \
-                and self.trumpSuit != Suit.SUIT_UNDEFINED)
+            or card.rank == self.trump_rank \
+            or (card.suit == self.trump_suit \
+                and self.trump_suit != Suit.SUIT_UNDEFINED)
 
 
 class Tractor:
@@ -107,11 +110,12 @@ class Tractor:
     def __str__(self) -> str:
         return f'{self.card}:{self.length}'
 
+
 class TrickFormat:
-    def __init__(self, suit: Suit, length: int, isTrump: bool) -> None:
+    def __init__(self, suit: Suit, length: int, is_trump: bool) -> None:
         self.suit = suit
         self.length = length
-        self.isTrump = isTrump
+        self.is_trump = is_trump
         self.tractors: List[Tractor] = []
         self.pairs: List[CardProto] = []
         self.singles: List[CardProto] = []
@@ -162,24 +166,34 @@ class TrickFormat:
             format += f'{single}, '
         return format
 
+    @classmethod
+    def invalid(cls) -> TrickFormat:
+        return TrickFormat(Suit.SUIT_UNDEFINED, 0, False)
+
+    @classmethod
+    def isInvalid(cls, format: TrickFormat) -> bool:
+        return format.length == 0 and format.suit == Suit.SUIT_UNDEFINED
+
+
 class Trick:
     def __init__(self, ranking: Ranking) -> None:
-        self.__ranking = ranking
+        self.__ranking: Ranking = ranking
+        self.__trick_format: TrickFormat | None = None
 
     # Assume cards have been sorted in descending order
-    def createFormat(self, cards: Sequence[CardProto]) -> TrickFormat:
+    def create_format(self, cards: Sequence[CardProto]) -> TrickFormat:
         # All valid formats must be of the same suit
         suit: Suit = cards[0].suit
-        if self.__ranking.isTrump(suit):
+        if self.__ranking.is_trump(suit):
             for card in cards:
-                if not self.__ranking.isTrump(card):
-                    return TrickFormat(Suit.SUIT_UNDEFINED, 0, False)
+                if not self.__ranking.is_trump(card):
+                    return TrickFormat.invalid()
         else:
             for card in cards:
                 if card.suit != suit:
-                    return TrickFormat(Suit.SUIT_UNDEFINED, 0, False)
+                    return TrickFormat.invalid()
 
-        format: TrickFormat = TrickFormat(suit, len(cards), self.__ranking.isTrump(suit))
+        format: TrickFormat = TrickFormat(suit, len(cards), self.__ranking.is_trump(suit))
 
         # Resolve singles and pairs
         i: int = 0
@@ -193,10 +207,10 @@ class Trick:
 
         # Resolve tractors
         i = 0
-        pairsLen = len(format.pairs)
-        while i < pairsLen:
+        pairs_len = len(format.pairs)
+        while i < pairs_len:
             j = i
-            while j < pairsLen-1 and self.__ranking.getRank(format.pairs[j+1]) - self.__ranking.getRank(format.pairs[j]) == 1:
+            while j < pairs_len-1 and self.__ranking.get_rank(format.pairs[j+1]) - self.__ranking.get_rank(format.pairs[j]) == 1:
                 j += 1
             if j != i:
                 format.tractors.append(Tractor(format.pairs[i], j-i+1))
@@ -205,37 +219,68 @@ class Trick:
 
         return format
 
-    def resolveFormat(self, player: Player, cards: Sequence[CardProto]) -> TrickFormat:
+    def resolveFormat(self, player: Player, cards: Sequence[CardProto]) -> tuple[TrickFormat, str]:
+        if self.__trick_format is None:
+            format = self.create_format(cards)
+
+            # TODO: Check legality of toss
+            # if format.length > 1:
+
+            if not TrickFormat.isInvalid(format):
+                self.__trick_format = format
+                return format, ''
+            else:
+                return format, 'Invalid lead format'
+
+        if len(cards) != self.__trick_format.length:
+            return TrickFormat.invalid(), 'Length of cards played does not match lead'
+
+
+
+    def play(self, player:Player, cards: Sequence[CardProto]) -> bool:
         pass
 
 
 class Player:
-    def __init__(self, player_name: str, notify: bool) -> None:
+    def __init__(self, ranking: Ranking, player_name: str, notify: bool) -> None:
         self.player_name: str = player_name
+        self.ranking: Ranking = ranking
         self.__notify: bool = notify
         self.__game_queue: deque[GameProto]  = deque()
         self.__game_queue_sem: Semaphore= Semaphore(0)
-        self.cards_on_hand: Dict[CardProto, int] = dict()
+        # Cards must be kept in sorted order
+        self.hand: List[CardProto] = []
 
-    def can_play_cards(self, cards: Sequence[CardProto]) -> bool:
-        card_as_dict = dict()
-        for card in cards:
-            hashable_card = getCardNum(card)
-            card_as_dict[hashable_card] = card_as_dict.get(hashable_card, 0) + 1
-        for key in card_as_dict:
-            if card_as_dict.get(key, 0) > self.cards_on_hand.get(key, 0):
+    def has_cards(self, cards: Sequence[CardProto]) -> bool:
+        # Sort cards
+        cards.sort(key = lambda c: (self.ranking.get_rank(c), c.Suit))
+
+        # Iterate both sequences in order
+        hand_index = 0
+        cards_index = 0
+
+        while cards_index < len(cards):
+            while hand_index < len(self.hand) and str(cards[cards_index]) != str(self.hand[hand_index]):
+                hand_index += 1
+            # A card could not be found in hand
+            if hand_index >= len(self.hand):
                 return False
+            # Matched, continue matching until all of cards exist in hand
+            cards_index += 1
+            hand_index += 1
+
         return True
 
-    def remove_card(self, card: CardProto) -> None:
-        hashable_card = getCardNum(card)
-        self.cards_on_hand[hashable_card] = max(0, self.cards_on_hand[hashable_card] - 1)
-        if self.cards_on_hand[hashable_card] == 0:
-            del self.cards_on_hand[hashable_card]
+    def remove_card(self, cards_to_remove: CardProto) -> None:
+        for card in self.hand:
+            if str(card) == str(cards_to_remove):
+                self.hand.remove(card)
+                return
+        logging.info(f'Could not remove card {cards_to_remove} from player {self.player_name}')
 
     def add_card(self, card: CardProto) -> None:
-        hashable_card = getCardNum(card)
-        self.cards_on_hand[hashable_card] = self.cards_on_hand.get(hashable_card, 0) + 1
+        self.hand.append(card)
+        self.hand.sort(key = lambda c: (self.ranking.get_rank(c), c.Suit))
 
     def queue_update(self, game: GameProto) -> None:
         if self.__notify:
@@ -257,9 +302,8 @@ class Player:
     def to_player_proto(self) -> PlayerProto:
         player_proto = PlayerProto()
         player_proto.player_name = self.player_name
-        for card,count in self.cards_on_hand.items():
-            for _ in range(count):
-                player_proto.cards_on_hand.cards.append(toCardProto(card))
+        for card in self.hand:
+            player_proto.cards_on_hand.cards.append(card)
         return player_proto
 
 
@@ -277,7 +321,7 @@ class Game:
         self.__update_lock: RLock = RLock()
         # hands on table contains an array of pairs - (id, hand)
         self.__action_count: int = 0
-        self.__hands_on_table: List[tuple[str, Hand]] = []
+        self.__hands_on_table: List[tuple[str, Sequence[CardProto]]] = []
         self.__current_rank: Rank = Rank.TWO
         self.__trump_declarer: str = ''
         self.__current_trump_cards: Sequence[CardProto] = []
@@ -288,7 +332,6 @@ class Game:
 
         # public
         self.state: GameState = GameState.AWAIT_JOIN
-        self.ranking: Ranking = Ranking(self.__current_rank)
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
@@ -319,7 +362,7 @@ class Game:
         with self.__players_lock:
             if player_name in self.__players.keys() or len(self.__players) == 4:
                 return None
-            player = Player(player_name, notify)
+            player = Player(Ranking(self.__current_rank), player_name, notify)
             self.__players[player_name] = player
 
             if len(self.__players) == 4:
@@ -347,7 +390,7 @@ class Game:
             return self.__hide_kitty(self.__players[player_name], cards)
 
         if (self.state == GameState.PLAY):
-            if not self.__players[player_name].can_play_cards(cards):
+            if not self.__players[player_name].has_cards(cards):
                 return False, f'Player does not possess the cards: {cards}'
             self.__hands_on_table.append(Hand(cards))
             self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
@@ -463,7 +506,7 @@ class Game:
     def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         logging.info(f'{player} declares trump as: {cards}')
 
-        if not player.can_play_cards(cards):
+        if not player.has_cards(cards):
             return False, f'Player does not possess the cards: {cards}'
 
         current_trump_type = self.get_trump_type(self.__current_trump_cards)
@@ -488,7 +531,7 @@ class Game:
         if (len(cards) != 8):
             return False, 'Incorrect number of cards to hide'
 
-        if not player.can_play_cards(cards):
+        if not player.has_cards(cards):
             return False, f'Player does not possess the cards: {cards}'
 
         for card in cards:
