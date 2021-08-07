@@ -8,12 +8,14 @@ from shengji_pb2 import (
 from typing import Sequence
 from game_state import (
     Player,
+    Ranking,
     Suit,
     Rank,
     Game,
     GameState,
     Player,
     Tractor,
+    Trick,
     TrickFormat)
 
 SPADE_TWO_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TWO)
@@ -86,6 +88,64 @@ class TrickFormatTests(unittest.TestCase):
         format2.singles.append(SMALL_JOKER_PROTO)
         format2.singles.append(SPADE_TWO_PROTO)
         self.assertFalse(format1.verify(format2))
+
+class TrickTests(unittest.TestCase):
+
+    @timeout_decorator.timeout(20)
+    def create_format_singles(self) -> None:
+        cards = [SMALL_JOKER_PROTO, SPADE_TWO_PROTO, SPADE_KING_PROTO]
+        ranking = Ranking(2)
+        ranking.resetOrder(Suit.SPADES)
+        trick = Trick(ranking)
+        format = trick.createFormat(cards)
+
+        self.assertTrue(format.isTrump)
+        self.assertEqual(3, format.length)
+        self.assertEqual(3, len(format.singles))
+        self.assertEqual(0, len(format.pairs))
+        self.assertEqual(0, len(format.tractors))
+
+    @timeout_decorator.timeout(20)
+    def create_format_pairs(self) -> None:
+        cards = [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO, SPADE_KING_PROTO, SPADE_KING_PROTO]
+        ranking = Ranking(2)
+        ranking.resetOrder(Suit.SPADES)
+        trick = Trick(ranking)
+        format = trick.createFormat(cards)
+
+        self.assertTrue(format.isTrump)
+        self.assertEqual(4, format.length)
+        self.assertEqual(0, len(format.singles))
+        self.assertEqual(2, len(format.pairs))
+        self.assertEqual(0, len(format.tractors))
+
+    @timeout_decorator.timeout(20)
+    def create_format_tractors(self) -> None:
+        cards = [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO, SPADE_TWO_PROTO, SPADE_TWO_PROTO]
+        ranking = Ranking(2)
+        ranking.resetOrder(Suit.SPADES)
+        trick = Trick(ranking)
+        format = trick.createFormat(cards)
+
+        self.assertTrue(format.isTrump)
+        self.assertEqual(4, format.length)
+        self.assertEqual(0, len(format.singles))
+        self.assertEqual(0, len(format.pairs))
+        self.assertEqual(1, len(format.tractors))
+
+    @timeout_decorator.timeout(20)
+    def create_format_mixed(self) -> None:
+        cards = [BIG_JOKER_PROTO, BIG_JOKER_PROTO, SMALL_JOKER_PROTO, SMALL_JOKER_PROTO, SPADE_TWO_PROTO, HEART_TWO_PROTO, HEART_TWO_PROTO, SPADE_KING_PROTO]
+        ranking = Ranking(2)
+        ranking.resetOrder(Suit.SPADES)
+        trick = Trick(ranking)
+        format = trick.createFormat(cards)
+
+        self.assertTrue(format.isTrump)
+        self.assertEqual(8, format.length)
+        self.assertEqual(2, len(format.singles))
+        self.assertEqual(1, len(format.pairs))
+        self.assertEqual(1, len(format.tractors))
 
 class PlayerTests(unittest.TestCase):
 

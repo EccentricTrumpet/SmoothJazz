@@ -43,30 +43,32 @@ class Ranking:
     def __init__(self, rank: int) -> None:
         self.trumpRank: int = rank
         self.trumpSuit: Suit = Suit.SUIT_UNDEFINED
-        self.__ranking: Dict[CardProto, int] = dict()
+        self.__ranking: Dict[str, int] = dict()
         self.resetOrder(self.trumpSuit)
 
     def resetOrder(self, suit: Suit):
         self.trumpSuit = suit
-        nonTrumpSuits = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS].remove(suit)
+        nonTrumpSuits = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS]
+        if suit in nonTrumpSuits:
+            nonTrumpSuits.remove(suit)
         ranking = 0
 
         # Jokers
-        self.__ranking[CardProto(suit=Suit.BIG_JOKER, rank=Rank.RANK_UNDEFINED)] = ranking
+        self.__ranking[str(CardProto(suit=Suit.BIG_JOKER, rank=Rank.RANK_UNDEFINED))] = ranking
         ranking += 1
-        self.__ranking[CardProto(suit=Suit.SMALL_JOKER, rank=Rank.RANK_UNDEFINED)] = ranking
+        self.__ranking[str(CardProto(suit=Suit.SMALL_JOKER, rank=Rank.RANK_UNDEFINED))] = ranking
         ranking += 1
 
         # Trump suit + rank
         if self.trumpSuit != Suit.SUIT_UNDEFINED \
             and self.trumpSuit != Suit.BIG_JOKER \
             and self.trumpSuit != Suit.SMALL_JOKER:
-                self.__ranking[CardProto(suit=self.trumpSuit, rank=self.trumpRank)] = ranking
+                self.__ranking[str(CardProto(suit=self.trumpSuit, rank=self.trumpRank))] = ranking
                 ranking += 1
 
         # Trump rank
         for suit in nonTrumpSuits:
-            self.__ranking[CardProto(suit=suit, rank=self.trumpRank)] = ranking
+            self.__ranking[str(CardProto(suit=suit, rank=self.trumpRank))] = ranking
         ranking += 1
 
         # Trump suit
@@ -75,14 +77,14 @@ class Ranking:
             and self.trumpSuit != Suit.SMALL_JOKER:
                 for rank in range(Rank.KING, Rank.TWO, -1):
                     if rank != self.trumpRank:
-                        self.__ranking[CardProto(suit=self.trumpSuit, rank=self.trumpRank)] = ranking
+                        self.__ranking[str(CardProto(suit=self.trumpSuit, rank=self.trumpRank))] = ranking
                         ranking += 1
 
         # Others
         for rank in range(Rank.KING, Rank.TWO, -1):
             if rank != self.trumpRank:
                 for suit in nonTrumpSuits:
-                    self.__ranking[CardProto(suit=suit, rank=self.trumpRank)] = ranking
+                    self.__ranking[str(CardProto(suit=suit, rank=self.trumpRank))] = ranking
                 ranking += 1
 
     # For trick resolution
@@ -161,8 +163,50 @@ class TrickFormat:
         return format
 
 class Trick:
-    def __init__(self, game: Game) -> None:
-        self.__game = game
+    def __init__(self, ranking: Ranking) -> None:
+        self.__ranking = ranking
+
+    # Assume cards have been sorted in descending order
+    def createFormat(self, cards: Sequence[CardProto]) -> TrickFormat:
+        # All valid formats must be of the same suit
+        suit: Suit = cards[0].suit
+        if self.__ranking.isTrump(suit):
+            for card in cards:
+                if not self.__ranking.isTrump(card):
+                    return TrickFormat(Suit.SUIT_UNDEFINED, 0, False)
+        else:
+            for card in cards:
+                if card.suit != suit:
+                    return TrickFormat(Suit.SUIT_UNDEFINED, 0, False)
+
+        format: TrickFormat = TrickFormat(suit, len(cards), self.__ranking.isTrump(suit))
+
+        # Resolve singles and pairs
+        i: int = 0
+        while i < len(cards):
+            if i < len(cards) - 1 and str(cards[i]) == str(cards[i+1]):
+                format.pairs.append(cards[i])
+                i += 2
+            else:
+                format.singles.append(cards[i])
+                i += 1
+
+        # Resolve tractors
+        i = 0
+        pairsLen = len(format.pairs)
+        while i < pairsLen:
+            j = i
+            while j < pairsLen-1 and self.__ranking.getRank(format.pairs[j+1]) - self.__ranking.getRank(format.pairs[j]) == 1:
+                j += 1
+            if j != i:
+                format.tractors.append(Tractor(format.pairs[i], j-i+1))
+            else:
+                i += 1
+
+        return format
+
+    def resolveFormat(self, player: Player, cards: Sequence[CardProto]) -> TrickFormat:
+        pass
 
 
 class Player:
@@ -221,14 +265,13 @@ class Player:
 
 class Game:
     def __init__(self, creator_name: str, game_id: str, delay: float) -> None:
-        self.state: GameState = GameState.AWAIT_JOIN
+        # private
         self.__game_id: str = game_id
         self.__creator_name: str = creator_name
         self.__kitty_player_name: str = creator_name
         self.__delay: float = delay
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
-        self._next_player_name: str = creator_name
         self.__kitty: List[CardProto] = []
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
@@ -239,6 +282,13 @@ class Game:
         self.__trump_declarer: str = ''
         self.__current_trump_cards: Sequence[CardProto] = []
         self.__play_order: Sequence[str] = []
+
+        # protected
+        self._next_player_name: str = creator_name
+
+        # public
+        self.state: GameState = GameState.AWAIT_JOIN
+        self.ranking: Ranking = Ranking(self.__current_rank)
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
