@@ -285,5 +285,32 @@ class GameTests(unittest.TestCase):
         self.assertEqual(list(game_proto.kitty.cards), [HEART_TWO_PROTO]*8)
         self.assertEqual(game_proto.next_turn_player_name, 'player_1')
 
+    @timeout_decorator.timeout(20)
+    def test_play_hand_not_possess_cards(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.PLAY
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO]*2)
+        game._next_player_name = 'player_1'
+
+        success, err = game.play('player_1', [SPADE_KING_PROTO]*2)
+
+        self.assertFalse(success)
+        self.assertRegex(err, 'Player does not possess the cards:.*')
+
+    @timeout_decorator.timeout(20)
+    def test_play_hand_valid(self) -> None:
+        game = Game('creator', '0', 0)
+        game.state = GameState.PLAY
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO]*2)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [SPADE_TWO_PROTO]*2)
+        game._next_player_name = 'player_1'
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_TWO_PROTO])
+
+        game_proto = next(p2.update_stream())
+        self.assertEqual(game_proto.next_turn_player_name, 'player_2')
+        self.assertEqual(game_proto.players[0].current_round_trick, HandProto(cards=[HEART_TWO_PROTO]))
+
+
 if __name__ == '__main__':
     unittest.main()

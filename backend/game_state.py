@@ -52,6 +52,7 @@ class Player:
         self.__game_queue: deque[GameProto]  = deque()
         self.__game_queue_sem: Semaphore= Semaphore(0)
         self.cards_on_hand: Dict[CardProto, int] = dict()
+        self.current_round_trick: Sequence[CardProto] = []
 
     def can_play_cards(self, cards: Sequence[CardProto]) -> bool:
         card_as_dict = dict()
@@ -96,6 +97,8 @@ class Player:
         for card,count in self.cards_on_hand.items():
             for _ in range(count):
                 player_proto.cards_on_hand.cards.append(toCardProto(card))
+        for card in self.current_round_trick:
+            player_proto.current_round_trick.cards.append(card)
         return player_proto
 
 
@@ -115,7 +118,6 @@ class Game:
         self.__update_lock: RLock = RLock()
         # hands on table contains an array of pairs - (id, hand)
         self.__action_count: int = 0
-        self.__hands_on_table: List[tuple[str, Hand]] = []
         self.__current_rank: Rank = Rank.TWO
         self.__trump_declarer: str = ''
         self.__current_trump_cards: Sequence[CardProto] = []
@@ -178,16 +180,17 @@ class Game:
             return self.__hide_kitty(self.__players[player_name], cards)
 
         if (self.state == GameState.PLAY):
-            if not self.__players[player_name].can_play_cards(cards):
+            player = self.__players[player_name]
+            if not player.can_play_cards(cards):
                 return False, f'Player does not possess the cards: {cards}'
-            self.__hands_on_table.append(Hand(cards))
+            player.current_round_trick = cards
             self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
             round_winner = None
-            if len(self.__hands_on_table) == 4:
+            if len([p.current_round_trick for p in self.__players.values() if len(p.current_round_trick) > 0]) == 4:
                 round_winner= random.choice(list(self.__players.keys()))
                 self._next_player_name = round_winner
-                self.__hands_on_table = []
-            player = self.__players[player_name]
+                for p in self.__players.values():
+                    p.current_round_trick = []
             for card in cards:
                 player.remove_card(card)
             self.__trick_played_update(player_name, cards)
@@ -199,9 +202,9 @@ class Game:
         hand = Hand(cards)
 
         # Check play cards
-        prev_hand = None
-        if len(self.__hands_on_table) > 0:
-            prev_hand = self.__hands_on_table[0][1]
+        # prev_hand = None
+        # if len(self.__hands_on_table) > 0:
+        #     prev_hand = self.__hands_on_table[0][1]
 
         if not self.players[player_name].CanPlayHand(hand, prev_hand, self.__metadata):
             return False, 'Invalid hand'
@@ -211,7 +214,7 @@ class Game:
         self.__players[player_name].PlayHand(hand)
 
         # Compute winner of this round if needed
-        if len(self.__hands_on_table) == 4:
+        if len([p.current_round_trick for p in self.__players if len(p.current_round_trick) > 0]) == 4:
             self._next_player_name = GetWinnerAndAccumulateScore()
         else:
             self._next_player_name = self.NextPlayer()

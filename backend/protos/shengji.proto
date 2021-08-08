@@ -113,7 +113,8 @@ message Game {
   // specific user id: Only that user can play (hide kitty or play a hand)
   string next_turn_player_name = 4;
 
-  // Player who wins the current round.
+  // Player who wins the current round. Only populated if all four players
+  // have played in the round.
   string current_round_winner_player_name = 5;
 
   // All players. Private states will be redacted by the server (e.g.
