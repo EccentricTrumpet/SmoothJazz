@@ -312,11 +312,11 @@ enum GameStage {
   Busy
 }
 
-export class CardRanking {
+// UI ranking
+export class Ranking {
   trumpSuit: Suit = Suit.SUIT_UNDEFINED;
   trumpRank: Rank;
-  uiRanks: Map<string, number> = new Map();
-  functionalRanks: Map<string, number> = new Map();
+  ranking: Map<string, number> = new Map();
 
   constructor(rank: Rank) {
     this.trumpRank = rank;
@@ -326,13 +326,10 @@ export class CardRanking {
   resetOrder(suit: Suit) {
     this.trumpSuit = suit;
     const nonTrumpSuits = [Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS].filter((s) => s !== this.trumpSuit);
-    let uiRank = 0;
-    let functionalRank = 0;
+    let uiRanking = 0;
     let that = this;
-    let setRank = function(card: CardProto, incrementFunctionalRank: boolean = true) {
-      that.uiRanks.set(card.toString(), uiRank++);
-      that.functionalRanks.set(card.toString(), functionalRank);
-      if (incrementFunctionalRank) functionalRank++;
+    let setRank = function(card: CardProto) {
+      that.ranking.set(card.toString(), uiRanking++);
     }
 
     // Jokers
@@ -346,9 +343,8 @@ export class CardRanking {
 
     // Trump rank
     for (const suit of nonTrumpSuits) {
-      setRank(cardProto(suit, this.trumpRank), false);
+      setRank(cardProto(suit, this.trumpRank));
     }
-    functionalRank++;
 
     // Trump suit
     if (this.trumpSuit !== Suit.SUIT_UNDEFINED && this.trumpSuit !== Suit.BIG_JOKER && this.trumpSuit !== Suit.SMALL_JOKER) {
@@ -372,13 +368,8 @@ export class CardRanking {
   }
 
   // For display order and sorting
-  getUIRank(card: CardProto) : number {
-    return this.uiRanks.get(card.toString());
-  }
-
-  // For tractor and trick resolution
-  getFunctionRank(card: CardProto) : number {
-    return this.functionalRanks.get(card.toString());
+  getRank(card: CardProto) : number {
+    return this.ranking.get(card.toString());
   }
 
   // For determing winning tricks
@@ -531,7 +522,7 @@ class TrickPile {
       let j = i;
       // Find longest run
       while (j < format.pairs.length - 1
-        && this.game.ranking.getUIRank(format.pairs[j+1]) - this.game.ranking.getUIRank(format.pairs[j]) === 1) {
+        && this.game.ranking.getRank(format.pairs[j+1]) - this.game.ranking.getRank(format.pairs[j]) === 1) {
         j++;
       }
       if (i !== j) {
@@ -723,7 +714,7 @@ class TrickPile {
     return TrickFormat.invalid;
   }
 
-    play(playerIndex: number, cards: CardProto[]): boolean {
+  play(playerIndex: number, cards: CardProto[]): boolean {
     let resolvedFormat = this.resolveLegalFormat(playerIndex, cards);
     console.log(resolvedFormat);
 
@@ -745,10 +736,10 @@ class TrickPile {
       else {
         let that = this;
         let champDefends = function(champCards: CardProto[], challengerCards: CardProto[]) : boolean {
-          champCards.sort((a, b) => that.game.ranking.getFunctionRank(a) - that.game.ranking.getFunctionRank(b));
-          challengerCards.sort((a, b) => that.game.ranking.getFunctionRank(a) - that.game.ranking.getFunctionRank(b));
+          champCards.sort((a, b) => that.game.ranking.getRank(a) - that.game.ranking.getRank(b));
+          challengerCards.sort((a, b) => that.game.ranking.getRank(a) - that.game.ranking.getRank(b));
           for (let i = 0; i < champCards.length; i++) {
-            if (that.game.ranking.getFunctionRank(challengerCards[i]) >= that.game.ranking.getFunctionRank(champCards[i])) {
+            if (that.game.ranking.getRank(challengerCards[i]) >= that.game.ranking.getRank(champCards[i])) {
               return true;
             }
           }
@@ -846,7 +837,7 @@ class Player {
   }
 
   render() {
-    this.handUI.sort((a, b) => this.game.ranking.getUIRank(toCardProto(a)) - this.game.ranking.getUIRank(toCardProto(b)));
+    this.handUI.sort((a, b) => this.game.ranking.getRank(toCardProto(a)) - this.game.ranking.getRank(toCardProto(b)));
     renderUI(this.handUI);
   }
 
@@ -917,7 +908,7 @@ class Game {
   trumpRank: Rank = Rank.TWO;
   trumpPlayer: string = "NONE";
   trumpCardsImgURL: string[] = [];
-  ranking = new CardRanking(this.trumpRank);
+  ranking = new Ranking(this.trumpRank);
 
   // Player metadata
   playerId: string;
@@ -1050,7 +1041,7 @@ class Game {
 
   renderKittyHiddenUpdate(kittyPlayerName: string, cards: CardProto[], playerName: string) {
     let player = this.players.find(player => player.name == kittyPlayerName);
-    cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
+    cards.sort((a, b) => this.ranking.getRank(a) - this.ranking.getRank(b));
     let cardUIs = resolveCardUIs(cards, player.handUI, playerName == kittyPlayerName);
     this.kittyUI.addCards(cardUIs);
     renderUI(this.kittyUI);
@@ -1059,7 +1050,7 @@ class Game {
 
   async play(playerIndex: number, cards: CardProto[]) : Promise<boolean> {
     // TODO: Check that player isn't lying and actually has the cards
-    cards.sort((a, b) => this.ranking.getUIRank(a) - this.ranking.getUIRank(b));
+    cards.sort((a, b) => this.ranking.getRank(a) - this.ranking.getRank(b));
     if (this.gameStage === GameStage.Play && playerIndex === this.currentPlayer) {
       // Stage change to prevent UI issues. This is probably not strictly threadsafe.
       this.gameStage = GameStage.Busy;
