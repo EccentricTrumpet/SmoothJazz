@@ -268,8 +268,10 @@ export class GamePage implements AfterViewChecked, OnInit {
               break;
             case GameProto.UpdateCase.TRICK_PLAYED_UPDATE:
               let trickPlayedUpdate = gameProto.getTrickPlayedUpdate();
-              this.game.renderTrickPlayedUpdate(trickPlayedUpdate.getPlayerName(), trickPlayedUpdate.getHandPlayed().getCardsList())
-              let currentRoundTricks = gameProto.getPlayersList().map((player) => (player.getCurrentRoundTrick())).filter(trick => trick?.getCardsList()?.length > 0);
+              this.game.renderTrickPlayedUpdate(trickPlayedUpdate.getPlayerName(),
+                                                trickPlayedUpdate.getHandPlayed().getCardsList());
+              let currentRoundTricks = gameProto.getPlayersList().map((player) => (
+                player.getCurrentRoundTrick())).filter(trick => trick?.getCardsList()?.length > 0);
               if (currentRoundTricks.length == 4) {
                 this.game.renderTrickWonAnimation(gameProto.getNextTurnPlayerName());
               }

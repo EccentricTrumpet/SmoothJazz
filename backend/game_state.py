@@ -415,7 +415,7 @@ class Game:
         # Check validity
         hand = Hand(cards)
 
-        # Check play cards
+        # Check play cards. Delete once real play logic is integrated.
         # prev_hand = None
         # if len(self.__hands_on_table) > 0:
         #     prev_hand = self.__hands_on_table[0][1]
