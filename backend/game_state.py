@@ -398,15 +398,16 @@ class Game:
                 return False, f'Player does not possess the cards: {cards}'
             player.current_round_trick = cards
             self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
+            for card in cards:
+                player.remove_card(card)
             round_winner = None
             if len([p.current_round_trick for p in self.__players.values() if len(p.current_round_trick) > 0]) == 4:
                 round_winner= random.choice(list(self.__players.keys()))
                 self._next_player_name = round_winner
+            self.__trick_played_update(player_name, cards)
+            if round_winner is not None:
                 for p in self.__players.values():
                     p.current_round_trick = []
-            for card in cards:
-                player.remove_card(card)
-            self.__trick_played_update(player_name, cards)
             return True, ''
 
         # TODO: Update players if play is valid
