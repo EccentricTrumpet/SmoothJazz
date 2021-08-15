@@ -268,10 +268,16 @@ export class GamePage implements AfterViewChecked, OnInit {
               break;
             case GameProto.UpdateCase.TRICK_PLAYED_UPDATE:
               let trickPlayedUpdate = gameProto.getTrickPlayedUpdate();
-              this.game.renderTrickPlayedUpdate(trickPlayedUpdate.getPlayerName(), trickPlayedUpdate.getHandPlayed().getCardsList())
+              this.game.renderTrickPlayedUpdate(trickPlayedUpdate.getPlayerName(),
+                                                trickPlayedUpdate.getHandPlayed().getCardsList());
+              let currentRoundTricks = gameProto.getPlayersList().map((player) => (
+                player.getCurrentRoundTrick())).filter(trick => trick?.getCardsList()?.length > 0);
+              if (currentRoundTricks.length == 4) {
+                this.game.renderTrickWonAnimation(gameProto.getNextTurnPlayerName());
+              }
               break;
             default:
-              console.log("Invalid update");
+              console.log("Invalid update: "+gameProto.getUpdateCase());
               break;
           }
         }
@@ -1037,6 +1043,25 @@ class Game {
     trickPlayedUI.addCards(cardUIs);
     renderUI(player.handUI);
     renderUI(trickPlayedUI);
+  }
+
+  async renderTrickWonAnimation(winnerPlayerName: string) {
+    console.log(`Player ${winnerPlayerName} won!`);
+    let winnerPlayer = this.players.find(player => player.name == winnerPlayerName);
+    let winnerUI = winnerPlayer.tricksWonUI;
+    let cards = [];
+    for (let play of this.trickPile.cardsPlayedUI.values()) {
+      for (let i = 0; i < play.length; i++) {
+        cards.push(play[i]);
+      }
+    }
+    winnerUI.addCards(cards);
+
+    // Pause so user can see all cards. Note that this needs to be faster
+    // than people's reaction time in production, otherwise, someone may play
+    // new round before the previous round's animation finishes.
+    await new Promise(r => setTimeout(r, 1000));
+    renderUI(winnerUI);
   }
 
   renderKittyHiddenUpdate(kittyPlayerName: string, cards: CardProto[], playerName: string) {
