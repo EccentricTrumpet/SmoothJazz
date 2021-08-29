@@ -1060,7 +1060,7 @@ class Game {
     // Pause so user can see all cards. Note that this needs to be faster
     // than people's reaction time in production, otherwise, someone may play
     // new round before the previous round's animation finishes.
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 500));
     renderUI(winnerUI);
   }
 

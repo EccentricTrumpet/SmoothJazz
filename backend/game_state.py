@@ -182,18 +182,20 @@ class Trick:
 
     # Assume cards have been sorted in descending order
     def create_format(self, cards: Sequence[CardProto]) -> TrickFormat:
+        if len(cards) < 1:
+            return TrickFormat.invalid()
         # All valid formats must be of the same suit
         suit: Suit = cards[0].suit
-        if self.__ranking.is_trump(suit):
-            for card in cards:
+        if self.__ranking.is_trump(cards[0]):
+            for card in cards[1:]:
                 if not self.__ranking.is_trump(card):
                     return TrickFormat.invalid()
         else:
-            for card in cards:
+            for card in cards[1:]:
                 if card.suit != suit:
                     return TrickFormat.invalid()
 
-        format: TrickFormat = TrickFormat(suit, len(cards), self.__ranking.is_trump(suit))
+        format: TrickFormat = TrickFormat(suit, len(cards), self.__ranking.is_trump(cards[0]))
 
         # Resolve singles and pairs
         i: int = 0
@@ -208,14 +210,19 @@ class Trick:
         # Resolve tractors
         i = 0
         pairs_len = len(format.pairs)
+        new_pairs = []
         while i < pairs_len:
             j = i
             while j < pairs_len-1 and self.__ranking.get_rank(format.pairs[j+1]) - self.__ranking.get_rank(format.pairs[j]) == 1:
                 j += 1
             if j != i:
                 format.tractors.append(Tractor(format.pairs[i], j-i+1))
+                i = j + 1
             else:
+                new_pairs.append(format.pairs[i])
                 i += 1
+
+        format.pairs = new_pairs
 
         return format
 
@@ -409,33 +416,6 @@ class Game:
                 for p in self.__players.values():
                     p.current_round_trick = []
             return True, ''
-
-        # TODO: Update players if play is valid
-
-        # Check validity
-        hand = Hand(cards)
-
-        # Check play cards. Delete once real play logic is integrated.
-        # prev_hand = None
-        # if len(self.__hands_on_table) > 0:
-        #     prev_hand = self.__hands_on_table[0][1]
-
-        if not self.players[player_name].CanPlayHand(hand, prev_hand, self.__metadata):
-            return False, 'Invalid hand'
-
-        # play this hand and update cards on table
-        self.hands_on_table.append((player_name, hand))
-        self.__players[player_name].PlayHand(hand)
-
-        # Compute winner of this round if needed
-        if len([p.current_round_trick for p in self.__players if len(p.current_round_trick) > 0]) == 4:
-            self._next_player_name = GetWinnerAndAccumulateScore()
-        else:
-            self._next_player_name = self.NextPlayer()
-
-        # Check to see if the game has ended
-        self.__action_count += 1
-        return True, ''
 
     def drawCards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
