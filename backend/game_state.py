@@ -171,7 +171,7 @@ class TrickFormat:
         return TrickFormat(Suit.SUIT_UNDEFINED, 0, False)
 
     @classmethod
-    def isInvalid(cls, format: TrickFormat) -> bool:
+    def is_invalid(cls, format: TrickFormat) -> bool:
         return format.length == 0 and format.suit == Suit.SUIT_UNDEFINED
 
 
@@ -179,9 +179,11 @@ class Trick:
     def __init__(self, ranking: Ranking) -> None:
         self.__ranking: Ranking = ranking
         self.__trick_format: TrickFormat | None = None
+        self.__winning_hand: TrickFormat | None = None
+        self.__winning_player: Player | None = None
 
     # Assume cards have been sorted in descending order
-    def create_format(self, cards: Sequence[CardProto]) -> TrickFormat:
+    def _create_format(self, suit: Suit, cards: Sequence[CardProto]) -> TrickFormat:
         if len(cards) < 1:
             return TrickFormat.invalid()
         # All valid formats must be of the same suit
@@ -223,17 +225,34 @@ class Trick:
                 i += 1
 
         format.pairs = new_pairs
+        format.tractors.sort(key = lambda t: (t.length, self.__ranking.get_rank(t.card)))
 
         return format
 
-    def resolveFormat(self, player: Player, cards: Sequence[CardProto]) -> tuple[TrickFormat, str]:
+
+    # Assume cards have been sorted in descending order
+    def create_format(self, cards: Sequence[CardProto]) -> TrickFormat:
+        # All valid formats must be of the same suit
+        suit: Suit = cards[0].suit
+        if self.__ranking.is_trump(suit):
+            for card in cards:
+                if not self.__ranking.is_trump(card):
+                    return TrickFormat.invalid()
+        else:
+            for card in cards:
+                if card.suit != suit:
+                    return TrickFormat.invalid()
+
+        return self._create_format(suit, cards)
+
+
+    def resolve_format(self, player: Player, cards: Sequence[CardProto]) -> tuple[TrickFormat, str]:
         if self.__trick_format is None:
             format = self.create_format(cards)
 
             # TODO: Check legality of toss
-            # if format.length > 1:
 
-            if not TrickFormat.isInvalid(format):
+            if not TrickFormat.is_invalid(format):
                 self.__trick_format = format
                 return format, ''
             else:
@@ -242,11 +261,154 @@ class Trick:
         if len(cards) != self.__trick_format.length:
             return TrickFormat.invalid(), 'Length of cards played does not match lead'
 
+        # Follow suit if possible
+        suit_cards_in_hand: List[CardProto] = []
+        suit_total_in_hand = 0
+        if self.__trick_format.suit:
+            suit_cards_in_hand: List[CardProto] = [c for c in player.hand if self.__ranking.is_trump(c)]
+            suit_total_in_hand = len(suit_cards_in_hand)
+            suit_cards_in_play: List[CardProto] = [c for c in cards if self.__ranking.is_trump(c)]
+
+            if len(suit_cards_in_play < min(suit_total_in_hand, len(cards))):
+                return TrickFormat.invalid(), 'Not all playable cards of the lead suit were played.'
+        else:
+            suit_cards_in_hand.extend(c for c in player.hand if not self.__ranking.is_trump(c) and self.__trick_format.suit == c.suit)
+            suit_total_in_hand = len(suit_cards_in_hand)
+            suit_cards_in_play: List[CardProto] = [c for c in cards if not self.__ranking.is_trump(c) and self.__trick_format.suit == c.suit]
+
+            if len(suit_cards_in_play < min(suit_total_in_hand, len(cards))):
+                return TrickFormat.invalid(), 'Not all playable cards of the lead suit were played.'
+
+        if suit_total_in_hand >= self.__trick_format.length:
+            # Full follow
+            logging.info('Full follow')
+
+            format: TrickFormat = self.create_format(cards)
+
+            if TrickFormat.is_invalid(format) or format.suit == Suit.SUIT_UNDEFINED:
+                raise RuntimeError('Invalid format or mixed hand. This should not occur.')
+
+            hand_format: TrickFormat = self._create_format(Suit.SUIT_UNDEFINED, player.hand)
+            hand_tractors: List[Tractor] = [t for t in hand_format.tractors]
+            trick_tractors: List[Tractor] = [t for t in format.tractors]
+            unsatisfied_tractors: List[Tractor] = []
+
+            for tractor in self.__trick_format.tractors:
+                # TODO: handle tractor subsets (i.e. length of 3 satisfies length of 2)
+                valid_tractors: List[Tractor] = [t for t in hand_tractors if t.length == tractor.length]
+                if len(valid_tractors) > 0:
+                    played_tractor: Tractor = None
+                    hand_tractor: Tractor = None
+                    for trick_tractor in trick_tractors:
+                        for valid_tractor in valid_tractors:
+                            if trick_tractor.length == valid_tractor.length and str(trick_tractor.card) == str(valid_tractor.card):
+                                played_tractor = valid_tractor
+                                hand_tractor = valid_tractor
+
+                    if played_tractor == None:
+                        logging.info('Not all playable tractors of the lead suit were played.')
+                        return TrickFormat.invalid(), 'Not all playable tractors of the lead suit were played.'
+
+                    hand_tractors.remove(hand_tractor)
+                    trick_tractors.remove(played_tractor)
+                else:
+                    unsatisfied_tractors.append(tractor)
+
+            pairs_in_played_tractors: int = sum(tt.length for tt in trick_tractors)
+            pairs_in_unsatisfied_tractors: int = sum(ut.length for ut in unsatisfied_tractors)
+            pairs_in_hand_tractors: int = sum(ht.length for ht in hand_tractors)
+
+            if len(format.pairs) + pairs_in_played_tractors < min(len(self.__trick_format.pairs) + pairs_in_unsatisfied_tractors, len(hand_format.pairs) + pairs_in_hand_tractors):
+                logging.info('Not all playable pairs of the lead suit were played.')
+                logging.info(f'Number of pairs played: {len(format.pairs)}')
+                logging.info(f'Number of pairs in hand: {len(hand_format.pairs)}')
+                logging.info(f'Number of pairs in tractors in hand: {pairs_in_hand_tractors}')
+                return TrickFormat.invalid(), 'Not all playable pairs of the lead suit were played.'
+
+            if self.__trick_format.verify(format):
+                logging.info('Matching format, valid')
+                return format, ''
+            else:
+                logging.info('Mixed format, valid')
+                return TrickFormat(Suit.SUIT_UNDEFINED, len(cards), False), ''
+
+        if suit_total_in_hand > 0 and suit_total_in_hand < self.__trick_format.length:
+            # Partial follow
+            logging.info('Partial follow')
+            return TrickFormat(Suit.SUIT_UNDEFINED, len(cards), False), ''
+
+        if suit_total_in_hand == 0:
+            for c in cards:
+                if not self.__ranking.is_trump(c):
+                    logging.info('Cannot follow, mixed format, valid')
+                    return TrickFormat(Suit.SUIT_UNDEFINED, len(cards), False), ''
+
+            # All trumps
+            format: TrickFormat = self.create_format(cards)
+
+            if not format.is_trump:
+                raise RuntimeError('We shoud never resolve the format when non-trumps follow a leading suit')
+
+            if self.__trick_format.verify(format):
+                logging.info('Cannot follow, trumped, valid')
+                return format, ''
+            else:
+                logging.info('Cannot follow, mixed trump format, valid')
+                return TrickFormat(Suit.SUIT_UNDEFINED, len(cards), False), ''
+
+        logging.info('Unknown format, invalid')
+        return TrickFormat.invalid(), 'Unknown format'
 
 
-    def play(self, player:Player, cards: Sequence[CardProto]) -> bool:
-        pass
+    def play(self, player:Player, cards: Sequence[CardProto]) -> tuple[bool, str]:
+        (resolved_format, message) = self.resolve_format(player, cards)
 
+        if TrickFormat.is_invalid(resolved_format):
+            return False, message
+
+        if resolved_format.suit != Suit.SUIT_UNDEFINED:
+            # Leading play
+            if self.__winning_hand == None:
+                self.__winning_hand = resolved_format
+                self.__winning_player = player
+            # Following play
+            else:
+                # Since the format isn't mixed, assume the format is matched
+                def champ_defends(ranking: Ranking, champ_cards: Sequence[CardProto], challenger_cards: Sequence[CardProto]) -> bool:
+                    champ_cards.sort(key = lambda c: self.ranking.get_rank(c))
+                    challenger_cards.sort(key = lambda c: self.ranking.get_rank(c))
+                    for (champ, challenger) in zip(champ_cards, challenger_cards):
+                        if ranking.get_rank(challenger) >= ranking.get_rank(champ):
+                            return True
+                    return False
+
+                # TODO: this trick winning logic is too strict according to wiki, though in my experience it's different.
+                if champ_defends(self.__ranking, [t.card for t in self.__winning_hand.tractors], [t.card for t in resolved_format.tractors]):
+                    logging.info('Challenger lost on tractor')
+                    return True, ''
+
+                if champ_defends(self.__ranking, self.__winning_hand.pairs, resolved_format.pairs):
+                    logging.info('Challenger lost on pair')
+                    return True, ''
+
+                if champ_defends(self.__ranking, self.__winning_hand.singles, resolved_format.singles):
+                    logging.info('Challenger lost on single')
+                    return True, ''
+
+                logging.info('Challenger won')
+                self.__winning_hand = resolved_format
+                self.__winning_player = player
+
+        return True, ''
+
+    def get_winner(self) -> Player:
+        winner: Player = self.__winning_player
+
+        self.__trick_format = None
+        self.__winning_player = None
+        self.__winning_hand = None
+
+        return winner
 
 class Player:
     def __init__(self, ranking: Ranking, player_name: str, notify: bool) -> None:
