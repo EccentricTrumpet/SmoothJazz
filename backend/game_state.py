@@ -180,14 +180,14 @@ class Trick:
         self.__ranking: Ranking = ranking
         self.__trick_format: TrickFormat | None = None
         self.__winning_hand: TrickFormat | None = None
-        self.__winning_player: Player | None = None
+        self.winning_player: Player | None = None
+        self.plays_made: int = 0
 
     # Assume cards have been sorted in descending order
     def _create_format(self, suit: Suit, cards: Sequence[CardProto]) -> TrickFormat:
         if len(cards) < 1:
             return TrickFormat.invalid()
         # All valid formats must be of the same suit
-        suit: Suit = cards[0].suit
         if self.__ranking.is_trump(cards[0]):
             for card in cards[1:]:
                 if not self.__ranking.is_trump(card):
@@ -234,7 +234,7 @@ class Trick:
     def create_format(self, cards: Sequence[CardProto]) -> TrickFormat:
         # All valid formats must be of the same suit
         suit: Suit = cards[0].suit
-        if self.__ranking.is_trump(suit):
+        if self.__ranking.is_trump(cards[0]):
             for card in cards:
                 if not self.__ranking.is_trump(card):
                     return TrickFormat.invalid()
@@ -264,20 +264,20 @@ class Trick:
         # Follow suit if possible
         suit_cards_in_hand: List[CardProto] = []
         suit_total_in_hand = 0
-        if self.__trick_format.suit:
-            suit_cards_in_hand: List[CardProto] = [c for c in player.hand if self.__ranking.is_trump(c)]
+        if self.__trick_format.is_trump:
+            suit_cards_in_hand = [c for c in player.hand if self.__ranking.is_trump(c)]
             suit_total_in_hand = len(suit_cards_in_hand)
             suit_cards_in_play: List[CardProto] = [c for c in cards if self.__ranking.is_trump(c)]
 
-            if len(suit_cards_in_play < min(suit_total_in_hand, len(cards))):
-                return TrickFormat.invalid(), 'Not all playable cards of the lead suit were played.'
+            if len(suit_cards_in_play) < min(suit_total_in_hand, len(cards)):
+                return TrickFormat.invalid(), f'Not all playable cards of the lead suit were played. Suit cards in play: {suit_cards_in_play}, Suit cards in hand: {suit_total_in_hand}'
         else:
-            suit_cards_in_hand.extend(c for c in player.hand if not self.__ranking.is_trump(c) and self.__trick_format.suit == c.suit)
+            suit_cards_in_hand = [c for c in player.hand if not self.__ranking.is_trump(c) and self.__trick_format.suit == c.suit]
             suit_total_in_hand = len(suit_cards_in_hand)
             suit_cards_in_play: List[CardProto] = [c for c in cards if not self.__ranking.is_trump(c) and self.__trick_format.suit == c.suit]
 
-            if len(suit_cards_in_play < min(suit_total_in_hand, len(cards))):
-                return TrickFormat.invalid(), 'Not all playable cards of the lead suit were played.'
+            if len(suit_cards_in_play) < min(suit_total_in_hand, len(cards)):
+                return TrickFormat.invalid(), f'Not all playable cards of the lead suit were played. Suit cards in play: {suit_cards_in_play}, Suit cards in hand: {suit_total_in_hand}'
 
         if suit_total_in_hand >= self.__trick_format.length:
             # Full follow
@@ -288,7 +288,7 @@ class Trick:
             if TrickFormat.is_invalid(format) or format.suit == Suit.SUIT_UNDEFINED:
                 raise RuntimeError('Invalid format or mixed hand. This should not occur.')
 
-            hand_format: TrickFormat = self._create_format(Suit.SUIT_UNDEFINED, player.hand)
+            hand_format: TrickFormat = self._create_format(format.suit, [c for c in player.hand if format.suit == c.suit])
             hand_tractors: List[Tractor] = [t for t in hand_format.tractors]
             trick_tractors: List[Tractor] = [t for t in format.tractors]
             unsatisfied_tractors: List[Tractor] = []
@@ -323,6 +323,7 @@ class Trick:
                 logging.info(f'Number of pairs played: {len(format.pairs)}')
                 logging.info(f'Number of pairs in hand: {len(hand_format.pairs)}')
                 logging.info(f'Number of pairs in tractors in hand: {pairs_in_hand_tractors}')
+
                 return TrickFormat.invalid(), 'Not all playable pairs of the lead suit were played.'
 
             if self.__trick_format.verify(format):
@@ -370,13 +371,13 @@ class Trick:
             # Leading play
             if self.__winning_hand == None:
                 self.__winning_hand = resolved_format
-                self.__winning_player = player
+                self.winning_player = player
             # Following play
             else:
                 # Since the format isn't mixed, assume the format is matched
                 def champ_defends(ranking: Ranking, champ_cards: Sequence[CardProto], challenger_cards: Sequence[CardProto]) -> bool:
-                    champ_cards.sort(key = lambda c: self.ranking.get_rank(c))
-                    challenger_cards.sort(key = lambda c: self.ranking.get_rank(c))
+                    champ_cards.sort(key = lambda c: ranking.get_rank(c))
+                    challenger_cards.sort(key = lambda c: ranking.get_rank(c))
                     for (champ, challenger) in zip(champ_cards, challenger_cards):
                         if ranking.get_rank(challenger) >= ranking.get_rank(champ):
                             return True
@@ -385,30 +386,33 @@ class Trick:
                 # TODO: this trick winning logic is too strict according to wiki, though in my experience it's different.
                 if champ_defends(self.__ranking, [t.card for t in self.__winning_hand.tractors], [t.card for t in resolved_format.tractors]):
                     logging.info('Challenger lost on tractor')
+                    self.plays_made = self.plays_made + 1
                     return True, ''
 
                 if champ_defends(self.__ranking, self.__winning_hand.pairs, resolved_format.pairs):
                     logging.info('Challenger lost on pair')
+                    self.plays_made = self.plays_made + 1
                     return True, ''
 
                 if champ_defends(self.__ranking, self.__winning_hand.singles, resolved_format.singles):
                     logging.info('Challenger lost on single')
+                    self.plays_made = self.plays_made + 1
                     return True, ''
 
                 logging.info('Challenger won')
                 self.__winning_hand = resolved_format
-                self.__winning_player = player
+                self.winning_player = player
 
+        self.plays_made = self.plays_made + 1
         return True, ''
 
-    def get_winner(self) -> Player:
-        winner: Player = self.__winning_player
 
+    def reset_trick(self) -> None:
         self.__trick_format = None
-        self.__winning_player = None
         self.__winning_hand = None
+        self.winning_player = None
+        self.plays_made = 0
 
-        return winner
 
 class Player:
     def __init__(self, ranking: Ranking, player_name: str, notify: bool) -> None:
@@ -423,14 +427,17 @@ class Player:
 
     def has_cards(self, cards: Sequence[CardProto]) -> bool:
         # Sort cards
-        cards.sort(key = lambda c: (self.ranking.get_rank(c), c.Suit))
+        cards.sort(key = lambda c: self.ranking.get_rank(c))
+        self.hand.sort(key = lambda c: self.ranking.get_rank(c))
 
         # Iterate both sequences in order
         hand_index = 0
         cards_index = 0
 
+        logging.info(f'Hand length {len(self.hand)}')
         while cards_index < len(cards):
             while hand_index < len(self.hand) and str(cards[cards_index]) != str(self.hand[hand_index]):
+                logging.info(f'Comparing {str(cards[cards_index])} and {str(self.hand[hand_index])}')
                 hand_index += 1
             # A card could not be found in hand
             if hand_index >= len(self.hand):
@@ -441,12 +448,12 @@ class Player:
 
         return True
 
-    def remove_card(self, cards_to_remove: CardProto) -> None:
-        for card in self.hand:
-            if str(card) == str(cards_to_remove):
-                self.hand.remove(card)
+    def remove_card(self, card: CardProto) -> None:
+        for hand_card in self.hand:
+            if str(card) == str(hand_card):
+                self.hand.remove(hand_card)
                 return
-        logging.info(f'Could not remove card {cards_to_remove} from player {self.player_name}')
+        logging.info(f'Could not remove card {card} from player {self.player_name}')
 
     def add_card(self, card: CardProto) -> None:
         self.hand.append(card)
@@ -491,13 +498,13 @@ class Game:
         self.__kitty: List[CardProto] = []
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
-        # hands on table contains an array of pairs - (id, hand)
-        self.__action_count: int = 0
 
         self.__current_rank: Rank = Rank.TWO
         self.__trump_declarer: str = ''
         self.__current_trump_cards: Sequence[CardProto] = []
         self.__play_order: Sequence[str] = []
+        self.__ranking: Ranking = Ranking(self.__current_rank)
+        self.__trick: Trick = Trick(self.__ranking)
 
         # protected
         self._next_player_name: str = creator_name
@@ -565,18 +572,27 @@ class Game:
             player = self.__players[player_name]
             if not player.has_cards(cards):
                 return False, f'Player does not possess the cards: {cards}'
-            player.current_round_trick = cards
+
+            (success, error) = self.__trick.play(player, cards)
+
+            if not success:
+                return success, error
+
             self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
             for card in cards:
                 player.remove_card(card)
-            round_winner = None
-            if len([p.current_round_trick for p in self.__players.values() if len(p.current_round_trick) > 0]) == 4:
-                round_winner= random.choice(list(self.__players.keys()))
-                self._next_player_name = round_winner
+            player.current_round_trick = cards
+
+            if self.__trick.plays_made == 4:
+                self._next_player_name = self.__trick.winning_player.player_name
+
             self.__trick_played_update(player_name, cards)
-            if round_winner is not None:
+
+            if self.__trick.plays_made == 4:
+                self.__trick.reset_trick()
                 for p in self.__players.values():
                     p.current_round_trick = []
+
             return True, ''
 
     def drawCards(self, player_name: str) -> None:
@@ -670,6 +686,7 @@ class Game:
         self.__trump_declarer = player.player_name
         if self.__current_rank == Rank.TWO:
             self.__kitty_player_name = self.__trump_declarer
+        self.__ranking.resetOrder(cards[0].suit)
         self.__update_players(lambda unused_game_proto: None)
 
         return True, ''
