@@ -232,6 +232,8 @@ class Trick:
 
     # Assume cards have been sorted in descending order
     def create_format(self, cards: Sequence[CardProto]) -> TrickFormat:
+        if len(cards) < 1:
+            return TrickFormat.invalid()
         # All valid formats must be of the same suit
         suit: Suit = cards[0].suit
         if self.__ranking.is_trump(cards[0]):
