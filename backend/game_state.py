@@ -439,7 +439,6 @@ class Player:
         logging.info(f'Hand length {len(self.hand)}')
         while cards_index < len(cards):
             while hand_index < len(self.hand) and str(cards[cards_index]) != str(self.hand[hand_index]):
-                logging.info(f'Comparing {str(cards[cards_index])} and {str(self.hand[hand_index])}')
                 hand_index += 1
             # A card could not be found in hand
             if hand_index >= len(self.hand):
@@ -595,6 +594,7 @@ class Game:
                 for p in self.__players.values():
                     p.current_round_trick = []
 
+            logging.info('successful play')
             return True, ''
 
     def drawCards(self, player_name: str) -> None:
