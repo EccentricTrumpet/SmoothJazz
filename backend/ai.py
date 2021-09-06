@@ -6,17 +6,19 @@ from game_state import (
     Player,
     Game,
     GameState,
-    TrumpType,
-    getCardNum,
-    toCardProto)
+    TrumpType)
 from shengji_pb2 import (
     Card as CardProto,
     Game as GameProto)
 
+def getCardNum(card: CardProto) -> int:
+    return card.suit * 100 + card.rank
+
+def toCardProto(cardNum: int) -> CardProto:
+    return CardProto(suit = cardNum // 100, rank = cardNum % 100)
 
 def isJoker(card: CardProto) -> bool:
     return card.suit == CardProto.Suit.SMALL_JOKER or card.suit == CardProto.Suit.BIG_JOKER
-
 
 class AIBase():
     def __init__(self, game: Game, player: Player) -> None:
@@ -84,7 +86,7 @@ class AaronAI(AIBase):
                 self.__try_declare_trump(gameProto)
         if gameProto.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.trump_player_name == self._player_name:
             time.sleep(self.__action_delay_sec)
-            self._game.drawCards(self._player_name)
+            self._game.draw_cards(self._player_name)
         if gameProto.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
 
             time.sleep(self.__action_delay_sec)

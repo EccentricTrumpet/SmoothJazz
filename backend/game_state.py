@@ -22,13 +22,6 @@ GameState = GameProto.GameState
 Suit = CardProto.Suit
 Rank = CardProto.Rank
 
-# Utility functions
-def getCardNum(card: CardProto) -> int:
-    return card.suit * 100 + card.rank
-
-def toCardProto(cardNum: int) -> CardProto:
-    return CardProto(suit = cardNum // 100, rank = cardNum % 100)
-
 class TrumpType(IntEnum):
     INVALID = 0
     NONE = 1
@@ -597,7 +590,7 @@ class Game:
             logging.info('successful play')
             return True, ''
 
-    def drawCards(self, player_name: str) -> None:
+    def draw_cards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
             self.__deal_hands()
         elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_name:
