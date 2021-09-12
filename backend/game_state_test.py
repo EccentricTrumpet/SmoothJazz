@@ -98,7 +98,7 @@ class TrickTests(unittest.TestCase):
         ranking.resetOrder(Suit.SPADES)
         trick_format = Trick(ranking).create_format(cards)
 
-        self.assertTrue(TrickFormat.isInvalid(trick_format))
+        self.assertTrue(TrickFormat.is_invalid(trick_format))
 
     @timeout_decorator.timeout(20)
     def test_create_format_singles(self) -> None:

@@ -109,7 +109,7 @@ class SJService(ShengjiServicer):
         context: ServicerContext) -> DrawCardsResponse:
 
         game = self.__get_game(request.game_id)
-        game.drawCards(request.player_name)
+        game.draw_cards(request.player_name)
 
         return DrawCardsResponse()
 
