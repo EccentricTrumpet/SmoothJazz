@@ -141,7 +141,7 @@ async def serve(address: str, delay_sec: float) -> None:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
-            format='%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s')
+            format='%(asctime)s [%(levelname)s] [%(threadName)s] {%(filename)s:%(lineno)d}: %(message)s')
 
     parser = argparse.ArgumentParser(description='Configuration for server.')
     parser.add_argument('--delay_sec', metavar='N', type=float, default=0.3, required=False,
