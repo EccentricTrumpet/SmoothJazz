@@ -356,7 +356,7 @@ class Trick:
         return TrickFormat.invalid(), 'Unknown format'
 
 
-    def play(self, player:Player, cards: Sequence[CardProto]) -> tuple[bool, str]:
+    def play_cards(self, player:Player, cards: Sequence[CardProto]) -> tuple[bool, str]:
         (resolved_format, message) = self.resolve_format(player, cards)
 
         if TrickFormat.is_invalid(resolved_format):
@@ -481,24 +481,24 @@ class Player:
 
 
 class Game:
-    def __init__(self, creator_name: str, game_id: str, delay: float) -> None:
-        # private
-        self.__game_id: str = game_id
+    def __init__(self, creator_name: str, game_id: str, delay: float, num_players: int = 4) -> None:
+        # private, sorted alphabetically
         self.__creator_name: str = creator_name
-        self.__kitty_player_name: str = creator_name
+        self.__current_rank: Rank = Rank.TWO
+        self.__current_trump_cards: Sequence[CardProto] = []
         self.__delay: float = delay
+        self.__game_id: str = game_id
+        self.__kitty: List[CardProto] = []
+        self.__kitty_player_name: str = creator_name
+        self.__num_players: float = num_players
+        self.__play_order: Sequence[str] = []
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
-        self.__kitty: List[CardProto] = []
-        self.__update_id: int = 0
-        self.__update_lock: RLock = RLock()
-
-        self.__current_rank: Rank = Rank.TWO
-        self.__trump_declarer: str = ''
-        self.__current_trump_cards: Sequence[CardProto] = []
-        self.__play_order: Sequence[str] = []
         self.__ranking: Ranking = Ranking(self.__current_rank)
         self.__trick: Trick = Trick(self.__ranking)
+        self.__trump_declarer: str = ''
+        self.__update_id: int = 0
+        self.__update_lock: RLock = RLock()
 
         # protected
         self._next_player_name: str = creator_name
@@ -533,12 +533,12 @@ class Game:
 
     def add_player(self, player_name: str, notify: bool) -> Player:
         with self.__players_lock:
-            if player_name in self.__players.keys() or len(self.__players) == 4:
+            if player_name in self.__players.keys() or len(self.__players) == self.__num_players:
                 return None
             player = Player(Ranking(self.__current_rank), player_name, notify)
             self.__players[player_name] = player
 
-            if len(self.__players) == 4:
+            if len(self.__players) == self.__num_players:
                 self.state = GameState.AWAIT_DEAL
 
             self.__new_player_update(player_name)
@@ -567,28 +567,29 @@ class Game:
             if not player.has_cards(cards):
                 return False, f'Player does not possess the cards: {cards}'
 
-            (success, error) = self.__trick.play(player, cards)
+            (success, error) = self.__trick.play_cards(player, cards)
 
             if not success:
                 return success, error
 
-            self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % 4]
+            self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % self.__num_players]
             for card in cards:
                 player.remove_card(card)
             player.current_round_trick = cards
 
-            if self.__trick.plays_made == 4:
+            if self.__trick.plays_made == self.__num_players:
                 self._next_player_name = self.__trick.winning_player.player_name
 
             self.__trick_played_update(player_name, cards)
 
-            if self.__trick.plays_made == 4:
+            if self.__trick.plays_made == self.__num_players:
                 self.__trick.reset_trick()
                 for p in self.__players.values():
                     p.current_round_trick = []
 
             logging.info('successful play')
             return True, ''
+        return False, 'Unsupported game state'
 
     def draw_cards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
@@ -637,7 +638,7 @@ class Game:
             card = self.__deck_cards.pop()
             player.add_card(card)
             logging.info(f'Dealt card {card} to {player.player_name}')
-            deal_index = (deal_index + 1) % 4
+            deal_index = (deal_index + 1) % self.__num_players
 
             if len(self.__deck_cards) == 8:
                 self.state = GameState.AWAIT_TRUMP_DECLARATION
