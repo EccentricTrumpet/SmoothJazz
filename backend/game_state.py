@@ -83,7 +83,7 @@ class Ranking:
                     self.__ranking[str(CardProto(suit=suit, rank=rank))] = ranking
                     ranking += 1
 
-    # For trick resolution
+    # For trick resolution. Smaller integer means larger card.
     def get_rank(self, card: CardProto) -> int:
         return self.__ranking[str(card)]
 
@@ -96,22 +96,24 @@ class Ranking:
 
 
 class Tractor:
-    def __init__(self, card: CardProto, length: int) -> None:
+    def __init__(self, card: CardProto, length: int, cards: Sequence[CardProto]) -> None:
         self.card: CardProto = card
         self.length: int = length
+        self.cards: Sequence[CardProto] = cards
 
     def __str__(self) -> str:
         return f'{self.card}:{self.length}'
 
 
 class TrickFormat:
-    def __init__(self, suit: Suit, length: int, is_trump: bool) -> None:
+    def __init__(self, suit: Suit, length: int, is_trump: bool, tractors: [Tractor] = None, pairs: [CardProto] = None, singles: [CardProto] = None) -> None:
         self.suit = suit
         self.length = length
         self.is_trump = is_trump
-        self.tractors: List[Tractor] = []
-        self.pairs: List[CardProto] = []
-        self.singles: List[CardProto] = []
+        # Stupid Python, see https://stackoverflow.com/questions/1132941/least-astonishment-and-the-mutable-default-argument
+        self.tractors: List[Tractor] = tractors if tractors else []
+        self.pairs: List[CardProto] = pairs if pairs else []
+        self.singles: List[CardProto] = singles if singles else []
 
     """
         TODO: Greedy isn't completely accurate, DP is likely necessary
@@ -141,23 +143,56 @@ class TrickFormat:
 
         return True
 
+    def is_multi_trick(self) -> bool:
+        return len(self.singles) + len(self.pairs) + len(self.tractors) > 1
+
+    def to_card_protos(self) -> Sequence[CardProto]:
+        res = []
+        for tractor in self.tractors:
+            for card in tractor:
+                res.extend([card]*2)
+        for pair in self.pairs:
+            res.extend([pair]*2)
+        res.extend(self.singles)
+        return res
+
+    def get_smaller_cards(self, other_format: TrickFormat, ranking: Ranking) -> Tuple[bool, TrickFormat]:
+        # Leave smallest tractor on the table if there are other players with larger tractor
+        for tractor in self.tractors:
+            for other_tractor in other_format.tractors:
+                if ranking.get_rank(tractor.card) > ranking.get_rank(other_tractor.card) and tractor.length <= other_tractor.length:
+                    return False, TrickFormat(self.suit, tractor.length*2, self.is_trump, tractors = [tractor])
+
+        # Leave smallest pairs on the table if there are other players with larger pairs
+        self.pairs.sort(key = lambda c: ranking.get_rank(c))
+        other_format.pairs.sort(key = lambda c: ranking.get_rank(c))
+        if self.pairs and other_format.pairs and ranking.get_rank(self.pairs[-1]) > ranking.get_rank(other_format.pairs[0]):
+            return False, TrickFormat(self.suit, 2, self.is_trump, pairs = [self.pairs[-1]])
+
+        # Leave smallest singles on the table if there are other players with larger singles
+        self.singles.sort(key = lambda c: ranking.get_rank(c))
+        other_format.singles.sort(key = lambda c: ranking.get_rank(c))
+        if self.singles and other_format.singles and ranking.get_rank(self.singles[-1]) > ranking.get_rank(other_format.singles[0]):
+            return False, TrickFormat(self.suit, 1, self.is_trump, singles = [self.singles[-1]])
+        return True, self
+
     def __str__(self) -> str:
         if self.length == 0:
             return 'Invalid format'
         if self.suit == Suit.SUIT_UNDEFINED:
             return 'Mixed format'
 
-        format = 'Suit: ' + self.suit
-        format += '\nTractor: '
+        res_string = f'Suit: {self.suit}'
+        res_string += '\nTractor: '
         for tractor in self.tractors:
-            format += f'{tractor}, '
-        format += '\nPairs: '
+            res_string += f'{tractor}, '
+        res_string += '\nPairs: '
         for pair in self.pairs:
-            format += f'{pair}, '
-        format += '\Singles: '
+            res_string += f'{pair}, '
+        res_string += '\nSingles: '
         for single in self.singles:
-            format += f'{single}, '
-        return format
+            res_string += f'{single}, '
+        return res_string
 
     @classmethod
     def invalid(cls) -> TrickFormat:
@@ -208,10 +243,12 @@ class Trick:
         new_pairs = []
         while i < pairs_len:
             j = i
+            tractor_cards = [format.pairs[j]]
             while j < pairs_len-1 and self.__ranking.get_rank(format.pairs[j+1]) - self.__ranking.get_rank(format.pairs[j]) == 1:
+                tractor_cards.append(format.pairs[j+1])
                 j += 1
             if j != i:
-                format.tractors.append(Tractor(format.pairs[i], j-i+1))
+                format.tractors.append(Tractor(format.pairs[i], j-i+1, tractor_cards))
                 i = j + 1
             else:
                 new_pairs.append(format.pairs[i])
@@ -245,8 +282,6 @@ class Trick:
         if self.__trick_format is None:
             format = self.create_format(cards)
 
-            # TODO: Check legality of toss
-
             if not TrickFormat.is_invalid(format):
                 self.__trick_format = format
                 return format, ''
@@ -254,7 +289,7 @@ class Trick:
                 return format, 'Invalid lead format'
 
         if len(cards) != self.__trick_format.length:
-            return TrickFormat.invalid(), 'Length of cards played does not match lead'
+            return TrickFormat.invalid(), f'Length of cards played does not match lead. Cards played: {cards}; Lead: {self.__trick_format}'
 
         # Follow suit if possible
         suit_cards_in_hand: List[CardProto] = []
@@ -356,17 +391,27 @@ class Trick:
         return TrickFormat.invalid(), 'Unknown format'
 
 
-    def play_cards(self, player:Player, cards: Sequence[CardProto]) -> tuple[bool, str]:
+    def play_cards(self, player:Player, cards: Sequence[CardProto], other_player_hands: List[Sequence[CardProto]]) -> tuple[bool, str, Sequence[CardProto]]:
         (resolved_format, message) = self.resolve_format(player, cards)
 
         if TrickFormat.is_invalid(resolved_format):
-            return False, message
+            return False, message, None
 
         if resolved_format.suit != Suit.SUIT_UNDEFINED:
             # Leading play
             if self.__winning_hand == None:
-                self.__winning_hand = resolved_format
-                self.winning_player = player
+                if resolved_format.is_multi_trick():
+                    for player_hand in other_player_hands:
+                        player_hand_format: TrickFormat = self._create_format(
+                                resolved_format.suit, [c for c in player_hand if resolved_format.suit == c.suit])
+                        is_valid_toss, smaller_resolved_format = resolved_format.get_smaller_cards(player_hand_format, self.__ranking)
+
+                        if not is_valid_toss:
+                            self.__trick_format = smaller_resolved_format
+                            self.__winning_hand = smaller_resolved_format
+                            self.winning_player = player
+                            self.plays_made = self.plays_made + 1
+                            return True, f'Player cards are not the largest, leaving smallest on the table: {smaller_resolved_format.to_card_protos()}', smaller_resolved_format.to_card_protos()
             # Following play
             else:
                 # Since the format isn't mixed, assume the format is matched
@@ -379,27 +424,28 @@ class Trick:
                     return False
 
                 # TODO: this trick winning logic is too strict according to wiki, though in my experience it's different.
+                # TODO(Aaron): I think this will crash when we have tractors of different length, though we need to add unit tests to make sure.
                 if champ_defends(self.__ranking, [t.card for t in self.__winning_hand.tractors], [t.card for t in resolved_format.tractors]):
                     logging.info('Challenger lost on tractor')
                     self.plays_made = self.plays_made + 1
-                    return True, ''
+                    return True, '', cards
 
                 if champ_defends(self.__ranking, self.__winning_hand.pairs, resolved_format.pairs):
                     logging.info('Challenger lost on pair')
                     self.plays_made = self.plays_made + 1
-                    return True, ''
+                    return True, '', cards
 
                 if champ_defends(self.__ranking, self.__winning_hand.singles, resolved_format.singles):
                     logging.info('Challenger lost on single')
                     self.plays_made = self.plays_made + 1
-                    return True, ''
+                    return True, '', cards
 
                 logging.info('Challenger won')
-                self.__winning_hand = resolved_format
-                self.winning_player = player
 
+        self.__winning_hand = resolved_format
+        self.winning_player = player
         self.plays_made = self.plays_made + 1
-        return True, ''
+        return True, '', cards
 
 
     def reset_trick(self) -> None:
@@ -429,7 +475,6 @@ class Player:
         hand_index = 0
         cards_index = 0
 
-        logging.info(f'Hand length {len(self.hand)}')
         while cards_index < len(cards):
             while hand_index < len(self.hand) and str(cards[cards_index]) != str(self.hand[hand_index]):
                 hand_index += 1
@@ -567,10 +612,10 @@ class Game:
             if not player.has_cards(cards):
                 return False, f'Player does not possess the cards: {cards}'
 
-            (success, error) = self.__trick.play_cards(player, cards)
+            (success, msg_string, cards) = self.__trick.play_cards(player, cards, [self.__players[p_name].hand for p_name in self.__players if p_name != player_name])
 
             if not success:
-                return success, error
+                return success, msg_string
 
             self._next_player_name = self.__play_order[(self.__play_order.index(player_name) + 1) % self.__num_players]
             for card in cards:
@@ -588,7 +633,7 @@ class Game:
                     p.current_round_trick = []
 
             logging.info('successful play')
-            return True, ''
+            return True, msg_string
         return False, 'Unsupported game state'
 
     def draw_cards(self, player_name: str) -> None:

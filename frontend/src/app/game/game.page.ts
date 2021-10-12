@@ -486,7 +486,7 @@ class Player {
       let response = await this.game.client.playHand(playHandReq, null);
 
       console.log("PlayHand Response: ", response.toObject());
-      if (response.getSuccess() == false) {
+      if (response.getErrorMessage() != "") {
         alert(response.getErrorMessage());
       }
       for (let selectedCard of this.selectedCardUIs.values()) {
