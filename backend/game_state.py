@@ -161,18 +161,21 @@ class TrickFormat:
         for tractor in self.tractors:
             for other_tractor in other_format.tractors:
                 if ranking.get_rank(tractor.card) > ranking.get_rank(other_tractor.card) and tractor.length <= other_tractor.length:
+                    logging.info(f'Multitrick comparision losing on tractors: {self} vs {other_format}')
                     return False, TrickFormat(self.suit, tractor.length*2, self.is_trump, tractors = [tractor])
 
         # Leave smallest pairs on the table if there are other players with larger pairs
         self.pairs.sort(key = lambda c: ranking.get_rank(c))
         other_format.pairs.sort(key = lambda c: ranking.get_rank(c))
         if self.pairs and other_format.pairs and ranking.get_rank(self.pairs[-1]) > ranking.get_rank(other_format.pairs[0]):
+            logging.info(f'Multitrick comparision losing on pairs: {self} vs {other_format}')
             return False, TrickFormat(self.suit, 2, self.is_trump, pairs = [self.pairs[-1]])
 
         # Leave smallest singles on the table if there are other players with larger singles
         self.singles.sort(key = lambda c: ranking.get_rank(c))
         other_format.singles.sort(key = lambda c: ranking.get_rank(c))
         if self.singles and other_format.singles and ranking.get_rank(self.singles[-1]) > ranking.get_rank(other_format.singles[0]):
+            logging.info(f'Multitrick comparision losing on singles: {self} vs {other_format}')
             return False, TrickFormat(self.suit, 1, self.is_trump, singles = [self.singles[-1]])
         return True, self
 
@@ -401,9 +404,15 @@ class Trick:
             # Leading play
             if self.__winning_hand == None:
                 if resolved_format.is_multi_trick():
+                    logging.info(f'Leading player proposes s multi trick on {resolved_format.suit}')
                     for player_hand in other_player_hands:
-                        player_hand_format: TrickFormat = self._create_format(
-                                resolved_format.suit, [c for c in player_hand if resolved_format.suit == c.suit])
+                        # TODO(Aaron): See if we can avoid all branches on is_trump
+                        if resolved_format.is_trump:
+                            player_hand_format: TrickFormat = self._create_format(
+                                    resolved_format.suit, [c for c in player_hand if self.__ranking.is_trump(c)])
+                        else:
+                            player_hand_format: TrickFormat = self._create_format(
+                                    resolved_format.suit, [c for c in player_hand if resolved_format.suit == c.suit and not self.__ranking.is_trump(c)])
                         is_valid_toss, smaller_resolved_format = resolved_format.get_smaller_cards(player_hand_format, self.__ranking)
 
                         if not is_valid_toss:
@@ -442,8 +451,8 @@ class Trick:
 
                 logging.info('Challenger won')
 
-        self.__winning_hand = resolved_format
-        self.winning_player = player
+            self.__winning_hand = resolved_format
+            self.winning_player = player
         self.plays_made = self.plays_made + 1
         return True, '', cards
 
@@ -465,6 +474,7 @@ class Player:
         self.current_round_trick: Sequence[CardProto] = []
         # Cards must be kept in sorted order
         self.hand: List[CardProto] = []
+        self.score: int = 0
 
     def has_cards(self, cards: Sequence[CardProto]) -> bool:
         # Sort cards
@@ -518,6 +528,7 @@ class Player:
     def to_player_proto(self) -> PlayerProto:
         player_proto = PlayerProto()
         player_proto.player_name = self.player_name
+        player_proto.score = self.score
         for card in self.current_round_trick:
             player_proto.current_round_trick.cards.append(card)
         for card in self.hand:
@@ -534,7 +545,6 @@ class Game:
         self.__delay: float = delay
         self.__game_id: str = game_id
         self.__kitty: List[CardProto] = []
-        self.__kitty_player_name: str = creator_name
         self.__num_players: float = num_players
         self.__play_order: Sequence[str] = []
         self.__players: Dict[str, Player] = dict()
@@ -547,6 +557,8 @@ class Game:
 
         # protected
         self._next_player_name: str = creator_name
+        self._kitty_player_name: str = creator_name
+        self._total_score: int = 0
 
         # public
         self.state: GameState = GameState.AWAIT_JOIN
@@ -561,6 +573,16 @@ class Game:
                     self.__deck_cards.append(CardProto(suit=s,rank=r))
 
         random.shuffle(self.__deck_cards)
+
+    @classmethod
+    def get_score_from_cards(cls, cards: Sequence[CardProto]) -> int:
+        res = 0
+        for c in cards:
+            if c.rank == Rank.KING or c.rank == Rank.TEN:
+                res += 10
+            elif c.rank == Rank.FIVE:
+                res += 5
+        return res
 
     def get_trump_type(self, cards: Sequence[CardProto]) -> TrumpType:
         if len(cards) == 0:
@@ -597,6 +619,15 @@ class Game:
         for player in players:
             player.complete_update_stream()
 
+    def _get_non_kitty_team_players(self) -> Sequence[Player]:
+        res = []
+        kitty_player_index = self.__play_order.index(self._kitty_player_name)
+        for i, player_name in enumerate(self.__play_order):
+            # N.B: This won't work for odd number of players.
+            if (i - kitty_player_index) % 2 != 0:
+                res.append(self.__players[player_name])
+        return res
+
     def play(self, player_name: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         logging.info(f'{player_name} plays {cards} at state: {self.state}')
         if player_name != self._next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
@@ -623,6 +654,9 @@ class Game:
             player.current_round_trick = cards
 
             if self.__trick.plays_made == self.__num_players:
+                current_round_score = self.get_score_from_cards([c for p in self.__players.values() for c in p.current_round_trick])
+                self.__trick.winning_player.score += current_round_score
+                self._total_score = sum([s.score for s in self._get_non_kitty_team_players()])
                 self._next_player_name = self.__trick.winning_player.player_name
 
             self.__trick_played_update(player_name, cards)
@@ -639,10 +673,10 @@ class Game:
     def draw_cards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
             self.__deal_hands()
-        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self.__kitty_player_name:
+        elif self.state == GameState.AWAIT_TRUMP_DECLARATION and player_name == self._kitty_player_name:
             self.state = GameState.DEAL_KITTY
             self.__deal_kitty()
-            self._next_player_name = self.__kitty_player_name
+            self._next_player_name = self._kitty_player_name
 
     def to_game_proto(self, increment_update_id: bool = True) -> GameProto:
         with self.__update_lock:
@@ -660,7 +694,8 @@ class Game:
         game.next_turn_player_name = self._next_player_name
         game.trump_cards.cards.extend(self.__current_trump_cards)
 
-        game.kitty_player_name = self.__kitty_player_name
+        game.kitty_player_name = self._kitty_player_name
+        game.total_score = self._total_score
         game.state = self.state
 
         with self.__players_lock:
@@ -693,7 +728,7 @@ class Game:
 
     def __deal_kitty(self) -> None:
         while (len(self.__deck_cards) > 0):
-            player = self.__players[self.__kitty_player_name]
+            player = self.__players[self._kitty_player_name]
             card = self.__deck_cards.pop()
             player.add_card(card)
             logging.info(f'Dealt kitty card {card} to {player.player_name}')
@@ -726,7 +761,7 @@ class Game:
         self.__current_trump_cards = cards
         self.__trump_declarer = player.player_name
         if self.__current_rank == Rank.TWO:
-            self.__kitty_player_name = self.__trump_declarer
+            self._kitty_player_name = self.__trump_declarer
         self.__ranking.resetOrder(cards[0].suit)
         self.__update_players(lambda unused_game_proto: None)
 

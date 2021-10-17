@@ -157,8 +157,13 @@ message Game {
   // Game State.
   GameState state = 11;
 
+  // Total score for kitty player and his teammates. THis can be
+  // theoretically calculated using player.score, but perform the
+  // summation logic in backend to keep frontend thin.
+  int32 total_score = 12;
+
   // Update id, a sequence of natural numbers
-  int32 update_id = 12;
+  int32 update_id = 100;
 
   // Updates that represent the delta since the last update
   oneof update {

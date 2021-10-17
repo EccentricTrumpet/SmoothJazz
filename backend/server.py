@@ -50,7 +50,6 @@ class SJService(ShengjiServicer):
         self.__games[game_id] = Game(request.player_name, game_id, self.__delay)
 
         logging.info(f'Created game with id: {game_id}')
-
         return CreateGameResponse(game_id=game_id)
 
     def addAIPlayer(self,
