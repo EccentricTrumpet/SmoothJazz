@@ -19,12 +19,16 @@ from game_state import (
     TrickFormat)
 
 SPADE_TWO_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TWO)
+SPADE_TEN_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TEN)
 SPADE_KING_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.KING)
+SPADE_ACE_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.ACE)
 SMALL_JOKER_PROTO = CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED)
 BIG_JOKER_PROTO = CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED)
 HEART_TWO_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TWO)
 HEART_QUEEN_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.QUEEN)
 HEART_KING_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.KING)
+HEART_TEN_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TEN)
+HEART_FIVE_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.FIVE)
 HEART_ACE_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.ACE)
 DEFAULT_TEST_TIMEOUT = 20
 
@@ -204,7 +208,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_valid_trump(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO])
 
@@ -215,7 +219,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_invalid_trump_card_not_in_hand(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_KING_PROTO])
 
@@ -226,7 +230,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_invalid_trump_wrong_rank(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_KING_PROTO])
 
@@ -237,7 +241,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_invalid_trump_single_too_small(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO])
 
@@ -252,7 +256,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_valid_double_trump_overwrite(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO])
 
@@ -266,7 +270,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_invalid_double_trump_diff_cards(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, HEART_TWO_PROTO])
 
@@ -276,7 +280,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_invalid_double_trump_wrong_rank(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_KING_PROTO, SPADE_KING_PROTO])
 
@@ -286,7 +290,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_valid_trump_with_small_jokers(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
 
@@ -295,7 +299,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_valid_trump_small_joker_overwrites(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, SPADE_TWO_PROTO])
 
@@ -308,7 +312,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_valid_trump_big_joker_overwrites(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SMALL_JOKER_PROTO, SMALL_JOKER_PROTO])
 
@@ -321,7 +325,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_trump_with_three_cards(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [SPADE_TWO_PROTO, SPADE_TWO_PROTO, SPADE_TWO_PROTO])
 
@@ -331,7 +335,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_trump_cannot_overwrite_self_declaration(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO, SPADE_TWO_PROTO])
 
@@ -343,7 +347,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_trump_fortify_self_declaration(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO, HEART_TWO_PROTO])
 
@@ -355,7 +359,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_declare_trump_pair_with_only_one_card_in_hand(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.DEAL
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
 
@@ -366,11 +370,12 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_hide_kitty_not_turn_of_player(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.HIDE_KITTY
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
+        self.__createPlayerWithHand(game, 'player_2', [HEART_TWO_PROTO])
 
-        game._next_player_name = 'creator'
+        game._next_player_name = 'player_2'
         success, err = game.play('player_1', [HEART_TWO_PROTO])
 
         self.assertFalse(success)
@@ -378,7 +383,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_hide_kitty_incorrect_number_of_cards(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.HIDE_KITTY
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
         game._next_player_name = 'player_1'
@@ -390,7 +395,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_hide_kitty_player_not_possess_cards(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.HIDE_KITTY
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO])
         game._next_player_name = 'player_1'
@@ -402,7 +407,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_hide_kitty_valid(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.HIDE_KITTY
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO]*8)
         game._next_player_name = 'player_1'
@@ -415,7 +420,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_not_possess_cards(self) -> None:
-        game = Game('creator', '0', 0)
+        game = Game('player_1', '0', 0)
         game.state = GameState.PLAY
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO]*2)
         game._next_player_name = 'player_1'
@@ -427,7 +432,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_not_following_suit(self) -> None:
-        game = Game('creator', '0', 0, 2)
+        game = Game('player_1', '0', 0, 2)
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO]*2)
         p2 = self.__createPlayerWithHand(game, 'player_2', [SPADE_KING_PROTO]*2 + [HEART_QUEEN_PROTO])
         game.state = GameState.PLAY
@@ -441,7 +446,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_invalid_toss_leave_smallest_on_table(self) -> None:
-        game = Game('creator', '0', 0, 2)
+        game = Game('player_1', '0', 0, 2)
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO, HEART_ACE_PROTO])
         p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO, HEART_QUEEN_PROTO])
         game.state = GameState.PLAY
@@ -450,38 +455,64 @@ class GameTests(unittest.TestCase):
         success, err = game.play('player_1', [HEART_QUEEN_PROTO, HEART_ACE_PROTO])
         self.assertRegex(err, '(?s)Player cards are not the largest, leaving smallest on the table.*QUEEN.*')
 
-        self.__playHandAndAssertSuccess(game, 'player_2', [HEART_QUEEN_PROTO])
-        self.assertEqual(game._next_player_name, 'player_1')
-
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
-    def test_play_hand_lead_player_winning(self) -> None:
-        game = Game('creator', '0', 0, 2)
-        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO]*2)
-        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_QUEEN_PROTO]*2)
+    def test_play_hand_valid_multi_toss(self) -> None:
+        game = Game('player_1', '0', 0, 2)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO, HEART_ACE_PROTO, HEART_QUEEN_PROTO])
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_TWO_PROTO, SPADE_ACE_PROTO, SMALL_JOKER_PROTO])
         game.state = GameState.PLAY
         game._next_player_name = 'player_1'
 
-        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_KING_PROTO])
-        self.__playHandAndAssertSuccess(game, 'player_2', [HEART_QUEEN_PROTO])
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_KING_PROTO, HEART_ACE_PROTO])
+
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_play_hand_invalid_trump_toss(self) -> None:
+        game = Game('player_1', '0', 0, 2)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [BIG_JOKER_PROTO, HEART_TWO_PROTO])
+        p2 = self.__createPlayerWithHand(game, 'player_2', [SMALL_JOKER_PROTO, HEART_QUEEN_PROTO])
+        game.state = GameState.PLAY
+        game._next_player_name = 'player_1'
+
+        success, err = game.play('player_1', [BIG_JOKER_PROTO, HEART_TWO_PROTO])
+        self.assertRegex(err, '(?s)Player cards are not the largest, leaving smallest on the table.*TWO.*')
+
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_play_hand_lead_player_winning_with_correct_score(self) -> None:
+        game = Game('player_1', '0', 0, 2)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO]*2)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_TEN_PROTO, HEART_FIVE_PROTO])
+        game.state = GameState.PLAY
+        game._kitty_player_name = 'player_1'
+        game._next_player_name = 'player_1'
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_KING_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_2', [HEART_FIVE_PROTO, HEART_TEN_PROTO])
 
         self.assertEqual(game._next_player_name, 'player_1')
+        self.assertEqual(p1.score, 35)
+        self.assertEqual(p2.score, 0)
+        self.assertEqual(game._total_score, 0)
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_follow_player_winning(self) -> None:
-        game = Game('creator', '0', 0, 2)
+        game = Game('player_1', '0', 0, 2)
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2)
         p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2)
         game.state = GameState.PLAY
+        game._kitty_player_name = 'player_1'
         game._next_player_name = 'player_1'
 
         self.__playHandAndAssertSuccess(game, 'player_1', [HEART_QUEEN_PROTO]*2)
         self.__playHandAndAssertSuccess(game, 'player_2', [HEART_KING_PROTO]*2)
 
         self.assertEqual(game._next_player_name, 'player_2')
+        self.assertEqual(p1.score, 0)
+        self.assertEqual(p2.score, 20)
+        self.assertEqual(game._total_score, 20)
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_follow_player_winning_by_trump(self) -> None:
-        game = Game('creator', '0', 0, 2)
+        game = Game('player_1', '0', 0, 2)
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO]*2+[HEART_QUEEN_PROTO])
         p2 = self.__createPlayerWithHand(game, 'player_2', [SMALL_JOKER_PROTO]*2+[BIG_JOKER_PROTO])
         game.state = GameState.PLAY
@@ -494,7 +525,7 @@ class GameTests(unittest.TestCase):
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_valid_hand_all_players_get_right_update(self) -> None:
-        game = Game('creator', '0', 0, 2)
+        game = Game('player_1', '0', 0, 2)
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO]*2)
         p2 = self.__createPlayerWithHand(game, 'player_2', [SPADE_TWO_PROTO]*2)
         game.state = GameState.PLAY
@@ -506,12 +537,53 @@ class GameTests(unittest.TestCase):
         self.assertEqual(game_proto.next_turn_player_name, 'player_2')
         self.assertEqual(game_proto.players[0].current_round_trick, HandProto(cards=[HEART_TWO_PROTO]))
 
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_four_players_kitty_team_winning(self) -> None:
+        game = Game('player_1', '0', 0, 4)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2)
+        p3 = self.__createPlayerWithHand(game, 'player_3', [SPADE_TWO_PROTO, HEART_FIVE_PROTO])
+        p4 = self.__createPlayerWithHand(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO])
+        game.state = GameState.PLAY
+        game._kitty_player_name = 'player_4'
+        game._next_player_name = 'player_2'
+
+        self.__playHandAndAssertSuccess(game, 'player_2', [HEART_KING_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_3', [SPADE_TWO_PROTO, HEART_FIVE_PROTO])
+        self.__playHandAndAssertSuccess(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO])
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_QUEEN_PROTO]*2)
+
+        self.assertEqual(game._next_player_name, 'player_2')
+        self.assertEqual(p2.score, 40)
+        self.assertEqual(game._total_score, 0)
+
+
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_four_players_kitty_team_losing(self) -> None:
+        game = Game('player_1', '0', 0, 4)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2)
+        p3 = self.__createPlayerWithHand(game, 'player_3', [SPADE_TWO_PROTO]*2)
+        p4 = self.__createPlayerWithHand(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO])
+        game.state = GameState.PLAY
+        game._kitty_player_name = 'player_4'
+        game._next_player_name = 'player_1'
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_QUEEN_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_2', [HEART_KING_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_3', [SPADE_TWO_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO])
+
+        self.assertEqual(game._next_player_name, 'player_3')
+        self.assertEqual(p3.score, 35)
+        self.assertEqual(game._total_score, 35)
+
 if __name__ == '__main__':
     # Uncomment below to show logging.
-    # import logging
-    # import sys
-    # logging.basicConfig(
-    #         stream=sys.stdout,
-    #         level=logging.INFO,
-    #         format='[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
+    import logging
+    import sys
+    logging.basicConfig(
+            stream=sys.stdout,
+            level=logging.DEBUG,
+            format='[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
     unittest.main()

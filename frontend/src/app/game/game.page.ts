@@ -232,6 +232,7 @@ export class GamePage implements AfterViewChecked, OnInit {
           }
           this.game = new Game(this.client, this.nativeElement.clientHeight, this.nativeElement.clientWidth, playerName, gameID);
         }
+        this.game.kittyPlayer = gameProto.getKittyPlayerName();
         const trumpCards = gameProto.getTrumpCards()?.getCardsList();
         const trumpCardsImgURL = trumpCards?.map(tc => {
           return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
@@ -273,6 +274,7 @@ export class GamePage implements AfterViewChecked, OnInit {
               let currentRoundTricks = gameProto.getPlayersList().map((player) => (
                 player.getCurrentRoundTrick())).filter(trick => trick?.getCardsList()?.length > 0);
               if (currentRoundTricks.length == 4) {
+                this.game.score = gameProto.getTotalScore();
                 this.game.renderTrickWonAnimation(gameProto.getNextTurnPlayerName());
               }
               break;
@@ -505,6 +507,7 @@ class Game {
   gameStage = GameStage.Setup;
   trickPile: TrickPile;
   updateId =-1;
+  score: number = 0;
 
   // Trump metadata
   trumpRank: Rank = Rank.TWO;
@@ -516,8 +519,7 @@ class Game {
   playerId: string;
   players: Player[] = new Array(4).fill(null);
   playerCount = 0;
-  currentPlayer = 0;
-  kittyPlayer = 0;
+  kittyPlayer: string;
 
   // UI elements
   cardMargin = -1;
