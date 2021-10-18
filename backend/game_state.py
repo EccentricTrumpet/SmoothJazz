@@ -538,9 +538,17 @@ class Player:
 
 class Game:
     def __init__(self, creator_name: str, game_id: str, delay: float, num_players: int = 4) -> None:
+        # public
+        self.current_rank: Rank = Rank.TWO
+        self.state: GameState = GameState.AWAIT_JOIN
+
+        # protected
+        self._next_player_name: str = creator_name
+        self._kitty_player_name: str = creator_name
+        self._total_score: int = 0
+
         # private, sorted alphabetically
         self.__creator_name: str = creator_name
-        self.__current_rank: Rank = Rank.TWO
         self.__current_trump_cards: Sequence[CardProto] = []
         self.__delay: float = delay
         self.__game_id: str = game_id
@@ -549,19 +557,11 @@ class Game:
         self.__play_order: Sequence[str] = []
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
-        self.__ranking: Ranking = Ranking(self.__current_rank)
+        self.__ranking: Ranking = Ranking(self.current_rank)
         self.__trick: Trick = Trick(self.__ranking)
         self.__trump_declarer: str = ''
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
-
-        # protected
-        self._next_player_name: str = creator_name
-        self._kitty_player_name: str = creator_name
-        self._total_score: int = 0
-
-        # public
-        self.state: GameState = GameState.AWAIT_JOIN
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
@@ -587,14 +587,14 @@ class Game:
     def get_trump_type(self, cards: Sequence[CardProto]) -> TrumpType:
         if len(cards) == 0:
             return TrumpType.NONE
-        if len(cards) == 1 and cards[0].rank == self.__current_rank:
+        if len(cards) == 1 and cards[0].rank == self.current_rank:
             return TrumpType.SINGLE
         if len(cards) == 2:
             if cards[0].suit == Suit.SMALL_JOKER and cards[1].suit == Suit.SMALL_JOKER:
                 return TrumpType.SMALL_JOKER
             if cards[0].suit == Suit.BIG_JOKER and cards[1].suit == Suit.BIG_JOKER:
                 return TrumpType.BIG_JOKER
-            if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == self.__current_rank:
+            if cards[0].suit == cards[1].suit and cards[0].rank == cards[1].rank == self.current_rank:
                 return TrumpType.PAIR
         return TrumpType.INVALID
 
@@ -602,7 +602,7 @@ class Game:
         with self.__players_lock:
             if player_name in self.__players.keys() or len(self.__players) == self.__num_players:
                 return None
-            player = Player(Ranking(self.__current_rank), player_name, notify)
+            player = Player(Ranking(self.current_rank), player_name, notify)
             self.__players[player_name] = player
 
             if len(self.__players) == self.__num_players:
@@ -689,7 +689,7 @@ class Game:
         game.game_id = self.__game_id
         game.creator_player_name = self.__creator_name
 
-        game.current_rank = self.__current_rank
+        game.current_rank = self.current_rank
         game.trump_player_name = self.__trump_declarer
         game.next_turn_player_name = self._next_player_name
         game.trump_cards.cards.extend(self.__current_trump_cards)
@@ -760,7 +760,7 @@ class Game:
 
         self.__current_trump_cards = cards
         self.__trump_declarer = player.player_name
-        if self.__current_rank == Rank.TWO:
+        if self.current_rank == Rank.TWO:
             self._kitty_player_name = self.__trump_declarer
         self.__ranking.resetOrder(cards[0].suit)
         self.__update_players(lambda unused_game_proto: None)

@@ -36,19 +36,16 @@ class AIBase():
 class AaronAI(AIBase):
     def __init__(self, game: Game, player: Player, action_delay_sec=1) -> None:
         super().__init__(game, player)
-        # Dictionary mapping card to number
-        self.__my_cards = dict()
         self.__action_delay_sec = action_delay_sec
 
     def __try_declare_trump(self, gameProto: GameProto) -> None:
         current_trump_type = self._game.get_trump_type(gameProto.trump_cards.cards)
         card = gameProto.card_dealt_update.card
         card_as_num = getCardNum(card)
-        self.__my_cards[card_as_num] = self.__my_cards.get(card_as_num, 0) + 1
         cards_to_play = []
-        if current_trump_type <= TrumpType.NONE and card.rank == CardProto.Rank.TWO:
+        if current_trump_type <= TrumpType.NONE and card.rank == self._game.current_rank:
             cards_to_play = [card]
-        elif self.__my_cards.get(card_as_num) == 2 and (card.rank == CardProto.Rank.TWO and current_trump_type <= TrumpType.SINGLE or card.suit == CardProto.Suit.SMALL_JOKER and current_trump_type <= TrumpType.PAIR or card.suit == CardProto.Suit.BIG_JOKER and current_trump_type <= TrumpType.SMALL_JOKER):
+        elif card.rank == self._game.current_rank or card.suit == CardProto.Suit.SMALL_JOKER or card.suit == CardProto.Suit.BIG_JOKER:
             cards_to_play = [card] * 2
         if cards_to_play:
             success, err_str = self._game.play(self._player_name, cards_to_play)
@@ -73,15 +70,12 @@ class AaronAI(AIBase):
         if success:
             for card_proto in cards_to_play:
                 card_num = getCardNum(card_proto)
-                self.__my_cards[card_num] -= 1
-                if self.__my_cards[card_num] <= 0:
-                    del self.__my_cards[card_num]
         return success
 
     def takeAction(self, gameProto: GameProto) -> None:
         self.__latest_game_proto = gameProto
         if gameProto.HasField('card_dealt_update'):
-            logging.info(f'Deal card {gameProto.card_dealt_update.card} to {gameProto.card_dealt_update.player_name}. Updating {self._player_name}. Trump player: {gameProto.trump_player_name}')
+            logging.debug(f'Deal card {gameProto.card_dealt_update.card} to {gameProto.card_dealt_update.player_name}. Updating {self._player_name}. Trump player: {gameProto.trump_player_name}')
             if gameProto.card_dealt_update.player_name == self._player_name:
                 self.__try_declare_trump(gameProto)
         if gameProto.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.trump_player_name == self._player_name:
@@ -90,20 +84,23 @@ class AaronAI(AIBase):
         if gameProto.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
 
             time.sleep(self.__action_delay_sec)
-            cards_to_play = []
-            for card_number in sorted(self.__my_cards.keys(), key=self.__getCardValue):
-                count = self.__my_cards[card_number]
-                if len(cards_to_play) == 8:
-                    break
-                if count == 1:
-                    cards_to_play.append(toCardProto(card_number))
-            self.__try_play_cards(cards_to_play)
+            cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]
+            best_cards_to_play = None
+            lowest_value = 9999999999999999
+            for _ in range(100):
+                cards_to_play = random.sample(list(cards_on_hand.cards), k=8)
+                cards_value = sum([self.__getCardValue(getCardNum(c)) for c in cards_to_play])
+                if cards_value < lowest_value:
+                    best_cards_to_play = cards_to_play
+            logging.info(f'Aaron AI {self._player_name} hides kitty with score of {sum([self.__getCardValue(getCardNum(c)) for c in best_cards_to_play])} with {best_cards_to_play}')
+            self.__try_play_cards(best_cards_to_play)
         # Keep randomly play cards (up to six), until succeed.
         if gameProto.state == GameState.PLAY and gameProto.next_turn_player_name == self._player_name:
             cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]
             while True:
-                # Assuming no tractor more than 2 cards in real life
-                k = random.randint(1, 2)
-                cards_to_play = random.sample(list(cards_on_hand.cards), k=k)
+                cards_to_play = max([len(p.current_round_trick.cards) for p in gameProto.players])
+                cards_to_play = max(cards_to_play, random.randint(1, 4))
+                cards_to_play = min(cards_to_play, len(cards_on_hand.cards))
+                cards_to_play = random.sample(list(cards_on_hand.cards), k=cards_to_play)
                 if self.__try_play_cards(cards_to_play):
                     break
