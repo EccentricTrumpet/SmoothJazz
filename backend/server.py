@@ -31,9 +31,7 @@ from shengji_pb2 import (
 
 
 class SJService(ShengjiServicer):
-    def __init__(self, delay: float = 0.3) -> None:
-        # delay for dealing cards
-        self.__delay: float = delay
+    def __init__(self) -> None:
         # Dict that holds game states.
         self.__games: Dict[str, Game] = dict()
         # game_id is a monotonically increasing number
@@ -47,7 +45,7 @@ class SJService(ShengjiServicer):
         logging.info(f'Received a CreateGame request from player_name: {request.player_name}')
 
         game_id = str(next(self.__game_id))
-        self.__games[game_id] = Game(request.player_name, game_id, self.__delay)
+        self.__games[game_id] = Game(request.player_name, game_id, 0.5 / request.game_speed)
 
         logging.info(f'Created game with id: {game_id}')
         return CreateGameResponse(game_id=game_id)
@@ -63,7 +61,7 @@ class SJService(ShengjiServicer):
         player = game.add_player(ai_name, True)
 
         if request.ai_type == AddAIPlayerRequest.AARON_AI:
-            my_ai = AaronAI(game, player, self.__delay * 3)
+            my_ai = AaronAI(game, player, game.get_game_delay())
             threading.Thread(target=my_ai.start, daemon=True).start()
 
         logging.info(f'Returning AddAIPlayerRequest for {ai_name}')
@@ -123,9 +121,9 @@ class SJService(ShengjiServicer):
             raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')
         return game
 
-async def serve(address: str, delay_sec: float) -> None:
+async def serve(address: str) -> None:
     server = GrpcServer(ThreadPoolExecutor(max_workers=100))
-    add_ShengjiServicer_to_server(SJService(delay_sec), server)
+    add_ShengjiServicer_to_server(SJService(), server)
     server.add_insecure_port(address)
     await server.start()
     logging.info(f'Server serving at {address}')
@@ -143,7 +141,10 @@ if __name__ == '__main__':
             format='%(asctime)s [%(levelname)s] [%(threadName)s] {%(filename)s:%(lineno)d}: %(message)s')
 
     parser = argparse.ArgumentParser(description='Configuration for server.')
-    parser.add_argument('--delay_sec', metavar='N', type=float, default=0.3, required=False,
-                        help='A float, in seconds, for server delay')
+    parser.add_argument('--debug', metavar='d', type=bool, default=False, required=False,
+                        help='If set, print spammy debug logging.')
     args = parser.parse_args()
-    asyncio.run(serve('[::]:50051', args.delay_sec))
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG,
+                format='%(asctime)s [%(levelname)s] [%(threadName)s] {%(filename)s:%(lineno)d}: %(message)s')
+    asyncio.run(serve('[::]:50051'))

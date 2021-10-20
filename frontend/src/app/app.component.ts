@@ -5,7 +5,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { CreateGameRequest } from 'proto-gen/shengji_pb';
 import { ShengjiClient } from 'proto-gen/ShengjiServiceClientPb';
 import { environment } from 'src/environments/environment';
-import { COOKIE_PLAYER_NAME } from './app.constants';
+import { COOKIE_PLAYER_NAME, COOKIE_GAME_SPEED } from './app.constants';
 
 @Component({
   selector: 'app-root',
@@ -32,6 +32,7 @@ export class AppComponent {
   async createGame() {
     console.log('Creating new game');
     let playerName = this.cookieService.get(COOKIE_PLAYER_NAME);
+    let gameSpeed = this.cookieService.get(COOKIE_GAME_SPEED);
     const alert = await this.alertController.create({
       header: 'Please Enter Your Name:',
       inputs: [
@@ -39,6 +40,15 @@ export class AppComponent {
           name: 'playerName',
           placeholder: '<Player Name>',
           value: playerName
+        },
+        {
+          name: 'gameSpeed',
+          placeholder: '10',
+          value: gameSpeed
+        },
+        {
+          name: 'debugMode',
+          placeholder: 'False'
         },
       ],
       buttons: [
@@ -51,10 +61,15 @@ export class AppComponent {
           handler: async inputData => {
             console.log(`Player name: ${inputData.playerName}`);
             playerName = inputData.playerName;
+            gameSpeed = inputData.gameSpeed;
+            debugMode = inputData.debugMode;
             this.cookieService.set(COOKIE_PLAYER_NAME, playerName);
+            this.cookieService.set(COOKIE_GAME_SPEED, gameSpeed);
 
             let createGameRequest = new CreateGameRequest();
             createGameRequest.setPlayerName(playerName);
+            createGameRequest.setGameSpeed(gameSpeed);
+            createGameRequest.setShowOtherPlayerHands(debugMode);
 
             let response = await this.client.createGame(createGameRequest, null);
             this.router.navigate([`game/${response.getGameId()}`]);

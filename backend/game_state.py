@@ -574,6 +574,10 @@ class Game:
 
         random.shuffle(self.__deck_cards)
 
+    @property
+    def get_game_delay(self) -> float:
+        return self.__delay
+
     @classmethod
     def get_score_from_cards(cls, cards: Sequence[CardProto]) -> int:
         res = 0

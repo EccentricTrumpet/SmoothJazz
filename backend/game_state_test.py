@@ -1,4 +1,7 @@
 # To run individual test cases, do `python3 backend/game_state_test.py GameTests.test_hide_kitty_incorrect_number_of_cards`
+import logging
+import sys
+import argparse
 import timeout_decorator
 import unittest
 from shengji_pb2 import (
@@ -579,11 +582,13 @@ class GameTests(unittest.TestCase):
         self.assertEqual(game._total_score, 35)
 
 if __name__ == '__main__':
-    # Uncomment below to show logging.
-    import logging
-    import sys
-    logging.basicConfig(
-            stream=sys.stdout,
-            level=logging.DEBUG,
-            format='[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
+    parser = argparse.ArgumentParser(description='Configuration for unit tests.')
+    parser.add_argument('--debug', metavar='d', type=bool, default=False, required=False,
+                        help='If set, print spammy debug logging to sdout.')
+    args = parser.parse_args()
+    if args.debug == True:
+        logging.basicConfig(
+                stream=sys.stdout,
+                level=logging.DEBUG,
+                format='[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s')
     unittest.main()
