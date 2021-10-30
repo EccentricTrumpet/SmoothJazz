@@ -83,6 +83,15 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentP
     let found = false;
     while (j < cardUIs.length) {
       let cardUI = cardUIs[j++];
+      if (cardUI.suit == 'hidden') {
+        console.assert(fromCurrentPlayer == false, 'Current player must not have hidden cards!');
+        cardUI.suit = getCardUISuitFromProto(cards[i]);
+        cardUI.rank = cards[i].getRank();
+        cardUI.updateBackgroundImg();
+        found = true;
+        resolvedCardUIs.push(cardUI);
+        break;
+      }
       let uiProto = toCardProto(cardUI);
       if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && (cardUI.selected || !fromCurrentPlayer)) {
         cardUI.selected = false;

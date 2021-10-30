@@ -84,13 +84,17 @@ var cards = (function() {
         .css('-o-transform', 'rotate(' + angle + 'deg)');
     },
 
+    updateBackgroundImg: function() {
+      let shortName = this.suit == 'hidden' ? 'cardback_red' : this.suit + this.rank;
+      $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
+    },
+
     showCard: function() {
       if (this.faceUp) {
         return;
       }
       this.faceUp = true;
-      let shortName = this.suit == 'hidden' ? 'cardback_red' : this.suit + this.rank;
-      $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
+      this.updateBackgroundImg();
     },
 
     hideCard: function() {
