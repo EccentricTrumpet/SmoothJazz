@@ -453,9 +453,6 @@ class Player {
 
   render() {
     this.handUI.sort((a, b) => this.game.ranking.getRank(toCardProto(a)) - this.game.ranking.getRank(toCardProto(b)));
-    // console.log(`player ${this.name} handUI: ${JSON.stringify(this.handUI)}`);
-    console.log(`player ${this.name} handUI: ${this.handUI}`);
-    console.log(this.handUI);
     renderUI(this.handUI);
   }
 
@@ -642,11 +639,8 @@ class Game {
 
     this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
     this.deckUI[this.deckUI.length-1].rank = card.getRank();
-    console.log(`Finished overwriting top card`);
     player.handUI.addCard(this.deckUI.topCard());
-    console.log(`Finished adding card`);
     player.render()
-    console.log(`Finished rendering~`);
   }
 
   renderTrickPlayedUpdate(playerId: string, cards: CardProto[]) {

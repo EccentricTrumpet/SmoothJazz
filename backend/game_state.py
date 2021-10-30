@@ -675,7 +675,7 @@ class Game:
 
             logging.info('successful play')
             return True, msg_string
-        return False, 'Unsupported game state'
+        return False, f'Unsupported game state: {self.state}'
 
     def draw_cards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
@@ -826,4 +826,5 @@ class Game:
             # This is not efficient, but who cares about performance...
             game_proto = copy.deepcopy(original_game_proto)
             appendUpdate(game_proto, p_name)
+            logging.debug(f'Updating {p_name} with proto {game_proto}')
             player.queue_update(game_proto)
