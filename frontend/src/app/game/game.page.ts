@@ -44,6 +44,7 @@ const getCardUISuitFromProto = function(cardProto: CardProto) : any {
     case CardProto.Suit.SPADES: return 's';
     case CardProto.Suit.CLUBS: return 'c';
     case CardProto.Suit.DIAMONDS: return 'd';
+    case CardProto.Suit.SUIT_UNDEFINED: return 'hidden';
     default: throw Error("Cannot process proto: " + cardProto);
   }
 }
@@ -56,6 +57,7 @@ const getCardProtoSuit = function(cardUI: any) : Suit {
     case "h": return CardProto.Suit.HEARTS;
     case "c": return CardProto.Suit.CLUBS;
     case "d": return CardProto.Suit.DIAMONDS;
+    case "hidden": return CardProto.Suit.SUIT_UNDEFINED;
     default: throw Error("Cannot process card ui: " + cardUI);
   }
 }
@@ -90,10 +92,10 @@ const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentP
       }
     }
     if (!found) {
-      let error_msg = "Could not resolve " + toFriendlyString(cards[i]) + "from players hand; fromCurrentPlayer is " + fromCurrentPlayer;
-      console.log(cards);
-      console.log(cardUIs);
+      console.log('ERROR: Cannot find card from UI!!!');
+      let error_msg = `Could not resolve ${toFriendlyString(cards[i])}; Cards length: ${cards.length}; fromCurrentPlayer is ${fromCurrentPlayer}. CardUIs: ${cardUIs}`;
       console.log(error_msg);
+      console.log(cardUIs);
       throw Error(error_msg);
     }
     i++;
@@ -238,7 +240,7 @@ export class GamePage implements AfterViewChecked, OnInit {
           return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
         });
         if (trumpCards?.length > 0 && JSON.stringify(trumpCardsImgURL) !== JSON.stringify(this.game.trumpCardsImgURL)) {
-          console.log(gameProto.getTrumpPlayerName() + " declared " + trumpCards[0].getSuit() + " as trump suit.");
+          console.log(`${gameProto.getTrumpPlayerName()} declared ${toFriendlyString(trumpCards[0])} as trump.`);
           this.game.ranking.resetOrder(trumpCards[0].getSuit());
           this.game.players.forEach(p => p.render());
           this.game.trumpPlayer = gameProto.getTrumpPlayerName();
@@ -442,6 +444,9 @@ class Player {
 
   render() {
     this.handUI.sort((a, b) => this.game.ranking.getRank(toCardProto(a)) - this.game.ranking.getRank(toCardProto(b)));
+    // console.log(`player ${this.name} handUI: ${JSON.stringify(this.handUI)}`);
+    console.log(`player ${this.name} handUI: ${this.handUI}`);
+    console.log(this.handUI);
     renderUI(this.handUI);
   }
 
@@ -624,13 +629,15 @@ class Game {
     // Manually alter the suit and rank for the last placeholder card to be
     // the one returned from backend. This is done as we don't know what
     // cards are in the deck initially.
-
     let player = this.players.find(player => player.name == playerId);
 
     this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
     this.deckUI[this.deckUI.length-1].rank = card.getRank();
+    console.log(`Finished overwriting top card`);
     player.handUI.addCard(this.deckUI.topCard());
+    console.log(`Finished adding card`);
     player.render()
+    console.log(`Finished rendering~`);
   }
 
   renderTrickPlayedUpdate(playerId: string, cards: CardProto[]) {

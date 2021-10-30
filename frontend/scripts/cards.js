@@ -89,7 +89,7 @@ var cards = (function() {
         return;
       }
       this.faceUp = true;
-      let shortName = this.suit + this.rank;
+      let shortName = this.suit == 'hidden' ? 'cardback_red' : this.suit + this.rank;
       $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
     },
 

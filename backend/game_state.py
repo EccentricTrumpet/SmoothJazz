@@ -21,6 +21,7 @@ from shengji_pb2 import (
 GameState = GameProto.GameState
 Suit = CardProto.Suit
 Rank = CardProto.Rank
+HIDDEN_CARD_PROTO = CardProto(suit=Suit.SUIT_UNDEFINED, rank=Rank.RANK_UNDEFINED)
 
 class TrumpType(IntEnum):
     INVALID = 0
@@ -490,6 +491,7 @@ class Player:
                 hand_index += 1
             # A card could not be found in hand
             if hand_index >= len(self.hand):
+                logging.info(f'Player {self.player_name} does not have {cards[cards_index]}. Current hand: {self.hand}')
                 return False
             # Matched, continue matching until all of cards exist in hand
             cards_index += 1
@@ -537,7 +539,7 @@ class Player:
 
 
 class Game:
-    def __init__(self, creator_name: str, game_id: str, delay: float, num_players: int = 4) -> None:
+    def __init__(self, creator_name: str, game_id: str, delay: float, num_players: int = 4, show_other_player_hands: bool = False) -> None:
         # public
         self.current_rank: Rank = Rank.TWO
         self.state: GameState = GameState.AWAIT_JOIN
@@ -553,7 +555,7 @@ class Game:
         self.__delay: float = delay
         self.__game_id: str = game_id
         self.__kitty: List[CardProto] = []
-        self.__num_players: float = num_players
+        self.__num_players: int = num_players
         self.__play_order: Sequence[str] = []
         self.__players: Dict[str, Player] = dict()
         self.__players_lock: RLock = RLock()
@@ -562,6 +564,7 @@ class Game:
         self.__trump_declarer: str = ''
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
+        self.__show_other_player_hands: bool = show_other_player_hands
 
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
@@ -706,8 +709,6 @@ class Game:
             players = self.__players.values()
         game.players.extend([p.to_player_proto() for p in players])
 
-        game.kitty.cards.extend(self.__kitty)
-
         return game
 
     def __deal_hands(self) -> None:
@@ -747,7 +748,7 @@ class Game:
         return self.state == GameState.DEAL or self.state == GameState.AWAIT_TRUMP_DECLARATION
 
     def __declare_trump(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        logging.info(f'{player} declares trump as: {cards}')
+        logging.info(f'{player.player_name} declares trump as: {cards}')
 
         if not player.has_cards(cards):
             return False, f'Player does not possess the cards: {cards}'
@@ -767,7 +768,7 @@ class Game:
         if self.current_rank == Rank.TWO:
             self._kitty_player_name = self.__trump_declarer
         self.__ranking.resetOrder(cards[0].suit)
-        self.__update_players(lambda unused_game_proto: None)
+        self.__update_players(lambda unused_game_proto, unused_update_player_name: None)
 
         return True, ''
 
@@ -789,33 +790,40 @@ class Game:
         return True, ''
 
     def __kitty_hidden_update(self, kitty_player_name: str) -> None:
-        def action(game: GameProto):
+        def action(game: GameProto, update_player_name: str):
             game.kitty_hidden_update.kitty_player_name = kitty_player_name
+            if update_player_name == kitty_player_name or self.__show_other_player_hands:
+                game.kitty.cards.extend(self.__kitty)
+            else:
+                game.kitty.cards.extend([HIDDEN_CARD_PROTO] * len(self.__kitty))
         self.__update_players(action)
 
     def __new_player_update(self, player_name: str) -> None:
-        def action(game: GameProto):
+        def action(game: GameProto, unused_update_player_name: str):
             game.new_player_update.player_name = player_name
         self.__update_players(action)
 
     def __card_dealt_update(self, player_name: str, card: CardProto) -> None:
-        def action(game: GameProto):
+        def action(game: GameProto, update_player_name: str):
             game.card_dealt_update.player_name = player_name
-            game.card_dealt_update.card.CopyFrom(card)
+            card_to_update = card if update_player_name == player_name or self.__show_other_player_hands else HIDDEN_CARD_PROTO
+            game.card_dealt_update.card.CopyFrom(card_to_update)
         self.__update_players(action)
 
     def __trick_played_update(self, player_name: str, cards: Sequence[CardProto]) -> None:
-        def action(game: GameProto):
+        def action(game: GameProto, unused_update_player_name: str):
             game.trick_played_update.player_name = player_name
             game.trick_played_update.hand_played.cards.extend(list(cards))
         self.__update_players(action)
 
-    def __update_players(self, appendUpdate: Callable[[GameProto], None]) -> None:
-        game_proto = self.to_game_proto()
-        appendUpdate(game_proto)
-
+    def __update_players(self, appendUpdate: Callable[[GameProto, str], None]) -> None:
         with self.__players_lock:
-            players = self.__players.values()
+            players = self.__players
 
-        for player in players:
+        original_game_proto = self.to_game_proto()
+        import copy
+        for p_name, player in players.items():
+            # This is not efficient, but who cares about performance...
+            game_proto = copy.deepcopy(original_game_proto)
+            appendUpdate(game_proto, p_name)
             player.queue_update(game_proto)

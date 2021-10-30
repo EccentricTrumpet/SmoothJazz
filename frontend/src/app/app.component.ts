@@ -32,7 +32,8 @@ export class AppComponent {
   async createGame() {
     console.log('Creating new game');
     let playerName = this.cookieService.get(COOKIE_PLAYER_NAME);
-    let gameSpeed = this.cookieService.get(COOKIE_GAME_SPEED);
+    let gameSpeed = this.cookieService.check(COOKIE_GAME_SPEED) ? this.cookieService.get(COOKIE_GAME_SPEED) : '10';
+    let debugMode = 'False'
     const alert = await this.alertController.create({
       header: 'Please Enter Your Name:',
       inputs: [
@@ -48,7 +49,8 @@ export class AppComponent {
         },
         {
           name: 'debugMode',
-          placeholder: 'False'
+          placeholder: 'false',
+          value: debugMode
         },
       ],
       buttons: [
@@ -62,14 +64,14 @@ export class AppComponent {
             console.log(`Player name: ${inputData.playerName}`);
             playerName = inputData.playerName;
             gameSpeed = inputData.gameSpeed;
-            debugMode = inputData.debugMode;
             this.cookieService.set(COOKIE_PLAYER_NAME, playerName);
             this.cookieService.set(COOKIE_GAME_SPEED, gameSpeed);
 
             let createGameRequest = new CreateGameRequest();
             createGameRequest.setPlayerName(playerName);
-            createGameRequest.setGameSpeed(gameSpeed);
-            createGameRequest.setShowOtherPlayerHands(debugMode);
+            console.log(parseInt(gameSpeed));
+            createGameRequest.setGameSpeed(parseInt(gameSpeed));
+            createGameRequest.setShowOtherPlayerHands(inputData.debugMode.toLowerCase()=='true');
 
             let response = await this.client.createGame(createGameRequest, null);
             this.router.navigate([`game/${response.getGameId()}`]);

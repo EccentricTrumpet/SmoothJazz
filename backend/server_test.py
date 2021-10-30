@@ -116,5 +116,5 @@ if __name__ == '__main__':
     logging.basicConfig(
             stream=sys.stderr,
             level=logging.DEBUG,
-            format="%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s")
+            format='%(asctime)s [%(levelname)s] [%(threadName)s] {%(filename)s:%(lineno)d}: %(message)s')
     unittest.main()

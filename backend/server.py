@@ -42,10 +42,10 @@ class SJService(ShengjiServicer):
             context: ServicerContext
             ) -> GameProto:
 
-        logging.info(f'Received a CreateGame request from player_name: {request.player_name}')
+        logging.info(f'Received a CreateGame request: {request}')
 
         game_id = str(next(self.__game_id))
-        self.__games[game_id] = Game(request.player_name, game_id, 0.5 / request.game_speed)
+        self.__games[game_id] = Game(request.player_name, game_id, 0.5 / request.game_speed, num_players=4, show_other_player_hands=request.show_other_player_hands)
 
         logging.info(f'Created game with id: {game_id}')
         return CreateGameResponse(game_id=game_id)
@@ -55,16 +55,14 @@ class SJService(ShengjiServicer):
                    context: ServicerContext
                    ) -> AddAIPlayerResponse:
         ai_name = f'Computer{random.randrange(10000)}'
-        logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
+        logging.info(f'Received addAIPlayer request: {request}. AI name: {ai_name}')
 
         game = self.__get_game(request.game_id)
         player = game.add_player(ai_name, True)
 
         if request.ai_type == AddAIPlayerRequest.AARON_AI:
-            my_ai = AaronAI(game, player, game.get_game_delay())
+            my_ai = AaronAI(game, player, game.get_game_delay * 5)
             threading.Thread(target=my_ai.start, daemon=True).start()
-
-        logging.info(f'Returning AddAIPlayerRequest for {ai_name}')
 
         return AddAIPlayerResponse(player_name=ai_name)
 
@@ -78,6 +76,7 @@ class SJService(ShengjiServicer):
         player = game.add_player(request.player_name, True)
 
         for update in player.update_stream():
+            logging.debug(f'Returning update to {request.player_name}: {update}')
             yield update
 
     def playHand(self,
