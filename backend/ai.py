@@ -49,7 +49,7 @@ class AaronAI(AIBase):
             cards_to_play = [card] * 2
         if cards_to_play:
             success, err_str = self._game.play(self._player_name, cards_to_play)
-            logging.info(f'Aaron AI {self._player_name} tries to declare trump as {cards_to_play[0].rank}. Success: {success}; Error: {err_str}')
+            logging.info(f'Aaron AI {self._player_name} tries to declare trump as {cards_to_play[0]}. Success: {success}; Error: {err_str}')
 
     def __getCardValue(self, cardNum: int) -> int:
         card_proto = toCardProto(cardNum)
@@ -67,9 +67,6 @@ class AaronAI(AIBase):
     def __try_play_cards(self, cards_to_play: List[CardProto]) -> bool:
         success, err_str = self._game.play(self._player_name, cards_to_play)
         logging.info(f'Aaron AI {self._player_name} tries to play {cards_to_play}. Success: {success}; Error: {err_str}')
-        if success:
-            for card_proto in cards_to_play:
-                card_num = getCardNum(card_proto)
         return success
 
     def takeAction(self, gameProto: GameProto) -> None:
@@ -80,6 +77,7 @@ class AaronAI(AIBase):
                 self.__try_declare_trump(gameProto)
         if gameProto.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.trump_player_name == self._player_name:
             time.sleep(self.__action_delay_sec)
+            logging.info(f'Aaron AI {self._player_name} draws kitty cards!')
             self._game.draw_cards(self._player_name)
         if gameProto.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
 

@@ -5,7 +5,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { CreateGameRequest } from 'proto-gen/shengji_pb';
 import { ShengjiClient } from 'proto-gen/ShengjiServiceClientPb';
 import { environment } from 'src/environments/environment';
-import { COOKIE_PLAYER_NAME } from './app.constants';
+import { COOKIE_PLAYER_NAME, COOKIE_GAME_SPEED } from './app.constants';
 
 @Component({
   selector: 'app-root',
@@ -32,6 +32,8 @@ export class AppComponent {
   async createGame() {
     console.log('Creating new game');
     let playerName = this.cookieService.get(COOKIE_PLAYER_NAME);
+    let gameSpeed = this.cookieService.check(COOKIE_GAME_SPEED) ? this.cookieService.get(COOKIE_GAME_SPEED) : '10';
+    let debugMode = 'False'
     const alert = await this.alertController.create({
       header: 'Please Enter Your Name:',
       inputs: [
@@ -39,6 +41,16 @@ export class AppComponent {
           name: 'playerName',
           placeholder: '<Player Name>',
           value: playerName
+        },
+        {
+          name: 'gameSpeed',
+          placeholder: '10',
+          value: gameSpeed
+        },
+        {
+          name: 'debugMode',
+          placeholder: 'false',
+          value: debugMode
         },
       ],
       buttons: [
@@ -51,10 +63,15 @@ export class AppComponent {
           handler: async inputData => {
             console.log(`Player name: ${inputData.playerName}`);
             playerName = inputData.playerName;
+            gameSpeed = inputData.gameSpeed;
             this.cookieService.set(COOKIE_PLAYER_NAME, playerName);
+            this.cookieService.set(COOKIE_GAME_SPEED, gameSpeed);
 
             let createGameRequest = new CreateGameRequest();
             createGameRequest.setPlayerName(playerName);
+            console.log(parseInt(gameSpeed));
+            createGameRequest.setGameSpeed(parseInt(gameSpeed));
+            createGameRequest.setShowOtherPlayerHands(inputData.debugMode.toLowerCase()=='true');
 
             let response = await this.client.createGame(createGameRequest, null);
             this.router.navigate([`game/${response.getGameId()}`]);
