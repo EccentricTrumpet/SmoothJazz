@@ -23,6 +23,9 @@ Suit = CardProto.Suit
 Rank = CardProto.Rank
 HIDDEN_CARD_PROTO = CardProto(suit=Suit.SUIT_UNDEFINED, rank=Rank.RANK_UNDEFINED)
 
+KITTY_COUNT = 8
+# KITTY_COUNT = 2
+
 class TrumpType(IntEnum):
     INVALID = 0
     NONE = 1
@@ -478,9 +481,11 @@ class Player:
         self.score: int = 0
 
     def has_cards(self, cards: Sequence[CardProto]) -> bool:
-        # Sort cards
-        cards.sort(key = lambda c: self.ranking.get_rank(c))
-        self.hand.sort(key = lambda c: self.ranking.get_rank(c))
+        # Sort cards. We cannot use ranking.get_rank() to sort as
+        # SPADE_2 and HEART_2 have the same rank and may occur in any
+        # order.
+        cards.sort(key = lambda c: hash(str(c)))
+        self.hand.sort(key = lambda c: hash(str(c)))
 
         # Iterate both sequences in order
         hand_index = 0
@@ -491,7 +496,7 @@ class Player:
                 hand_index += 1
             # A card could not be found in hand
             if hand_index >= len(self.hand):
-                logging.info(f'Player {self.player_name} does not have {cards[cards_index]}. Current hand: {self.hand}')
+                logging.info(f'Player {self.player_name} does not have {cards[cards_index]}. Current hand: {self.hand}. Cards: {cards}.')
                 return False
             # Matched, continue matching until all of cards exist in hand
             cards_index += 1
@@ -569,10 +574,11 @@ class Game:
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
         for i in range(2):
-            self.__deck_cards.append(CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED))
-            self.__deck_cards.append(CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED))
+            # self.__deck_cards.append(CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED))
+            # self.__deck_cards.append(CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED))
             for s in Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS:
-                for r in range(Rank.ACE, Rank.KING + 1):
+                # for r in range(Rank.ACE, Rank.KING + 1):
+                for r in range(Rank.ACE, Rank.TWO + 1):
                     self.__deck_cards.append(CardProto(suit=s,rank=r))
 
         random.shuffle(self.__deck_cards)
@@ -636,7 +642,7 @@ class Game:
         return res
 
     def play(self, player_name: str, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        logging.info(f'{player_name} plays {cards} at state: {self.state}')
+        logging.info(f'{player_name} plays {cards} at state: {GameState.Name(self.state)}')
         if player_name != self._next_player_name and self.state != GameState.DEAL and self.state != GameState.AWAIT_TRUMP_DECLARATION:
             return False, f'Not the turn of player {player_name}. Next player: {self._next_player_name}'
         if self.__can_declare_trump():
@@ -672,10 +678,40 @@ class Game:
                 self.__trick.reset_trick()
                 for p in self.__players.values():
                     p.current_round_trick = []
+                round_terminated = all([len(p.hand) == 0 for p in self.__players.values()])
+                if round_terminated:
+                    logging.info('Round finished!')
+                    self._reset_round()
+                    player_names = ', '.join([p.player_name for p in self._get_non_kitty_team_players()])
+                    round_end_message = f'{player_names} get a total score of {self._total_score}.'
+                    self.__round_end_update(round_end_message)
 
             logging.info('successful play')
             return True, msg_string
         return False, f'Unsupported game state: {self.state}'
+
+    def _reset_round(self):
+        self.state = GameState.AWAIT_DEAL
+        kitty_player_index = self.__play_order.index(self._kitty_player_name)
+        if self._total_score == 0:
+            self.current_rank += 3;
+            self._kitty_player_name = self.__play_order[(kitty_player_index+2) % 4]
+        elif self._total_score < 40:
+            self.current_rank += 2;
+            self._kitty_player_name = self.__play_order[(kitty_player_index+2) % 4]
+        elif self._total_score < 80:
+            self.current_rank += 1;
+            self._kitty_player_name = self.__play_order[(kitty_player_index+2) % 4]
+        elif self._total_score < 120:
+            self.current_rank += 1;
+            self._kitty_player_name = self.__play_order[(kitty_player_index+1) % 4]
+        elif self._total_score < 160:
+            self.current_rank += 2;
+            self._kitty_player_name = self.__play_order[(kitty_player_index+1) % 4]
+        elif self._total_score < 200:
+            self.current_rank += 3;
+            self._kitty_player_name = self.__play_order[(kitty_player_index+1) % 4]
+        self._total_score = 0
 
     def draw_cards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
@@ -718,14 +754,14 @@ class Game:
 
         deal_index = 0
 
-        while (len(self.__deck_cards) > 8):
+        while (len(self.__deck_cards) > KITTY_COUNT):
             player = players[deal_index]
             card = self.__deck_cards.pop()
             player.add_card(card)
             logging.info(f'Dealt card {card} to {player.player_name}')
             deal_index = (deal_index + 1) % self.__num_players
 
-            if len(self.__deck_cards) == 8:
+            if len(self.__deck_cards) == KITTY_COUNT:
                 self.state = GameState.AWAIT_TRUMP_DECLARATION
 
             time.sleep(self.__delay)
@@ -773,7 +809,7 @@ class Game:
         return True, ''
 
     def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
-        if (len(cards) != 8):
+        if (len(cards) != KITTY_COUNT):
             return False, 'Incorrect number of cards to hide'
 
         if not player.has_cards(cards):
@@ -814,6 +850,11 @@ class Game:
         def action(game: GameProto, unused_update_player_name: str):
             game.trick_played_update.player_name = player_name
             game.trick_played_update.hand_played.cards.extend(list(cards))
+        self.__update_players(action)
+
+    def __round_end_update(self, message: str) -> None:
+        def action(game: GameProto, unused_update_player_name: str):
+            game.round_end_update.round_end_message = message
         self.__update_players(action)
 
     def __update_players(self, appendUpdate: Callable[[GameProto, str], None]) -> None:

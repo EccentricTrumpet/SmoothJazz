@@ -175,6 +175,7 @@ message Game {
     CardDealtUpdate card_dealt_update = 102;
     KittyHiddenUpdate kitty_hidden_update = 103;
     TrickPlayedUpdate trick_played_update = 104;
+    RoundEndUpdate round_end_update = 105;
   }
 }
 
@@ -198,6 +199,10 @@ message TrickPlayedUpdate {
   // Player who plays hands
   string player_name = 1;
   Hand hand_played = 2;
+}
+
+message RoundEndUpdate {
+  string round_end_message = 1;
 }
 
 message Card {

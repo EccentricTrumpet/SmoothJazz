@@ -95,7 +95,7 @@ class AaronAI(AIBase):
         # Keep randomly play cards (up to six), until succeed.
         if gameProto.state == GameState.PLAY and gameProto.next_turn_player_name == self._player_name:
             cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]
-            while True:
+            while self._game.state == GameState.PLAY:
                 cards_to_play = max([len(p.current_round_trick.cards) for p in gameProto.players])
                 cards_to_play = max(cards_to_play, random.randint(1, 4))
                 cards_to_play = min(cards_to_play, len(cards_on_hand.cards))

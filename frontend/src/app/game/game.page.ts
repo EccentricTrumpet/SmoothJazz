@@ -289,6 +289,16 @@ export class GamePage implements AfterViewChecked, OnInit {
                 this.game.renderTrickWonAnimation(gameProto.getNextTurnPlayerName());
               }
               break;
+            case GameProto.UpdateCase.ROUND_END_UPDATE:
+              let roundEndUpdate = gameProto.getRoundEndUpdate();
+              (async () => { 
+                  console.log('before sleep')
+                  await new Promise(r => setTimeout(r, 3500));
+                  console.log('after sleep')
+              })();
+              alert(roundEndUpdate.getRoundEndMessage());
+              this.game.start();
+              break;
             default:
               console.log("Invalid update: "+gameProto.getUpdateCase());
               break;
@@ -517,7 +527,7 @@ class Game {
   cardsInKitty = 8;
   gameStage = GameStage.Setup;
   trickPile: TrickPile;
-  updateId =-1;
+  updateId = -1;
   score: number = 0;
 
   // Trump metadata
@@ -644,7 +654,7 @@ class Game {
   }
 
   renderTrickPlayedUpdate(playerId: string, cards: CardProto[]) {
-    console.log(`Player ${playerId} plays ${cards}`);
+    console.log(`Player ${playerId} plays ${cards.map(toFriendlyString).join()}`);
     let player = this.players.find(player => player.name == playerId);
     let cardUIs = resolveCardUIs(cards, player.handUI, false);
     let trickPlayedUI = this.trickPile.cardsPlayedUI.get(playerId);
@@ -654,7 +664,7 @@ class Game {
   }
 
   async renderTrickWonAnimation(winnerPlayerName: string) {
-    console.log(`Player ${winnerPlayerName} won!`);
+    console.log(`Player ${winnerPlayerName} won the current round!`);
     let winnerPlayer = this.players.find(player => player.name == winnerPlayerName);
     let winnerUI = winnerPlayer.tricksWonUI;
     let cards = [];
