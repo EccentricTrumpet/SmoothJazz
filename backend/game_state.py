@@ -705,13 +705,13 @@ class Game:
         self.__init_deck()
         kitty_player_index = self.__play_order.index(self._kitty_player_name)
         if self._total_score < LEVEL_JUMP*2:
-            new_kitty_player_index = (kitty_player_index + 2) % 4
+            new_kitty_player_index = (kitty_player_index + 2) % self.__num_players
             kitty_team_players = self._get_team_players(kitty_team=True)
             rank_jump = 3 if self._total_score == 0 else (2 if self._total_score < LEVEL_JUMP else 1)
             for p in kitty_team_players:
                 p.latest_rank += rank_jump
         else:
-            new_kitty_player_index = (kitty_player_index + 1) % 4
+            new_kitty_player_index = (kitty_player_index + 1) % self.__num_players
             rank_jump = (self._total_score - LEVEL_JUMP*2) // LEVEL_JUMP
             for p in kitty_team_players:
                 p.latest_rank += rank_jump

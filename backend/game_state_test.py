@@ -31,6 +31,7 @@ HEART_KING_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.KING)
 HEART_TEN_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TEN)
 HEART_FIVE_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.FIVE)
 HEART_ACE_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.ACE)
+DIAMOND_ACE_PROTO = CardProto(suit=Suit.DIAMONDS,rank=Rank.ACE)
 DEFAULT_TEST_TIMEOUT = 20
 
 class TrickFormatTests(unittest.TestCase):
@@ -480,8 +481,8 @@ class GameTests(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_lead_player_winning_with_correct_score(self) -> None:
         game = Game('player_1', '0', 0, 2)
-        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO]*2)
-        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_TEN_PROTO, HEART_FIVE_PROTO])
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO]*3)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_TEN_PROTO, HEART_FIVE_PROTO, DIAMOND_ACE_PROTO])
         game.state = GameState.PLAY
         game._kitty_player_name = 'player_1'
         game._next_player_name = 'player_1'
@@ -497,8 +498,8 @@ class GameTests(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_follow_player_winning(self) -> None:
         game = Game('player_1', '0', 0, 2)
-        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2)
-        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*3)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*3)
         game.state = GameState.PLAY
         game._kitty_player_name = 'player_1'
         game._next_player_name = 'player_1'
@@ -541,10 +542,10 @@ class GameTests(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_four_players_kitty_team_winning(self) -> None:
         game = Game('player_1', '0', 0, 4)
-        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2)
-        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2)
-        p3 = self.__createPlayerWithHand(game, 'player_3', [SPADE_TWO_PROTO, HEART_FIVE_PROTO])
-        p4 = self.__createPlayerWithHand(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO])
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*3)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*3)
+        p3 = self.__createPlayerWithHand(game, 'player_3', [SPADE_TWO_PROTO, HEART_FIVE_PROTO, DIAMOND_ACE_PROTO])
+        p4 = self.__createPlayerWithHand(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO, DIAMOND_ACE_PROTO])
         game.state = GameState.PLAY
         game._kitty_player_name = 'player_4'
         game._next_player_name = 'player_2'
@@ -562,10 +563,10 @@ class GameTests(unittest.TestCase):
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_four_players_kitty_team_losing(self) -> None:
         game = Game('player_1', '0', 0, 4)
-        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2)
-        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2)
-        p3 = self.__createPlayerWithHand(game, 'player_3', [SPADE_TWO_PROTO]*2)
-        p4 = self.__createPlayerWithHand(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO])
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*3)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*3)
+        p3 = self.__createPlayerWithHand(game, 'player_3', [SPADE_TWO_PROTO]*3)
+        p4 = self.__createPlayerWithHand(game, 'player_4', [SPADE_TEN_PROTO, HEART_FIVE_PROTO, DIAMOND_ACE_PROTO])
         game.state = GameState.PLAY
         game._kitty_player_name = 'player_4'
         game._next_player_name = 'player_1'
