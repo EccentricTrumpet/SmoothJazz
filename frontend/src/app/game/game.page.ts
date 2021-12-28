@@ -76,29 +76,36 @@ const toCardProto = function(cardUI: any) : CardProto {
 // cards and cardUIs must be in order.
 const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentPlayer: boolean) : any[] {
   let resolvedCardUIs: any[] = [];
+  let foundCardUIIndices = new Set<number>();
   let i = 0;
-  let j = 0;
 
   while (i < cards.length) {
     let found = false;
+    // TODO(Aaron): There's probably a way to make this O(n) instead of
+    // O(n^2) if we can keep the sorting consistent between backend and
+    // frontend.
+    let j = 0;
     while (j < cardUIs.length) {
-      let cardUI = cardUIs[j++];
-      if (cardUI.suit == 'hidden') {
+      let cardUI = cardUIs[j];
+      if (cardUI.suit == 'hidden' && !foundCardUIIndices.has(j)) {
         console.assert(fromCurrentPlayer == false, 'Current player must not have hidden cards!');
         cardUI.suit = getCardUISuitFromProto(cards[i]);
         cardUI.rank = cards[i].getRank();
         cardUI.updateBackgroundImg();
         found = true;
+        foundCardUIIndices.add(j);
         resolvedCardUIs.push(cardUI);
         break;
       }
       let uiProto = toCardProto(cardUI);
-      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && (cardUI.selected || !fromCurrentPlayer)) {
+      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && (cardUI.selected || !fromCurrentPlayer) && !foundCardUIIndices.has(j)) {
         cardUI.selected = false;
         found = true;
+        foundCardUIIndices.add(j);
         resolvedCardUIs.push(cardUI);
         break;
       }
+      j++;
     }
     if (!found) {
       console.log('ERROR: Cannot find card from UI!!!');
@@ -245,6 +252,18 @@ export class GamePage implements AfterViewChecked, OnInit {
         }
         this.game.kittyPlayer = gameProto.getKittyPlayerName();
         const trumpCards = gameProto.getTrumpCards()?.getCardsList();
+        if (gameProto.getUpdateCase() != GameProto.UpdateCase.ROUND_END_UPDATE) {
+          this.game.trumpPlayer = gameProto.getTrumpPlayerName();
+          this.game.score = gameProto.getTotalScore();
+          if ( this.game.trumpRank != gameProto.getCurrentRank()){
+            this.game.trumpRank = gameProto.getCurrentRank();
+            this.game.ranking = new Ranking(this.game.trumpRank);
+          }
+          if (trumpCards?.length == 0) {
+            this.game.trumpCardsImgURL = [];
+          }
+        }
+
         const trumpCardsImgURL = trumpCards?.map(tc => {
           return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
         });
@@ -252,7 +271,6 @@ export class GamePage implements AfterViewChecked, OnInit {
           console.log(`${gameProto.getTrumpPlayerName()} declared ${toFriendlyString(trumpCards[0])} as trump.`);
           this.game.ranking.resetOrder(trumpCards[0].getSuit());
           this.game.players.forEach(p => p.render());
-          this.game.trumpPlayer = gameProto.getTrumpPlayerName();
           this.game.trumpCardsImgURL = trumpCardsImgURL;
         }
 
@@ -266,7 +284,7 @@ export class GamePage implements AfterViewChecked, OnInit {
                 this.game.addPlayer(newPlayer, this.getUIIndex(newPlayer, gameProto.getPlayersList(), playerName));
 
                 if (this.game.playerCount == 4) {
-                  this.game.start();
+                  this.game.start(true);
                   this.addAIVisible = false;
                 }
               break;
@@ -291,13 +309,12 @@ export class GamePage implements AfterViewChecked, OnInit {
               break;
             case GameProto.UpdateCase.ROUND_END_UPDATE:
               let roundEndUpdate = gameProto.getRoundEndUpdate();
-              (async () => { 
-                  console.log('before sleep')
-                  await new Promise(r => setTimeout(r, 3500));
-                  console.log('after sleep')
-              })();
-              alert(roundEndUpdate.getRoundEndMessage());
-              this.game.start();
+              let that = this;
+              setTimeout(function () {
+                console.log(`Round End message: ${roundEndUpdate.getRoundEndMessage()}`);
+                alert(roundEndUpdate.getRoundEndMessage());
+                that.game.start(false);
+              }, 2000);
               break;
             default:
               console.log("Invalid update: "+gameProto.getUpdateCase());
@@ -321,7 +338,7 @@ export class GamePage implements AfterViewChecked, OnInit {
             }
 
             if (this.game.playerCount == 4) {
-              this.game.start();
+              this.game.start(true);
             }
           }
         }
@@ -332,6 +349,7 @@ export class GamePage implements AfterViewChecked, OnInit {
   }
 }
 
+// TODO(Aaron): I think we can get rid of this and replace with game_state from the proto.
 enum GameStage {
   Setup,
   Deal,
@@ -595,6 +613,7 @@ class Game {
       {"x": this.width/2, "y": this.cardHeight() + this.cardMargin}, // top
       {"x": (this.cardWidth() + this.cardPadding() * 32)/2, "y": this.height/2} // left
     ];
+
   }
 
   addPlayer(playerName: string, index: number): void {
@@ -603,9 +622,10 @@ class Game {
     this.players[index] = newPlayer;
   }
 
-  start(): void {
-    cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
-
+  start(freshGame: boolean): void {
+    if (freshGame) {
+      cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
+    }
     // Start game
     this.gameStage = GameStage.Deal;
 

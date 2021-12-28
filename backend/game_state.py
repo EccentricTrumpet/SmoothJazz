@@ -24,7 +24,8 @@ Rank = CardProto.Rank
 HIDDEN_CARD_PROTO = CardProto(suit=Suit.SUIT_UNDEFINED, rank=Rank.RANK_UNDEFINED)
 
 KITTY_COUNT = 8
-# KITTY_COUNT = 2
+DECK_OF_CARDS = 2
+LEVEL_JUMP = DECK_OF_CARDS*20
 
 class TrumpType(IntEnum):
     INVALID = 0
@@ -49,7 +50,7 @@ class Ranking:
         if trump_suit in non_trump_suits:
             non_trump_suits.remove(trump_suit)
         ranks: List[Rank] = [Rank.ACE]
-        for rank in range(Rank.KING, Rank.TWO, -1):
+        for rank in range(Rank.KING, Rank.TWO - 1, -1):
             ranks.append(rank)
         ranking = 0
 
@@ -471,7 +472,9 @@ class Trick:
 class Player:
     def __init__(self, ranking: Ranking, player_name: str, notify: bool) -> None:
         self.player_name: str = player_name
+        # TODO(Aaron): Cards are sorted and displayed in frontend, we can probably get rid of this field.
         self.ranking: Ranking = ranking
+        self.latest_rank: Rank = Rank.TWO
         self.__notify: bool = notify
         self.__game_queue: deque[GameProto]  = deque()
         self.__game_queue_sem: Semaphore= Semaphore(0)
@@ -536,6 +539,7 @@ class Player:
         player_proto = PlayerProto()
         player_proto.player_name = self.player_name
         player_proto.score = self.score
+        player_proto.latest_rank = self.latest_rank
         for card in self.current_round_trick:
             player_proto.current_round_trick.cards.append(card)
         for card in self.hand:
@@ -570,15 +574,16 @@ class Game:
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
         self.__show_other_player_hands: bool = show_other_player_hands
+        self.__init_deck()
 
+    def __init_deck(self) -> None:
         # shuffle two decks of cards
         self.__deck_cards: List[CardProto] = []
-        for i in range(2):
-            # self.__deck_cards.append(CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED))
-            # self.__deck_cards.append(CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED))
+        for i in range(DECK_OF_CARDS):
+            self.__deck_cards.append(CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED))
+            self.__deck_cards.append(CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED))
             for s in Suit.SPADES, Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS:
-                # for r in range(Rank.ACE, Rank.KING + 1):
-                for r in range(Rank.ACE, Rank.TWO + 1):
+                for r in range(Rank.ACE, Rank.KING + 1):
                     self.__deck_cards.append(CardProto(suit=s,rank=r))
 
         random.shuffle(self.__deck_cards)
@@ -632,12 +637,13 @@ class Game:
         for player in players:
             player.complete_update_stream()
 
-    def _get_non_kitty_team_players(self) -> Sequence[Player]:
+    def _get_team_players(self, kitty_team: bool) -> Sequence[Player]:
         res = []
         kitty_player_index = self.__play_order.index(self._kitty_player_name)
         for i, player_name in enumerate(self.__play_order):
             # N.B: This won't work for odd number of players.
-            if (i - kitty_player_index) % 2 != 0:
+            ind_offset = (i - kitty_player_index) % 2
+            if kitty_team and ind_offset == 0 or (not kitty_team and ind_offset == 1):
                 res.append(self.__players[player_name])
         return res
 
@@ -669,7 +675,7 @@ class Game:
             if self.__trick.plays_made == self.__num_players:
                 current_round_score = self.get_score_from_cards([c for p in self.__players.values() for c in p.current_round_trick])
                 self.__trick.winning_player.score += current_round_score
-                self._total_score = sum([s.score for s in self._get_non_kitty_team_players()])
+                self._total_score = sum([s.score for s in self._get_team_players(kitty_team = False)])
                 self._next_player_name = self.__trick.winning_player.player_name
 
             self.__trick_played_update(player_name, cards)
@@ -680,10 +686,11 @@ class Game:
                     p.current_round_trick = []
                 round_terminated = all([len(p.hand) == 0 for p in self.__players.values()])
                 if round_terminated:
-                    logging.info('Round finished!')
+                    logging.info('Current round finished!')
+                    non_kitty_team_player_names = ', '.join([p.player_name for p in self._get_team_players(kitty_team = False)])
+                    round_res = 'wins' if self._total_score >= LEVEL_JUMP*2 else 'loses'
+                    round_end_message = f'Team {non_kitty_team_player_names} {round_res} with  a total score of {self._total_score}.'
                     self._reset_round()
-                    player_names = ', '.join([p.player_name for p in self._get_non_kitty_team_players()])
-                    round_end_message = f'{player_names} get a total score of {self._total_score}.'
                     self.__round_end_update(round_end_message)
 
             logging.info('successful play')
@@ -692,26 +699,32 @@ class Game:
 
     def _reset_round(self):
         self.state = GameState.AWAIT_DEAL
+        self.__current_trump_cards = []
+        self.__trump_declarer = ""
+        self.__kitty = []
+        self.__init_deck()
         kitty_player_index = self.__play_order.index(self._kitty_player_name)
-        if self._total_score == 0:
-            self.current_rank += 3;
-            self._kitty_player_name = self.__play_order[(kitty_player_index+2) % 4]
-        elif self._total_score < 40:
-            self.current_rank += 2;
-            self._kitty_player_name = self.__play_order[(kitty_player_index+2) % 4]
-        elif self._total_score < 80:
-            self.current_rank += 1;
-            self._kitty_player_name = self.__play_order[(kitty_player_index+2) % 4]
-        elif self._total_score < 120:
-            self.current_rank += 1;
-            self._kitty_player_name = self.__play_order[(kitty_player_index+1) % 4]
-        elif self._total_score < 160:
-            self.current_rank += 2;
-            self._kitty_player_name = self.__play_order[(kitty_player_index+1) % 4]
-        elif self._total_score < 200:
-            self.current_rank += 3;
-            self._kitty_player_name = self.__play_order[(kitty_player_index+1) % 4]
+        if self._total_score < LEVEL_JUMP*2:
+            new_kitty_player_index = (kitty_player_index + 2) % 4
+            kitty_team_players = self._get_team_players(kitty_team=True)
+            rank_jump = 3 if self._total_score == 0 else (2 if self._total_score < LEVEL_JUMP else 1)
+            for p in kitty_team_players:
+                p.latest_rank += rank_jump
+        else:
+            new_kitty_player_index = (kitty_player_index + 1) % 4
+            rank_jump = (self._total_score - LEVEL_JUMP*2) // LEVEL_JUMP
+            for p in kitty_team_players:
+                p.latest_rank += rank_jump
+        self._kitty_player_name = self.__play_order[new_kitty_player_index]
+        self.current_rank = self.__players[self._kitty_player_name].latest_rank
+        self.__ranking = Ranking(self.current_rank)
+        self.__trick = Trick(self.__ranking)
         self._total_score = 0
+        for player in self.__players.values():
+            player.score = 0
+            player.hand = []
+            player.current_round_trick = []
+            player.ranking = Ranking(self.current_rank)
 
     def draw_cards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:

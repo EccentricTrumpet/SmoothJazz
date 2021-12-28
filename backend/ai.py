@@ -75,11 +75,11 @@ class AaronAI(AIBase):
             logging.debug(f'Deal card {gameProto.card_dealt_update.card} to {gameProto.card_dealt_update.player_name}. Updating {self._player_name}. Trump player: {gameProto.trump_player_name}')
             if gameProto.card_dealt_update.player_name == self._player_name:
                 self.__try_declare_trump(gameProto)
-        if gameProto.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.trump_player_name == self._player_name:
+        if gameProto.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.kitty_player_name == self._player_name:
             time.sleep(self.__action_delay_sec)
             logging.info(f'Aaron AI {self._player_name} draws kitty cards!')
             self._game.draw_cards(self._player_name)
-        if gameProto.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
+        if gameProto.state == GameState.HIDE_KITTY and gameProto.kitty_player_name == self._player_name:
 
             time.sleep(self.__action_delay_sec)
             cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]

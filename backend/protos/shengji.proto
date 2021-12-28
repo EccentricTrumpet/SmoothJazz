@@ -97,6 +97,9 @@ message Player {
 
   // You current score
   int32 score = 5;
+
+  // Player's latest rank when the player's team is the kitty player.
+  Card.Rank latest_rank = 8;
 }
 
 message Game {

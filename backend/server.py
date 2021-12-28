@@ -104,6 +104,8 @@ class SJService(ShengjiServicer):
         request: DrawCardsRequest,
         context: ServicerContext) -> DrawCardsResponse:
 
+        logging.info(f'Server received drawCards Request: {request}')
+
         game = self.__get_game(request.game_id)
         game.draw_cards(request.player_name)
 
