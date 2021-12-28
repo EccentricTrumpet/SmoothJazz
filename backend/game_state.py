@@ -22,10 +22,13 @@ GameState = GameProto.GameState
 Suit = CardProto.Suit
 Rank = CardProto.Rank
 HIDDEN_CARD_PROTO = CardProto(suit=Suit.SUIT_UNDEFINED, rank=Rank.RANK_UNDEFINED)
+<<<<<<< HEAD
 
 KITTY_COUNT = 8
 DECK_OF_CARDS = 2
 LEVEL_JUMP = DECK_OF_CARDS*20
+=======
+>>>>>>> 1ba7a1fd15f0b1358b68a3d0124392941cda73f7
 
 class TrumpType(IntEnum):
     INVALID = 0
@@ -499,7 +502,11 @@ class Player:
                 hand_index += 1
             # A card could not be found in hand
             if hand_index >= len(self.hand):
+<<<<<<< HEAD
                 logging.info(f'Player {self.player_name} does not have {cards[cards_index]}. Current hand: {self.hand}. Cards: {cards}.')
+=======
+                logging.info(f'Player {self.player_name} does not have {cards[cards_index]}. Current hand: {self.hand}')
+>>>>>>> 1ba7a1fd15f0b1358b68a3d0124392941cda73f7
                 return False
             # Matched, continue matching until all of cards exist in hand
             cards_index += 1
@@ -574,7 +581,10 @@ class Game:
         self.__update_id: int = 0
         self.__update_lock: RLock = RLock()
         self.__show_other_player_hands: bool = show_other_player_hands
+<<<<<<< HEAD
         self.__init_deck()
+=======
+>>>>>>> 1ba7a1fd15f0b1358b68a3d0124392941cda73f7
 
     def __init_deck(self) -> None:
         # shuffle two decks of cards
@@ -696,6 +706,7 @@ class Game:
             logging.info('successful play')
             return True, msg_string
         return False, f'Unsupported game state: {self.state}'
+<<<<<<< HEAD
 
     def _reset_round(self):
         self.state = GameState.AWAIT_DEAL
@@ -725,6 +736,8 @@ class Game:
             player.hand = []
             player.current_round_trick = []
             player.ranking = Ranking(self.current_rank)
+=======
+>>>>>>> 1ba7a1fd15f0b1358b68a3d0124392941cda73f7
 
     def draw_cards(self, player_name: str) -> None:
         if self.state == GameState.AWAIT_DEAL and player_name == self.__creator_name:
@@ -865,11 +878,14 @@ class Game:
             game.trick_played_update.hand_played.cards.extend(list(cards))
         self.__update_players(action)
 
+<<<<<<< HEAD
     def __round_end_update(self, message: str) -> None:
         def action(game: GameProto, unused_update_player_name: str):
             game.round_end_update.round_end_message = message
         self.__update_players(action)
 
+=======
+>>>>>>> 1ba7a1fd15f0b1358b68a3d0124392941cda73f7
     def __update_players(self, appendUpdate: Callable[[GameProto, str], None]) -> None:
         with self.__players_lock:
             players = self.__players
