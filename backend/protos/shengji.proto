@@ -47,6 +47,10 @@ message JoinGameRequest {
 
 message CreateGameRequest {
   string player_name = 1;
+  // Game speed as an integer multiplier, 1 is slowest, 1000 is fastest.
+  int32 game_speed = 2;
+  // Should only be set to true for debugging purpose.
+  bool show_other_player_hands = 3;
 }
 
 message CreateGameResponse {
@@ -93,6 +97,9 @@ message Player {
 
   // You current score
   int32 score = 5;
+
+  // Player's latest rank when the player's team is the kitty player.
+  Card.Rank latest_rank = 8;
 }
 
 message Game {
@@ -171,6 +178,7 @@ message Game {
     CardDealtUpdate card_dealt_update = 102;
     KittyHiddenUpdate kitty_hidden_update = 103;
     TrickPlayedUpdate trick_played_update = 104;
+    RoundEndUpdate round_end_update = 105;
   }
 }
 
@@ -194,6 +202,10 @@ message TrickPlayedUpdate {
   // Player who plays hands
   string player_name = 1;
   Hand hand_played = 2;
+}
+
+message RoundEndUpdate {
+  string round_end_message = 1;
 }
 
 message Card {

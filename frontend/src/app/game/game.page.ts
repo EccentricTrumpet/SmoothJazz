@@ -44,6 +44,7 @@ const getCardUISuitFromProto = function(cardProto: CardProto) : any {
     case CardProto.Suit.SPADES: return 's';
     case CardProto.Suit.CLUBS: return 'c';
     case CardProto.Suit.DIAMONDS: return 'd';
+    case CardProto.Suit.SUIT_UNDEFINED: return 'hidden';
     default: throw Error("Cannot process proto: " + cardProto);
   }
 }
@@ -56,6 +57,7 @@ const getCardProtoSuit = function(cardUI: any) : Suit {
     case "h": return CardProto.Suit.HEARTS;
     case "c": return CardProto.Suit.CLUBS;
     case "d": return CardProto.Suit.DIAMONDS;
+    case "hidden": return CardProto.Suit.SUIT_UNDEFINED;
     default: throw Error("Cannot process card ui: " + cardUI);
   }
 }
@@ -74,26 +76,42 @@ const toCardProto = function(cardUI: any) : CardProto {
 // cards and cardUIs must be in order.
 const resolveCardUIs = function(cards: CardProto[], cardUIs: any[], fromCurrentPlayer: boolean) : any[] {
   let resolvedCardUIs: any[] = [];
+  let foundCardUIIndices = new Set<number>();
   let i = 0;
-  let j = 0;
 
   while (i < cards.length) {
     let found = false;
+    // TODO(Aaron): There's probably a way to make this O(n) instead of
+    // O(n^2) if we can keep the sorting consistent between backend and
+    // frontend.
+    let j = 0;
     while (j < cardUIs.length) {
-      let cardUI = cardUIs[j++];
-      let uiProto = toCardProto(cardUI);
-      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && (cardUI.selected || !fromCurrentPlayer)) {
-        cardUI.selected = false;
+      let cardUI = cardUIs[j];
+      if (cardUI.suit == 'hidden' && !foundCardUIIndices.has(j)) {
+        console.assert(fromCurrentPlayer == false, 'Current player must not have hidden cards!');
+        cardUI.suit = getCardUISuitFromProto(cards[i]);
+        cardUI.rank = cards[i].getRank();
+        cardUI.updateBackgroundImg();
         found = true;
+        foundCardUIIndices.add(j);
         resolvedCardUIs.push(cardUI);
         break;
       }
+      let uiProto = toCardProto(cardUI);
+      if (cards[i].getSuit() == uiProto.getSuit() && cards[i].getRank() == uiProto.getRank() && (cardUI.selected || !fromCurrentPlayer) && !foundCardUIIndices.has(j)) {
+        cardUI.selected = false;
+        found = true;
+        foundCardUIIndices.add(j);
+        resolvedCardUIs.push(cardUI);
+        break;
+      }
+      j++;
     }
     if (!found) {
-      let error_msg = "Could not resolve " + toFriendlyString(cards[i]) + "from players hand; fromCurrentPlayer is " + fromCurrentPlayer;
-      console.log(cards);
-      console.log(cardUIs);
+      console.log('ERROR: Cannot find card from UI!!!');
+      let error_msg = `Could not resolve ${toFriendlyString(cards[i])}; Cards length: ${cards.length}; fromCurrentPlayer is ${fromCurrentPlayer}. CardUIs: ${cardUIs}`;
       console.log(error_msg);
+      console.log(cardUIs);
       throw Error(error_msg);
     }
     i++;
@@ -234,14 +252,25 @@ export class GamePage implements AfterViewChecked, OnInit {
         }
         this.game.kittyPlayer = gameProto.getKittyPlayerName();
         const trumpCards = gameProto.getTrumpCards()?.getCardsList();
+        if (gameProto.getUpdateCase() != GameProto.UpdateCase.ROUND_END_UPDATE) {
+          this.game.trumpPlayer = gameProto.getTrumpPlayerName();
+          this.game.score = gameProto.getTotalScore();
+          if ( this.game.trumpRank != gameProto.getCurrentRank()){
+            this.game.trumpRank = gameProto.getCurrentRank();
+            this.game.ranking = new Ranking(this.game.trumpRank);
+          }
+          if (trumpCards?.length == 0) {
+            this.game.trumpCardsImgURL = [];
+          }
+        }
+
         const trumpCardsImgURL = trumpCards?.map(tc => {
           return "assets/cards_js_img/"+getCardUISuitFromProto(tc) + tc.getRank()+".svg";
         });
         if (trumpCards?.length > 0 && JSON.stringify(trumpCardsImgURL) !== JSON.stringify(this.game.trumpCardsImgURL)) {
-          console.log(gameProto.getTrumpPlayerName() + " declared " + trumpCards[0].getSuit() + " as trump suit.");
+          console.log(`${gameProto.getTrumpPlayerName()} declared ${toFriendlyString(trumpCards[0])} as trump.`);
           this.game.ranking.resetOrder(trumpCards[0].getSuit());
           this.game.players.forEach(p => p.render());
-          this.game.trumpPlayer = gameProto.getTrumpPlayerName();
           this.game.trumpCardsImgURL = trumpCardsImgURL;
         }
 
@@ -255,7 +284,7 @@ export class GamePage implements AfterViewChecked, OnInit {
                 this.game.addPlayer(newPlayer, this.getUIIndex(newPlayer, gameProto.getPlayersList(), playerName));
 
                 if (this.game.playerCount == 4) {
-                  this.game.start();
+                  this.game.start(true);
                   this.addAIVisible = false;
                 }
               break;
@@ -277,6 +306,15 @@ export class GamePage implements AfterViewChecked, OnInit {
                 this.game.score = gameProto.getTotalScore();
                 this.game.renderTrickWonAnimation(gameProto.getNextTurnPlayerName());
               }
+              break;
+            case GameProto.UpdateCase.ROUND_END_UPDATE:
+              let roundEndUpdate = gameProto.getRoundEndUpdate();
+              let that = this;
+              setTimeout(function () {
+                console.log(`Round End message: ${roundEndUpdate.getRoundEndMessage()}`);
+                alert(roundEndUpdate.getRoundEndMessage());
+                that.game.start(false);
+              }, 2000);
               break;
             default:
               console.log("Invalid update: "+gameProto.getUpdateCase());
@@ -300,7 +338,7 @@ export class GamePage implements AfterViewChecked, OnInit {
             }
 
             if (this.game.playerCount == 4) {
-              this.game.start();
+              this.game.start(true);
             }
           }
         }
@@ -311,6 +349,7 @@ export class GamePage implements AfterViewChecked, OnInit {
   }
 }
 
+// TODO(Aaron): I think we can get rid of this and replace with game_state from the proto.
 enum GameStage {
   Setup,
   Deal,
@@ -506,7 +545,7 @@ class Game {
   cardsInKitty = 8;
   gameStage = GameStage.Setup;
   trickPile: TrickPile;
-  updateId =-1;
+  updateId = -1;
   score: number = 0;
 
   // Trump metadata
@@ -574,6 +613,7 @@ class Game {
       {"x": this.width/2, "y": this.cardHeight() + this.cardMargin}, // top
       {"x": (this.cardWidth() + this.cardPadding() * 32)/2, "y": this.height/2} // left
     ];
+
   }
 
   addPlayer(playerName: string, index: number): void {
@@ -582,9 +622,10 @@ class Game {
     this.players[index] = newPlayer;
   }
 
-  start(): void {
-    cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
-
+  start(freshGame: boolean): void {
+    if (freshGame) {
+      cards.init({table: "#card-table", loop: 2, cardSize: this.cardSize});
+    }
     // Start game
     this.gameStage = GameStage.Deal;
 
@@ -624,7 +665,6 @@ class Game {
     // Manually alter the suit and rank for the last placeholder card to be
     // the one returned from backend. This is done as we don't know what
     // cards are in the deck initially.
-
     let player = this.players.find(player => player.name == playerId);
 
     this.deckUI[this.deckUI.length-1].suit = getCardUISuitFromProto(card);
@@ -634,7 +674,7 @@ class Game {
   }
 
   renderTrickPlayedUpdate(playerId: string, cards: CardProto[]) {
-    console.log(`Player ${playerId} plays ${cards}`);
+    console.log(`Player ${playerId} plays ${cards.map(toFriendlyString).join()}`);
     let player = this.players.find(player => player.name == playerId);
     let cardUIs = resolveCardUIs(cards, player.handUI, false);
     let trickPlayedUI = this.trickPile.cardsPlayedUI.get(playerId);
@@ -644,7 +684,7 @@ class Game {
   }
 
   async renderTrickWonAnimation(winnerPlayerName: string) {
-    console.log(`Player ${winnerPlayerName} won!`);
+    console.log(`Player ${winnerPlayerName} won the current round!`);
     let winnerPlayer = this.players.find(player => player.name == winnerPlayerName);
     let winnerUI = winnerPlayer.tricksWonUI;
     let cards = [];

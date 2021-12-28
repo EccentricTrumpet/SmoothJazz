@@ -31,9 +31,7 @@ from shengji_pb2 import (
 
 
 class SJService(ShengjiServicer):
-    def __init__(self, delay: float = 0.3) -> None:
-        # delay for dealing cards
-        self.__delay: float = delay
+    def __init__(self) -> None:
         # Dict that holds game states.
         self.__games: Dict[str, Game] = dict()
         # game_id is a monotonically increasing number
@@ -44,10 +42,10 @@ class SJService(ShengjiServicer):
             context: ServicerContext
             ) -> GameProto:
 
-        logging.info(f'Received a CreateGame request from player_name: {request.player_name}')
+        logging.info(f'Received a CreateGame request: {request}')
 
         game_id = str(next(self.__game_id))
-        self.__games[game_id] = Game(request.player_name, game_id, self.__delay)
+        self.__games[game_id] = Game(request.player_name, game_id, 0.5 / request.game_speed, num_players=4, show_other_player_hands=request.show_other_player_hands)
 
         logging.info(f'Created game with id: {game_id}')
         return CreateGameResponse(game_id=game_id)
@@ -57,16 +55,14 @@ class SJService(ShengjiServicer):
                    context: ServicerContext
                    ) -> AddAIPlayerResponse:
         ai_name = f'Computer{random.randrange(10000)}'
-        logging.info(f'Adding AI: {ai_name} to game: {request.game_id}')
+        logging.info(f'Received addAIPlayer request: {request}. AI name: {ai_name}')
 
         game = self.__get_game(request.game_id)
         player = game.add_player(ai_name, True)
 
         if request.ai_type == AddAIPlayerRequest.AARON_AI:
-            my_ai = AaronAI(game, player, self.__delay * 3)
+            my_ai = AaronAI(game, player, game.get_game_delay * 5)
             threading.Thread(target=my_ai.start, daemon=True).start()
-
-        logging.info(f'Returning AddAIPlayerRequest for {ai_name}')
 
         return AddAIPlayerResponse(player_name=ai_name)
 
@@ -80,6 +76,7 @@ class SJService(ShengjiServicer):
         player = game.add_player(request.player_name, True)
 
         for update in player.update_stream():
+            logging.debug(f'Returning update to {request.player_name}: {update}')
             yield update
 
     def playHand(self,
@@ -107,6 +104,8 @@ class SJService(ShengjiServicer):
         request: DrawCardsRequest,
         context: ServicerContext) -> DrawCardsResponse:
 
+        logging.info(f'Server received drawCards Request: {request}')
+
         game = self.__get_game(request.game_id)
         game.draw_cards(request.player_name)
 
@@ -123,9 +122,9 @@ class SJService(ShengjiServicer):
             raise RuntimeError(f'Cannot retrieve non-existent game: {game_id}')
         return game
 
-async def serve(address: str, delay_sec: float) -> None:
+async def serve(address: str) -> None:
     server = GrpcServer(ThreadPoolExecutor(max_workers=100))
-    add_ShengjiServicer_to_server(SJService(delay_sec), server)
+    add_ShengjiServicer_to_server(SJService(), server)
     server.add_insecure_port(address)
     await server.start()
     logging.info(f'Server serving at {address}')
@@ -143,7 +142,10 @@ if __name__ == '__main__':
             format='%(asctime)s [%(levelname)s] [%(threadName)s] {%(filename)s:%(lineno)d}: %(message)s')
 
     parser = argparse.ArgumentParser(description='Configuration for server.')
-    parser.add_argument('--delay_sec', metavar='N', type=float, default=0.3, required=False,
-                        help='A float, in seconds, for server delay')
+    parser.add_argument('--debug', metavar='d', type=bool, default=False, required=False,
+                        help='If set, print spammy debug logging.')
     args = parser.parse_args()
-    asyncio.run(serve('[::]:50051', args.delay_sec))
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG,
+                format='%(asctime)s [%(levelname)s] [%(threadName)s] {%(filename)s:%(lineno)d}: %(message)s')
+    asyncio.run(serve('[::]:50051'))

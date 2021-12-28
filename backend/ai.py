@@ -49,7 +49,7 @@ class AaronAI(AIBase):
             cards_to_play = [card] * 2
         if cards_to_play:
             success, err_str = self._game.play(self._player_name, cards_to_play)
-            logging.info(f'Aaron AI {self._player_name} tries to declare trump as {cards_to_play[0].rank}. Success: {success}; Error: {err_str}')
+            logging.info(f'Aaron AI {self._player_name} tries to declare trump as {cards_to_play[0]}. Success: {success}; Error: {err_str}')
 
     def __getCardValue(self, cardNum: int) -> int:
         card_proto = toCardProto(cardNum)
@@ -67,9 +67,6 @@ class AaronAI(AIBase):
     def __try_play_cards(self, cards_to_play: List[CardProto]) -> bool:
         success, err_str = self._game.play(self._player_name, cards_to_play)
         logging.info(f'Aaron AI {self._player_name} tries to play {cards_to_play}. Success: {success}; Error: {err_str}')
-        if success:
-            for card_proto in cards_to_play:
-                card_num = getCardNum(card_proto)
         return success
 
     def takeAction(self, gameProto: GameProto) -> None:
@@ -78,10 +75,11 @@ class AaronAI(AIBase):
             logging.debug(f'Deal card {gameProto.card_dealt_update.card} to {gameProto.card_dealt_update.player_name}. Updating {self._player_name}. Trump player: {gameProto.trump_player_name}')
             if gameProto.card_dealt_update.player_name == self._player_name:
                 self.__try_declare_trump(gameProto)
-        if gameProto.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.trump_player_name == self._player_name:
+        if gameProto.state == GameState.AWAIT_TRUMP_DECLARATION and gameProto.kitty_player_name == self._player_name:
             time.sleep(self.__action_delay_sec)
+            logging.info(f'Aaron AI {self._player_name} draws kitty cards!')
             self._game.draw_cards(self._player_name)
-        if gameProto.state == GameState.HIDE_KITTY and gameProto.trump_player_name == self._player_name:
+        if gameProto.state == GameState.HIDE_KITTY and gameProto.kitty_player_name == self._player_name:
 
             time.sleep(self.__action_delay_sec)
             cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]
@@ -97,7 +95,7 @@ class AaronAI(AIBase):
         # Keep randomly play cards (up to six), until succeed.
         if gameProto.state == GameState.PLAY and gameProto.next_turn_player_name == self._player_name:
             cards_on_hand = [p.cards_on_hand for p in gameProto.players if p.player_name == self._player_name][0]
-            while True:
+            while self._game.state == GameState.PLAY:
                 cards_to_play = max([len(p.current_round_trick.cards) for p in gameProto.players])
                 cards_to_play = max(cards_to_play, random.randint(1, 4))
                 cards_to_play = min(cards_to_play, len(cards_on_hand.cards))

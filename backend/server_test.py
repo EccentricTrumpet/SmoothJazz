@@ -15,17 +15,19 @@ class ShengjiTest(unittest.TestCase):
 
     @timeout_decorator.timeout(20)
     def test_create_game(self) -> None:
-        sj = SJService(delay=0)
+        sj = SJService()
         req = CreateGameRequest()
         req.player_name = "test_creation_id"
+        req.game_speed = 1000
         game = sj.createGame(req, None)
         self.assertEqual(game.game_id, str(0))
 
     @timeout_decorator.timeout(20)
     def test_streaming_with_three_ais(self) -> None:
-        sj = SJService(delay=0)
+        sj = SJService()
         req = CreateGameRequest()
         req.player_name = "test_creation_id"
+        req.game_speed = 1000
         game = sj.createGame(req, None)
 
         join_game_req = JoinGameRequest()
@@ -57,9 +59,10 @@ class ShengjiTest(unittest.TestCase):
 
     @timeout_decorator.timeout(20)
     def test_deal_cards(self) -> None:
-        sj = SJService(delay=0)
+        sj = SJService()
         req = CreateGameRequest()
         req.player_name = "test_creation_id"
+        req.game_speed = 1000
         game = sj.createGame(req, None)
 
         add_ai_req = AddAIPlayerRequest(
@@ -113,5 +116,5 @@ if __name__ == '__main__':
     logging.basicConfig(
             stream=sys.stderr,
             level=logging.DEBUG,
-            format="%(asctime)s [%(levelname)s] [%(threadName)s]: %(message)s")
+            format='%(asctime)s [%(levelname)s] [%(threadName)s] {%(filename)s:%(lineno)d}: %(message)s')
     unittest.main()

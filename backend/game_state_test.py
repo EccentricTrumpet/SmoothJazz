@@ -16,7 +16,8 @@ from game_state import (
     Player,
     Tractor,
     Trick,
-    TrickFormat)
+    TrickFormat,
+    HIDDEN_CARD_PROTO)
 
 SPADE_TWO_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TWO)
 SPADE_TEN_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TEN)
@@ -578,8 +579,47 @@ class GameTests(unittest.TestCase):
         self.assertEqual(p3.score, 35)
         self.assertEqual(game._total_score, 35)
 
+    def __assertDealtCardsAreHidden(self, player: Player) -> None:
+        for update in player.update_stream():
+            if update.state == GameState.AWAIT_TRUMP_DECLARATION:
+                break
+            if update.card_dealt_update.player_name == player.player_name:
+                self.assertNotEqual(update.card_dealt_update.card, HIDDEN_CARD_PROTO)
+            else:
+                self.assertEqual(update.card_dealt_update.card, HIDDEN_CARD_PROTO)
+
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_dealt_card_not_shown_to_other_player_cards(self) -> None:
+        game = Game('player_1', 'game_0', delay=0,
+                num_players=2, show_other_player_hands=False)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [])
+        p2 = self.__createPlayerWithHand(game, 'player_2', [])
+        next(p1.update_stream()) # Skip new player update for p2
+
+        game.draw_cards('player_1')
+
+        self.__assertDealtCardsAreHidden(p1)
+        self.__assertDealtCardsAreHidden(p2)
+
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_kitty_not_shown_to_other_player_cards(self) -> None:
+        game = Game('player_1', 'game_0', delay=0,
+                num_players=2, show_other_player_hands=False)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_TWO_PROTO]*8)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [SPADE_TWO_PROTO]*8)
+        game.state = GameState.HIDE_KITTY
+        game._next_player_name = 'player_1'
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_TWO_PROTO]*8)
+
+        next(p1.update_stream()) # Skip new player update for p2
+        p1_game_proto = next(p1.update_stream())
+        self.assertEqual(list(p1_game_proto.kitty.cards), [HEART_TWO_PROTO]*8)
+
+        p2_game_proto = next(p2.update_stream())
+        self.assertEqual(list(p2_game_proto.kitty.cards), [HIDDEN_CARD_PROTO]*8)
+
 if __name__ == '__main__':
-    # Uncomment below to show logging.
     import logging
     import sys
     logging.basicConfig(
