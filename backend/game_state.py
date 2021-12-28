@@ -713,7 +713,8 @@ class Game:
         else:
             new_kitty_player_index = (kitty_player_index + 1) % self.__num_players
             rank_jump = (self._total_score - LEVEL_JUMP*2) // LEVEL_JUMP
-            for p in kitty_team_players:
+            non_kitty_team_players = self._get_team_players(kitty_team=False)
+            for p in non_kitty_team_players:
                 p.latest_rank += rank_jump
         self._kitty_player_name = self.__play_order[new_kitty_player_index]
         self.current_rank = self.__players[self._kitty_player_name].latest_rank
