@@ -513,6 +513,48 @@ class GameTests(unittest.TestCase):
         self.assertEqual(game._total_score, 20)
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_play_level_end_kitty_get_40_pts(self) -> None:
+        game = Game('player_1', '0', 0, 2)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2 + [SPADE_KING_PROTO]*2)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2 + [SPADE_ACE_PROTO]*2)
+        game.state = GameState.PLAY
+        game._kitty_player_name = 'player_1'
+        game._next_player_name = 'player_1'
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_QUEEN_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_2', [HEART_KING_PROTO]*2)
+        self.assertEqual(game._next_player_name, 'player_2')
+
+        self.__playHandAndAssertSuccess(game, 'player_2', [SPADE_ACE_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_1', [SPADE_KING_PROTO]*2)
+
+        self.assertEqual(game._kitty_player_name, 'player_1')
+        self.assertEqual(game.current_rank, Rank.THREE)
+        self.assertEqual(game._total_score, 0)
+
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_play_level_end_kitty_get_120_pts_with_kitty(self) -> None:
+        game = Game('player_1', '0', 0, 2)
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_QUEEN_PROTO]*2 + [SPADE_KING_PROTO]*2 + [SPADE_TEN_PROTO]*4+[SPADE_TWO_PROTO]*4)
+        p2 = self.__createPlayerWithHand(game, 'player_2', [HEART_KING_PROTO]*2 + [SPADE_ACE_PROTO]*2)
+        game.state = GameState.HIDE_KITTY
+        game._kitty_player_name = 'player_1'
+        game._next_player_name = 'player_1'
+        self.__playHandAndAssertSuccess(game, 'player_1', [SPADE_TEN_PROTO]*4+[SPADE_TWO_PROTO]*4)
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_QUEEN_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_2', [HEART_KING_PROTO]*2)
+        self.assertEqual(game._next_player_name, 'player_2')
+
+        self.__playHandAndAssertSuccess(game, 'player_2', [SPADE_ACE_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_1', [SPADE_KING_PROTO]*2)
+
+        # 120 pts for player_2 in total: 40*2 from kitty + 20+20
+        self.assertEqual(game._kitty_player_name, 'player_2')
+        self.assertEqual(game.current_rank, Rank.THREE)
+        self.assertEqual(game._total_score, 0)
+
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_play_hand_follow_player_winning_by_trump(self) -> None:
         game = Game('player_1', '0', 0, 2)
         p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_KING_PROTO]*2+[HEART_QUEEN_PROTO])
