@@ -551,6 +551,7 @@ class Game:
     def __init__(self, creator_name: str, game_id: str, delay: float, num_players: int = 4, show_other_player_hands: bool = False) -> None:
         # public
         self.current_rank: Rank = Rank.TWO
+        self.is_first_game = True
         self.state: GameState = GameState.AWAIT_JOIN
 
         # protected
@@ -677,7 +678,7 @@ class Game:
                 current_round_score = self.get_score_from_cards([c for p in self.__players.values() for c in p.current_round_trick])
                 if round_terminated:
                     trick_length = len(list(self.__players.values())[0].current_round_trick)
-                    current_round_score += self.get_score_from_cards(self.__kitty) * trick_length
+                    current_round_score += self.get_score_from_cards(self.__kitty) * 2 ** trick_length
                 self.__trick.winning_player.score += current_round_score
                 self._total_score = sum([s.score for s in self._get_team_players(kitty_team = False)])
                 self._next_player_name = self.__trick.winning_player.player_name
@@ -701,6 +702,7 @@ class Game:
         return False, f'Unsupported game state: {self.state}'
 
     def _reset_round(self):
+        self.is_first_game = False
         self.state = GameState.AWAIT_DEAL
         self.__current_trump_cards = []
         self.__trump_declarer = ""
@@ -818,7 +820,7 @@ class Game:
 
         self.__current_trump_cards = cards
         self.__trump_declarer = player.player_name
-        if self.current_rank == Rank.TWO:
+        if self.is_first_game:
             self._kitty_player_name = self.__trump_declarer
         self.__ranking.resetOrder(cards[0].suit)
         self.__update_players(lambda unused_game_proto, unused_update_player_name: None)
