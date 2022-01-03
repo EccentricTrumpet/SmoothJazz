@@ -549,9 +549,9 @@ class GameTests(unittest.TestCase):
         self.__playHandAndAssertSuccess(game, 'player_2', [SPADE_ACE_PROTO]*2)
         self.__playHandAndAssertSuccess(game, 'player_1', [SPADE_KING_PROTO]*2)
 
-        # 120 pts for player_2 in total: 40*2 from kitty + 20+20
+        # 200 pts for player_2 in total: 40*4 from kitty + 20+20
         self.assertEqual(game._kitty_player_name, 'player_2')
-        self.assertEqual(game.current_rank, Rank.THREE)
+        self.assertEqual(game.current_rank, Rank.FIVE)
         self.assertEqual(game._total_score, 0)
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
