@@ -672,8 +672,12 @@ class Game:
                 player.remove_card(card)
             player.current_round_trick = cards
 
+            round_terminated = all([len(p.hand) == 0 for p in self.__players.values()])
             if self.__trick.plays_made == self.__num_players:
                 current_round_score = self.get_score_from_cards([c for p in self.__players.values() for c in p.current_round_trick])
+                if round_terminated:
+                    trick_length = len(list(self.__players.values())[0].current_round_trick)
+                    current_round_score += self.get_score_from_cards(self.__kitty) * trick_length
                 self.__trick.winning_player.score += current_round_score
                 self._total_score = sum([s.score for s in self._get_team_players(kitty_team = False)])
                 self._next_player_name = self.__trick.winning_player.player_name
@@ -684,12 +688,11 @@ class Game:
                 self.__trick.reset_trick()
                 for p in self.__players.values():
                     p.current_round_trick = []
-                round_terminated = all([len(p.hand) == 0 for p in self.__players.values()])
                 if round_terminated:
                     logging.info('Current round finished!')
                     non_kitty_team_player_names = ', '.join([p.player_name for p in self._get_team_players(kitty_team = False)])
                     round_res = 'wins' if self._total_score >= LEVEL_JUMP*2 else 'loses'
-                    round_end_message = f'Team {non_kitty_team_player_names} {round_res} with  a total score of {self._total_score}.'
+                    round_end_message = f'Team {non_kitty_team_player_names} {round_res} with a total score of {self._total_score}.'
                     self._reset_round()
                     self.__round_end_update(round_end_message)
 
@@ -824,7 +827,7 @@ class Game:
 
     def __hide_kitty(self, player: Player, cards: Sequence[CardProto]) -> Tuple[bool, str]:
         if (len(cards) != KITTY_COUNT):
-            return False, 'Incorrect number of cards to hide'
+            return False, f'Incorrect number of cards to hide. Expecting {KITTY_COUNT} cards'
 
         if not player.has_cards(cards):
             return False, f'Player does not possess the cards: {cards}'
