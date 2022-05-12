@@ -3,16 +3,17 @@
     <ion-button *ngIf="addAIVisible" color="primary" shape="round" size="small" id="addAIButton" (click) = "addAIPlayer()">
       Add AI Player
     </ion-button>
+    <div>Kitty Player: {{game?.kittyPlayer}}</div>
+    <div>Trump Declarer: {{game?.trumpPlayer}}</div>
     <div>Trump Rank: {{game?.ranking?.trumpRank}}</div>
     Trump Cards:<br/>
     <div *ngFor="let trumpCardURL of game?.trumpCardsImgURL" class="card" [ngStyle]="{'background-image': 'url(' + trumpCardURL  + ')', 'width': '69px', 'height': '94px', 'background-size': '100%', 'display': 'inline-block'}"></div>
-    <div>Trump Declarer: {{game?.trumpPlayer}}</div>
     <div>Score: {{game?.score}}</div>
     <div *ngFor="let player of game?.players">
-      <div
+      <div *ngIf="player"
         [style.position]="'absolute'"
         [style.left]="player?.label_left"
-        [style.top]="player?.label_top">{{player?.name}}</div>
+        [style.top]="player?.label_top">{{player?.name}} (Score: {{player?.score}})</div>
     </div>
   </div>
 </ion-content>

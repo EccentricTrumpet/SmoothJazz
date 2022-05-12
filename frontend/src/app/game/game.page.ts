@@ -304,6 +304,12 @@ export class GamePage implements AfterViewChecked, OnInit {
                 player.getCurrentRoundTrick())).filter(trick => trick?.getCardsList()?.length > 0);
               if (currentRoundTricks.length == 4) {
                 this.game.score = gameProto.getTotalScore();
+            let players = gameProto.getPlayersList();
+            for (let i = 0; i < players.length; i++) {
+              let name = players[i].getPlayerName();
+              let uiIndex = this.getUIIndex(name, players, playerName);
+              this.game.players[uiIndex].score = players[i].getScore();
+            }
                 this.game.renderTrickWonAnimation(gameProto.getNextTurnPlayerName());
               }
               break;
@@ -452,6 +458,7 @@ class TrickPile {
 class Player {
   game: Game;
   name: string;
+  score: number;
   index: number;
   x: number;
   y: number;
@@ -463,13 +470,14 @@ class Player {
   label_top: string;
 
   constructor(game: Game, index: number, name: string, x: number, y: number) {
+    this.score = 0;
     this.game = game;
     this.index = index;
     this.name = name;
     this.x = x;
     this.y = y;
     this.handUI = new cards.Hand({faceUp: true, x:x, y:y - (game.cardHeight() + game.cardMargin) / 2});
-    this.tricksWonUI = new cards.Hand({faceUp: true, x:x, y:y + (game.cardHeight() + game.cardMargin) / 2});
+    this.tricksWonUI = new cards.Hand({faceUp: true, x:x, y:y + (game.cardHeight() + game.cardMargin) / 2 + game.labelHeight});
     let that = this;
     this.handUI.click((c, e) => that.act(c, e));
     // TODO: The proper way to center this would be to find the text width in
@@ -590,11 +598,9 @@ class Game {
     // 6) bottom player hands; 7) bottome player winning tricks.
     const minCardHeight = (height - 6 * this.cardMargin - 3 * this.labelHeight) / 7;
     // Middle player row layout: 1 face plus 24 1/5 shown hands * 2 + 3 playing card + 4 padding
-    // NOTE: Worst case for bottom row layout isn't included in the calculation:
-    // 1 face plus 7 1/5 shown hidden kitty + 1 face hand card
-    // + 1 face winning card + 95 1/5 shown winning card + 2 padding
-    // const minCardWidth = (width - 2 * this.cardMargin) / 25;
-    const minCardWidth = (width - 6 * this.cardMargin) / 17;
+    // Bottom row layout: 1 face plus 7 1/5 shown hidden kitty 1 face
+    // winning card + 95 1/5 shown winning card + 2 padding
+    const minCardWidth = (width - 2 * this.cardMargin) / 23;
     const originCardWidth = 69;
     const originCardHeight = 94;
     this.cardSize = {
@@ -608,7 +614,7 @@ class Game {
     // cards + 8 kitty), so the central_x locates at (1 full face
     // card plus 32 padding)/2
     this.playerLocations = [
-      {"x": this.width/2, "y": this.height - this.cardHeight() - this.cardMargin}, // bottom
+      {"x": this.width/2, "y": this.height - this.cardHeight() - this.cardMargin - this.labelHeight}, // bottom
       {"x": this.width - (this.cardWidth() + this.cardPadding() * 32)/2, "y": this.height/2}, // right
       {"x": this.width/2, "y": this.cardHeight() + this.cardMargin}, // top
       {"x": (this.cardWidth() + this.cardPadding() * 32)/2, "y": this.height/2} // left
