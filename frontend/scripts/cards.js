@@ -59,11 +59,10 @@ var cards = (function() {
       this.faceUp = false;
       this.selected = false;
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
-      this.el = $('<div/>').css({
+      let svg_url = opt.cardsUrl+card_back+'.svg';
+      this.el = $(`<img src='${svg_url}'>`).css({
         width: opt.cardSize.width,
         height: opt.cardSize.height,
-        "background-image": 'url(' + opt.cardsUrl + card_back + '.svg)',
-        "background-size": '100%',
         position: 'absolute',
         left: '0px',
         top: '0px',
@@ -86,7 +85,7 @@ var cards = (function() {
 
     updateBackgroundImg: function() {
       let shortName = this.suit == 'hidden' ? 'cardback_red' : this.suit + this.rank;
-      $(this.el).css('background-image', 'url(' + opt.cardsUrl + shortName + '.svg)');
+      $(this.el).attr('src', opt.cardsUrl + shortName + '.svg');
     },
 
     showCard: function() {
@@ -103,7 +102,7 @@ var cards = (function() {
       }
       this.faceUp = false;
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
-      $(this.el).css('background-image', 'url(' + opt.cardsUrl + card_back + '.svg)');
+      $(this.el).attr('src', opt.cardsUrl + card_back + '.svg');
       this.rotate(0);
     },
 
@@ -216,6 +215,10 @@ var cards = (function() {
         }
         this[i].targetTop = top;
         this[i].targetLeft = left;
+        this[i].el.css({
+          width: opt.cardSize.width,
+          height: opt.cardSize.height,
+        });
       }
     },
 
@@ -237,6 +240,10 @@ var cards = (function() {
       for (var i = 0; i < this.length; i++) {
         this[i].targetTop = this[i].selected ? top - opt.cardSize.height/2 : top;
         this[i].targetLeft = left + i * opt.cardSize.padding;
+        this[i].el.css({
+          width: opt.cardSize.width,
+          height: opt.cardSize.height,
+        });
       }
     },
 
@@ -248,6 +255,7 @@ var cards = (function() {
   return {
     init: init,
     all: all,
+    options: opt,
     Card: Card,
     Deck: Deck,
     Hand: Hand,
