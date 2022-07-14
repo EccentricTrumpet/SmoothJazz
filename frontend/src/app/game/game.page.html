@@ -1,5 +1,8 @@
 <ion-content id="main-content">
   <div #cardTable id="card-table">
+    <ion-button *ngIf="game?.playButtonVisible" color="primary" shape="round" size="small" id="playCardsButton" (click) = "game?.playSelectedCards()">
+      Play
+    </ion-button>
     <ion-button *ngIf="addAIVisible" color="primary" shape="round" size="small" id="addAIButton" (click) = "addAIPlayer()">
       Add AI Player
     </ion-button>
@@ -7,7 +10,7 @@
     <div>Trump Declarer: {{game?.trumpPlayer}}</div>
     <div>Trump Rank: {{game?.ranking?.trumpRank}}</div>
     Trump Cards:<br/>
-    <div *ngFor="let trumpCardURL of game?.trumpCardsImgURL" class="card" [ngStyle]="{'background-image': 'url(' + trumpCardURL  + ')', 'width': '69px', 'height': '94px', 'background-size': '100%', 'display': 'inline-block'}"></div>
+    <img *ngFor="let trumpCardURL of game?.trumpCardsImgURL" class="card" [src]='trumpCardURL' [ngStyle]="{'max-width': '7%', 'max-height': '15%', 'display': 'inline-block'}"/>
     <div>Score: {{game?.score}}</div>
     <div *ngFor="let player of game?.players">
       <div *ngIf="player"

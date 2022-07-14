@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ViewChild, ElementRef, OnInit} from '@angular/core';
+import { AfterViewChecked, Component, ViewChild, ElementRef, OnInit, HostListener} from '@angular/core';
 import { environment } from '../../environments/environment';
 import { ShengjiClient } from "proto-gen/ShengjiServiceClientPb";
 import { ActivatedRoute, NavigationStart, Router } from "@angular/router";
@@ -201,6 +201,16 @@ export class GamePage implements AfterViewChecked, OnInit {
       });
       await alert.present();
     });
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event) {
+    console.log("Window Width: " + event.target.innerWidth);
+    console.log("Window Height: " + event.target.innerHeight);
+    if (this.game != null) {
+      this.nativeElement = this.tableElement.nativeElement;
+      this.game.adjustSize(this.nativeElement.clientHeight, this.nativeElement.clientWidth);
+    }
   }
 
   // TODO(Aaron): Check if this can be replaced by ionViewDidEnter
@@ -444,13 +454,22 @@ class TrickPile {
   constructor(game: Game, players: Player[], x: number, y: number) {
     this.game = game;
     this.players = players;
-    for (let i = 0; i < players.length; i++) {
-      let vector = [players[i].x - x, players[i].y - y];
+    for (let i = 0; i < this.players.length; i++) {
+      this.cardsPlayedUI.set(this.players[i].name, new cards.Hand({faceUp: true, x:0, y:0}));
+    }
+    this.resize(x, y);
+  }
+
+  resize(x: number, y: number):void {
+    for (let i = 0; i < this.players.length; i++) {
+      let vector = [this.players[i].x - x, this.players[i].y - y];
       let magnitude = Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1]);
-      this.cardsPlayedUI.set(players[i].name, new cards.Hand({faceUp: true,
-        x:x + vector[0]*this.game.cardWidth()/magnitude,
-        y:y + vector[1]*this.game.cardHeight()/magnitude
-      }));
+      console.log(x, y, vector, magnitude);
+      let playerCardsPlayedUI = this.cardsPlayedUI.get(this.players[i].name);
+      console.log(playerCardsPlayedUI);
+      playerCardsPlayedUI.x = x + vector[0]*this.game.cardWidth()/magnitude;
+      playerCardsPlayedUI.y = y + vector[1]*this.game.cardHeight()/magnitude;
+      renderUI(playerCardsPlayedUI, true);
     }
   }
 }
@@ -474,12 +493,22 @@ class Player {
     this.game = game;
     this.index = index;
     this.name = name;
-    this.x = x;
-    this.y = y;
-    this.handUI = new cards.Hand({faceUp: true, x:x, y:y - (game.cardHeight() + game.cardMargin) / 2});
-    this.tricksWonUI = new cards.Hand({faceUp: true, x:x, y:y + (game.cardHeight() + game.cardMargin) / 2 + game.labelHeight});
+    this.handUI = new cards.Hand({faceUp: true, x:0, y:0});
+    this.tricksWonUI = new cards.Hand({faceUp: true, x:0, y:0});
+    this.resize(x, y);
     let that = this;
     this.handUI.click((c, e) => that.act(c, e));
+  }
+
+  resize(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    this.handUI.x = x;
+    this.handUI.y = y - (this.game.cardHeight() + this.game.cardMargin) / 2;
+    renderUI(this.handUI, true);
+    this.tricksWonUI.x = x;
+    this.tricksWonUI.y = y + (this.game.cardHeight() + this.game.cardMargin) / 2 + this.game.labelHeight;
+    renderUI(this.tricksWonUI, true);
     // TODO: The proper way to center this would be to find the text width in
     // px of the DOM element and divide by half, 5 is good enough for now for
     // ASCII characters, I guess...
@@ -489,6 +518,34 @@ class Player {
 
   render() {
     this.handUI.sort((a, b) => this.game.ranking.getRank(toCardProto(a)) - this.game.ranking.getRank(toCardProto(b)));
+    renderUI(this.handUI);
+  }
+
+  async playSelectedCards() {
+    // Set all proto field for the PlayHandRequest.
+    const playHandReq = new PlayHandRequest();
+    playHandReq.setPlayerName(this.game.playerId);
+    playHandReq.setGameId(this.game.gameId);
+    // TODO: Set the real intention somehow...
+    playHandReq.setIntention(PlayHandRequest.Intention.HIDE_KITTY);
+
+    const handToPlay = new HandProto();
+    let cardsProto = Array.from(this.selectedCardUIs.values()).map(ui => toCardProto(ui));
+    handToPlay.setCardsList(cardsProto);
+    playHandReq.setHand(handToPlay);
+
+    console.log("Sending playhandRequest: ", playHandReq.toObject());
+    let response = await this.game.client.playHand(playHandReq, null);
+
+    console.log("PlayHand Response: ", response.toObject());
+    if (response.getErrorMessage() != "") {
+      alert(response.getErrorMessage());
+    }
+    for (let selectedCard of this.selectedCardUIs.values()) {
+      selectedCard.selected = false;
+    }
+    this.selectedCardUIs.clear();
+    this.game.playButtonVisible = false;
     renderUI(this.handUI);
   }
 
@@ -507,42 +564,21 @@ class Player {
         this.selectedCardUIs.delete(cardUI);
         cardUI.selected = false;
         renderUI(this.handUI);
+        if (this.selectedCardUIs.size == 0)
+          this.game.playButtonVisible = false;
         return;
       }
 
       cardUI.selected = true;
       this.selectedCardUIs.add(cardUI);
       renderUI(this.handUI);
+      this.game.playButtonVisible = true;
     }
     // submit play with right click
     else if (event.type === "contextmenu") {
       // Ignore if right clicked an unselected card
       if (!this.selectedCardUIs.has(cardUI)) return;
-
-      // Set all proto field for the PlayHandRequest.
-      const playHandReq = new PlayHandRequest();
-      playHandReq.setPlayerName(this.game.playerId);
-      playHandReq.setGameId(this.game.gameId);
-      // TODO: Set the real intention somehow...
-      playHandReq.setIntention(PlayHandRequest.Intention.HIDE_KITTY);
-
-      const handToPlay = new HandProto();
-      let cardsProto = Array.from(this.selectedCardUIs.values()).map(ui => toCardProto(ui));
-      handToPlay.setCardsList(cardsProto);
-      playHandReq.setHand(handToPlay);
-
-      console.log("Sending playhandRequest: ", playHandReq.toObject());
-      let response = await this.game.client.playHand(playHandReq, null);
-
-      console.log("PlayHand Response: ", response.toObject());
-      if (response.getErrorMessage() != "") {
-        alert(response.getErrorMessage());
-      }
-      for (let selectedCard of this.selectedCardUIs.values()) {
-        selectedCard.selected = false;
-      }
-      this.selectedCardUIs.clear();
-      renderUI(this.handUI);
+      this.playSelectedCards();
     }
   }
 }
@@ -577,6 +613,7 @@ class Game {
   width: number;
   height: number;
   playerLocations: any;
+  playButtonVisible: boolean = false;
 
   // gRPC
   client: ShengjiClient;
@@ -586,6 +623,12 @@ class Game {
 
     this.playerId = playerId;
     this.gameId = gameId;
+    this.adjustSize(height, width);
+  }
+
+  adjustSize(height: number, width: number): void {
+    console.log("Adjusting UI based off width: " + width + "; height: " + height);
+
     this.height = height;
     this.width = width;
 
@@ -619,7 +662,27 @@ class Game {
       {"x": this.width/2, "y": this.cardHeight() + this.cardMargin}, // top
       {"x": (this.cardWidth() + this.cardPadding() * 32)/2, "y": this.height/2} // left
     ];
-
+    cards.options.cardSize = this.cardSize;
+    if (this.deckUI != null) {
+      this.deckUI.x = this.width / 2;
+      this.deckUI.y = this.height / 2;
+      renderUI(this.deckUI, true);
+    }
+    if (this.kittyUI != null) {
+      this.kittyUI.x = this.cardWidth()/2 + 4.5*this.cardPadding();
+      this.kittyUI.y = this.height - this.cardWidth()/2 - this.cardPadding();
+      renderUI(this.kittyUI, true);
+    }
+    // for (let player of this.players) {
+    for(let i=0; i<this.players.length; i++){
+      let player = this.players[i];
+      if (player == null)
+        continue;
+      player.resize(this.playerLocations[i].x, this.playerLocations[i].y);
+    }
+    if (this.trickPile != null) {
+      this.trickPile.resize(this.width / 2, this.height / 2);
+    }
   }
 
   addPlayer(playerName: string, index: number): void {
@@ -664,6 +727,14 @@ class Game {
     drawCardsRequest.setGameId(this.gameId);
     drawCardsRequest.setPlayerName(this.playerId);
     await this.client.drawCards(drawCardsRequest, null);
+  }
+
+  playSelectedCards() {
+    this.getMainPlayer().playSelectedCards();
+  }
+
+  getMainPlayer() {
+    return this.players.find(player => player.name == this.playerId);
   }
 
   renderCardDealt(playerId: string, card: CardProto) {
