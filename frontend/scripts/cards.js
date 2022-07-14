@@ -61,8 +61,6 @@ var cards = (function() {
       let card_back = opt.cardback == 'red' ? 'cardback_red' : 'cardback_blue';
       let svg_url = opt.cardsUrl+card_back+'.svg';
       this.el = $(`<img src='${svg_url}'>`).css({
-        // 'max-width': '7%',
-        // 'max-height': '15%',
         width: opt.cardSize.width,
         height: opt.cardSize.height,
         position: 'absolute',
