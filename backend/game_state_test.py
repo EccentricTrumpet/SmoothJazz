@@ -20,18 +20,24 @@ from game_state import (
     HIDDEN_CARD_PROTO)
 
 SPADE_TWO_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TWO)
+SPADE_FOUR_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.FOUR)
 SPADE_TEN_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.TEN)
 SPADE_KING_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.KING)
 SPADE_ACE_PROTO = CardProto(suit=Suit.SPADES,rank=Rank.ACE)
 SMALL_JOKER_PROTO = CardProto(suit=Suit.SMALL_JOKER,rank=Rank.RANK_UNDEFINED)
 BIG_JOKER_PROTO = CardProto(suit=Suit.BIG_JOKER,rank=Rank.RANK_UNDEFINED)
 HEART_TWO_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TWO)
+HEART_THREE_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.THREE)
+HEART_FOUR_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.FOUR)
 HEART_QUEEN_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.QUEEN)
 HEART_KING_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.KING)
 HEART_TEN_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.TEN)
+DIAMOND_TEN_PROTO = CardProto(suit=Suit.DIAMONDS,rank=Rank.TEN)
 HEART_FIVE_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.FIVE)
 HEART_ACE_PROTO = CardProto(suit=Suit.HEARTS,rank=Rank.ACE)
 DIAMOND_ACE_PROTO = CardProto(suit=Suit.DIAMONDS,rank=Rank.ACE)
+DIAMOND_TWO_PROTO = CardProto(suit=Suit.DIAMONDS,rank=Rank.TWO)
+CLUB_FOUR_PROTO = CardProto(suit=Suit.CLUBS,rank=Rank.FOUR)
 DEFAULT_TEST_TIMEOUT = 20
 
 class TrickFormatTests(unittest.TestCase):
@@ -580,6 +586,23 @@ class GameTests(unittest.TestCase):
         game_proto = next(p2.update_stream())
         self.assertEqual(game_proto.next_turn_player_name, 'player_2')
         self.assertEqual(game_proto.players[0].current_round_trick, HandProto(cards=[HEART_TWO_PROTO]))
+
+    # This is scenario for https://github.com/EccentricTrumpet/SmoothJazz/issues/134
+    @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
+    def test_play_valid_with_no_trump_pair(self) -> None:
+        game = Game('player_1', '0', 0, 2)
+        game.current_rank = Rank.FOUR
+        p1 = self.__createPlayerWithHand(game, 'player_1', [HEART_THREE_PROTO]*2 + [HEART_FOUR_PROTO])
+        p2 = self.__createPlayerWithHand(game, 'player_2', [SPADE_FOUR_PROTO, CLUB_FOUR_PROTO, HEART_TEN_PROTO])
+        game.state = GameState.DEAL
+        # player_1 declares HEART_FOUR as the trump card
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_FOUR_PROTO])
+        game.state = GameState.PLAY
+        game._next_player_name = 'player_1'
+
+        self.__playHandAndAssertSuccess(game, 'player_1', [HEART_THREE_PROTO]*2)
+        self.__playHandAndAssertSuccess(game, 'player_2', [CLUB_FOUR_PROTO, HEART_TEN_PROTO])
+        # p2 = self.__createPlayerWithHand(game, 'player_2', [SPADE_FOUR_PROTO, CLUB_FOUR_PROTO, HEART_TEN_PROTO])
 
     @timeout_decorator.timeout(DEFAULT_TEST_TIMEOUT)
     def test_four_players_kitty_team_winning(self) -> None:
