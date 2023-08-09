@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  grpcUrl: "http://localhost:8080"
+  grpcUrl: "http://tabletenniser-chat.ddns.net:8080"
 };
 
 /*

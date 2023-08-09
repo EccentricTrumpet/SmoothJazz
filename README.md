@@ -55,6 +55,9 @@ Set up reverse proxy (from https://github.com/improbable-eng/grpc-web):
 
 > **Note**: It deploys to localhost:8100 by default. To deploy it to 0.0.0.0:8936, run `ionic serve --external -p 8936`
 
+
+> **Note**: If encounter `ERR_OSSL_EVP_UNSUPPORTED` error, run `export NODE_OPTIONS=--openssl-legacy-provider` and then `ionic serve`
+
 ## Protobuf regeneration
 
 1. `npm run prebuild`
