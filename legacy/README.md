@@ -1,3 +1,5 @@
+> **Note**: This is the legacy version of the project. The current version is located at [./README.md](./README.md)
+
 # Public URL
 
 http://smoothjazz.ddns.net
