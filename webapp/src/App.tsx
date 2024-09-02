@@ -1,43 +1,24 @@
-import './App.css';
-import WebSocketCall from "./components/WebSocketCall";
-import { io, Socket } from "socket.io-client";
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Chat from "./pages/Chat";
+import Home from "./pages/Home";
+import NewGame from './pages/NewGame';
+import Game from './pages/Game';
+import JoinGame from './pages/JoinGame';
 
 function App() {
-  const [socketInstance, setSocket] = useState<Socket|null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const socket = io("localhost:5000/", {
-      transports: ["websocket"],
-    });
-
-    setSocket(socket);
-
-    socket.on("connect", () => {
-      console.log('socket connected');
-    });
-
-    socket.on("disconnect", (data) => {
-      console.log('socket disconnected');
-    });
-
-    setLoading(false);
-
-    return function cleanup() {
-      socket.disconnect();
-    };
-  }, []);
 
   return (
-    <div className="App">
-      <h1>React/Flask App + socket.io</h1>
-      <>
-        <div className="line">
-          {!loading && <WebSocketCall socket={socketInstance} />}
-        </div>
-      </>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/">
+          <Route index element={<Home />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="game" element={<Game />} />
+          <Route path="newGame" element={<NewGame />} />
+          <Route path="joinGame" element={<JoinGame />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

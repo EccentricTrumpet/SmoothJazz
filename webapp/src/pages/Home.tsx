@@ -1,0 +1,14 @@
+export default function Home() {
+  return (
+    <div>
+      <div>
+        <img className="home-logo" src="./favicon.png" alt="" />
+      </div>
+      <div className="grid">
+        <a role="button" href="newGame">New Game</a>
+        <a role="button" href="joinGame">Join Game</a>
+        <a role="button" href="https://en.wikipedia.org/wiki/Sheng_ji" target="_blank" rel="noopener noreferrer">Rules</a>
+      </div>
+    </div>
+  );
+}
