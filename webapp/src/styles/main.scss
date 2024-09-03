@@ -1,8 +1,6 @@
-@use "sass:map";
-@use "@picocss/pico/scss/pico" as * with (
+@use "@picocss/pico/scss/pico" with (
   $semantic-root-element: "#root",
   $enable-semantic-container: true,
-  $enable-classes: false
 );
 
 .home-logo {
