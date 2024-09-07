@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { Manager, Socket } from "socket.io-client";
 
 export default function Chat() {
   const [message, setMessage] = useState("");
@@ -10,21 +10,20 @@ export default function Chat() {
   useEffect(() => {
     console.log('establishing connection')
 
-    const newSocket = io("localhost:5000/", {
-      transports: ["websocket"],
-    })
+    const manager = new Manager("localhost:5001")
+    const chatSocket = manager.socket("/chat")
 
-    newSocket.on("connect", () => {
-      setSocket(newSocket)
+    chatSocket.on("connect", () => {
+      setSocket(chatSocket)
       console.log('socket connected');
     });
 
-    newSocket.on("disconnect", () => {
+    chatSocket.on("disconnect", () => {
       console.log('socket disconnected');
     });
 
     return () => {
-      newSocket.disconnect();
+      chatSocket.disconnect();
     };
   }, []);
 
