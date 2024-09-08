@@ -3,7 +3,7 @@ import logging
 import os.path as PATH
 from servers.http import HttpServer
 from servers.socket import initialize
-from services.game_service import GameService
+from services.match_service import MatchService
 
 if __name__ == "__main__":
     # Server configuration
@@ -24,11 +24,11 @@ if __name__ == "__main__":
     )
 
     # Initialize services
-    game_service = GameService()
+    match_service = MatchService()
 
     # Initialize servers
     http = HttpServer(
-        game_service, PATH.join(PATH.dirname(PATH.abspath(__file__)), "build")
+        match_service, PATH.join(PATH.dirname(PATH.abspath(__file__)), "build")
     )
     socketio = initialize(http.app)
 

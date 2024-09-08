@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { CookiesProvider, useCookies } from 'react-cookie'
 import { Options } from '../scripts/Options'
+import { useNavigate } from 'react-router-dom';
 
-export default function JoinGame() {
+export default function JoinMatch() {
   const [cookie, setCookie] = useCookies(['shengji'])
   const [options, setOptions] = useState(Options());
-  const [game, setGame] = useState("");
+  const [match, setMatch] = useState(-1);
+  const navigate = useNavigate()
 
   useEffect(() => {
     const savedOptions = cookie['shengji'];
@@ -22,18 +24,19 @@ export default function JoinGame() {
     setOptions(values => ({...values, [name]: value}));
   }
 
-  const handleGameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setGame(event.target.value);
+  const handleMatchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setMatch(parseInt(event.target.value));
   }
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCookie('shengji', options, { path: '/'})
+    navigate(`/${match}`, { state: { name: options.name } });
   }
 
   return (
     <CookiesProvider>
-      <h1>Join a game</h1>
+      <h1>Join a match</h1>
       <form onSubmit={handleSubmit}>
         <label htmlFor="name">Player name</label>
         <input
@@ -45,13 +48,13 @@ export default function JoinGame() {
           onChange={handleChange}
           required
         />
-        <label htmlFor="game">Game</label>
+        <label htmlFor="match">Match</label>
         <input
-          id="game"
-          type="text"
-          name="game"
-          placeholder="Game"
-          onChange={handleGameChange}
+          id="match"
+          type="number"
+          name="match"
+          placeholder="Match"
+          onChange={handleMatchChange}
           required
         />
 

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { CookiesProvider, useCookies } from 'react-cookie'
 import { Options } from '../scripts/Options'
+import { useNavigate } from 'react-router-dom';
 
-export default function NewGame() {
+export default function NewMatch() {
   const [cookie, setCookie] = useCookies(['shengji'])
   const [options, setOptions] = useState(Options);
+  const navigate = useNavigate()
 
   useEffect(() => {
     const savedOptions = cookie['shengji'];
@@ -21,14 +23,24 @@ export default function NewGame() {
     setOptions(values => ({...values, [name]: value}));
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCookie('shengji', options, { path: '/'});
+    const name = options.name
+    const response = await fetch('http://localhost:5001/match', {
+      method: 'POST',
+      headers:new Headers({
+        'Content-type': 'application/json'
+      }),
+      body: JSON.stringify(options)
+    });
+    const match_id = parseInt(await response.text());
+    navigate(`/${match_id}`, { state: { name: name } });
   }
 
   return (
     <CookiesProvider>
-      <h1>Create a new game</h1>
+      <h1>Create a new match</h1>
       <form onSubmit={handleSubmit}>
         <label htmlFor="name">Player name</label>
         <input

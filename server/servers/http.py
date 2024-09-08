@@ -1,7 +1,8 @@
-from flask import Flask, render_template
+import logging
+from flask import Flask, render_template, request
 from flask.views import MethodView
 from flask_cors import CORS
-from services.game_service import GameService
+from services.match_service import MatchService
 
 
 class HelloAPI(MethodView):
@@ -18,18 +19,26 @@ class HomeAPI(MethodView):
         return render_template("index.html")
 
 
-class GameAPI(MethodView):
+class MatchAPI(MethodView):
     init_every_request = False
 
-    def __init__(self, game_service: GameService):
-        self.__game_service: GameService = game_service
+    def __init__(self, match_service: MatchService):
+        self.__match_service: MatchService = match_service
 
     def post(self):
-        return self.__game_service.create_game()
+        creator = request.json["name"]
+        speed = int(request.json["speed"])
+        debug = bool(request.json["debug"])
+
+        logging.info(
+            f"Creating new match - creator: {creator}, speed: {speed}, debug: {debug}"
+        )
+
+        return self.__match_service.create_match(creator, 0.5 / speed, debug)
 
 
 class HttpServer:
-    def __init__(self, game_service: GameService, static_path: str) -> None:
+    def __init__(self, match_service: MatchService, static_path: str) -> None:
         self.app = Flask(
             __name__,
             static_url_path="",
@@ -41,5 +50,5 @@ class HttpServer:
         self.app.add_url_rule("/", view_func=HomeAPI.as_view("home-api"))
         self.app.add_url_rule("/hello", view_func=HelloAPI.as_view("hello-api"))
         self.app.add_url_rule(
-            "/game", view_func=GameAPI.as_view("game-api", game_service)
+            "/match", view_func=MatchAPI.as_view("match-api", match_service)
         )
