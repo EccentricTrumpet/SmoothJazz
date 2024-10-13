@@ -12,9 +12,9 @@ export default function JoinMatch() {
   useEffect(() => {
     const savedOptions = cookie['shengji'];
     setOptions({
-      name: savedOptions['name'] || "",
-      speed: savedOptions['speed'] || "",
-      debug: savedOptions['debug'] || false
+      name: savedOptions?.['name'] || "",
+      speed: savedOptions?.['speed'] || "",
+      debug: savedOptions?.['debug'] || false
     });
   }, [cookie])
 
