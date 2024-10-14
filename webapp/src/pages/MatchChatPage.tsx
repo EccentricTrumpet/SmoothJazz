@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 
-export default function Match() {
+export default function MatchChatPage() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
   const [socket, setSocket] = useState<Socket>();

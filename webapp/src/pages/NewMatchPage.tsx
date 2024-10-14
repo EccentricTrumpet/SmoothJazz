@@ -3,7 +3,7 @@ import { CookiesProvider, useCookies } from 'react-cookie'
 import { Options } from '../scripts/Options'
 import { useNavigate } from 'react-router-dom';
 
-export default function NewMatch() {
+export default function NewMatchPage() {
   const [cookie, setCookie] = useCookies(['shengji'])
   const [options, setOptions] = useState(Options);
   const navigate = useNavigate()

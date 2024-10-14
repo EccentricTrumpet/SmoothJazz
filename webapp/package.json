@@ -4,11 +4,8 @@
   "private": true,
   "dependencies": {
     "@picocss/pico": "^2.0.6",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.106",
+    "framer-motion": "^11.5.4",
+    "lodash": "^4.17.21",
     "react": "^18.3.1",
     "react-cookie": "^7.2.0",
     "react-dom": "^18.3.1",
@@ -45,6 +42,12 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.11",
-    "@types/react-dom": "^18.3.1"
+    "@types/react-dom": "^18.3.1",
+    "@types/lodash": "^4.17.7",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.106",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0"
   }
 }

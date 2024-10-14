@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Chat from "./pages/Chat";
-import Home from "./pages/Home";
-import NewMatch from './pages/NewMatch';
-import Match from './pages/Match';
-import JoinMatch from './pages/JoinMatch';
+import MatchChatPage from "./pages/MatchChatPage";
+import HomePage from "./pages/HomePage";
+import NewMatchPage from './pages/NewMatchPage';
+import MatchPage from './pages/MatchPage';
+import JoinMatchPage from './pages/JoinMatchPage';
 
 function App() {
 
@@ -11,11 +11,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/">
-          <Route index element={<Home />} />
-          <Route path="chat" element={<Chat />} />
-          <Route path="/:id" element={<Match />} />
-          <Route path="newMatch" element={<NewMatch />} />
-          <Route path="joinMatch" element={<JoinMatch />} />
+          <Route index element={<HomePage />} />
+          <Route path="chat" element={<MatchChatPage />} />
+          <Route path="/:id" element={<MatchPage />} />
+          <Route path="newMatch" element={<NewMatchPage />} />
+          <Route path="joinMatch" element={<JoinMatchPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
