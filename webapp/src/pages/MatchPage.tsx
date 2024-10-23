@@ -4,7 +4,9 @@ import { useLocation, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card } from "../abstractions/Card";
-import { Player } from "../abstractions/Player";
+import { Suit } from "../abstractions/Suit";
+import CardComponent from "../components/CardComponent";
+import { DisplaySettings } from "../abstractions/DisplaySettings";
 
 export default function MatchPage() {
   const [socket, setSocket] = useState<Socket>();
@@ -16,6 +18,8 @@ export default function MatchPage() {
   const { state } = useLocation();
   const name = state.name;
   const [cards, setCards] = useState<Array<Card>>([]);
+  const displaySettings = new DisplaySettings();
+  displaySettings.cardBack = "red.png"
 
   // Establish window size
   useEffect(() => {
@@ -82,10 +86,38 @@ export default function MatchPage() {
     }
   }, [socket, name, id]);
 
-  const handleDealCard = () => {
-    let newCard = new Card("king_of_hearts2.png", "j");
-    newCard.setX(cards.length*10);
+  const handleDeal = () => {
+    const id = cards.length;
+    const index = id % 54;
+    const rank = index % 13 + 1;
+    let suit = Suit.Joker;
+    if (index < 13) {
+      suit = Suit.Spade;
+    } else if (index < 26) {
+      suit = Suit.Heart;
+    } else if (index < 39) {
+      suit = Suit.Club;
+    } else if (index < 52) {
+      suit = Suit.Diamond;
+    }
+
+    let newCard = new Card(id, suit, rank);
+    newCard.position.x = cards.length*25;
     setCards(prevCards => [...prevCards, newCard]);
+  }
+
+  const handleFlip = () => {
+    setCards(cards => cards.map((card) => new Card(
+      card.id,
+      card.suit,
+      card.rank,
+      !card.facedown,
+      card.position
+    )));
+  }
+
+  const cardOnClick = (card: Card) => {
+    console.log(`clicked: ${card}`);
   }
 
   return (
@@ -101,22 +133,13 @@ export default function MatchPage() {
       <div className="grid" style={{
         width: "500px"
       }}>
-        <button>New Player</button>
-        <button onClick={handleDealCard}>Deal Card</button>
-        <button>Play Card</button>
+        <button>Add Player</button>
+        <button onClick={handleDeal}>Deal</button>
+        <button onClick={handleFlip}>Flip</button>
       </div>
 
-      { cards.map((card, idx) => {
-        return <motion.img
-          style={{position: "fixed", top: 0, left: 0}}
-          key={idx}
-          src={require(`../assets/${card.suit}`)}
-          alt={card.rank}
-          initial={{ x: 0, y: 0 }}
-          animate={{ x: card.x, y: 100 }}
-          transition={{
-            x: { type: "spring", stiffness: 100 }
-          }} />
+      { cards.map((card) => {
+        return <CardComponent card={card} settings={displaySettings} onClick={cardOnClick} />
       })}
     </motion.div>
   ));

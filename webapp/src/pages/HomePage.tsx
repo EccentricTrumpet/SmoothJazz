@@ -1,8 +1,8 @@
 export default function HomePage() {
   return (
-    <div>
-      <div>
-        <img className="home-logo" src="./favicon.png" alt="" />
+    <div className="container">
+      <div className="grid">
+        <img src="./favicon.png" alt="" style={{margin: "auto", height:500, width:500}}/>
       </div>
       <div className="grid">
         <a role="button" href="newMatch">New Match</a>

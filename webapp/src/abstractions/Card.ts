@@ -1,15 +1,16 @@
+import { Position } from "./Position";
+import { Suit } from "./Suit";
+
 export class Card {
-    suit: string;
-    rank: string;
-    x: number;
+    constructor(
+        public id: number,
+        public suit: Suit,
+        public rank: number,
+        public facedown: boolean = false,
+        public position: Position = new Position(0, 0, 0)
+    ) {}
 
-    constructor(suit: string, rank: string) {
-        this.suit = suit;
-        this.rank = rank;
-        this.x = 0;
-    }
-
-    setX(x: number) {
-        this.x = x;
+    public toString = () : string => {
+        return `[Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
     }
 }

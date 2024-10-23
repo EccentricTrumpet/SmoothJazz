@@ -35,33 +35,35 @@ export default function JoinMatchPage() {
   }
 
   return (
-    <CookiesProvider>
-      <h1>Join a match</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="name">Player name</label>
-        <input
-          id="name"
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={options.name || ""}
-          onChange={handleChange}
-          required
-        />
-        <label htmlFor="match">Match</label>
-        <input
-          id="match"
-          type="number"
-          name="match"
-          placeholder="Match"
-          onChange={handleMatchChange}
-          required
-        />
+    <div className="container">
+      <CookiesProvider>
+        <h1>Join a match</h1>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="name">Player name</label>
+          <input
+            id="name"
+            type="text"
+            name="name"
+            placeholder="Name"
+            value={options.name || ""}
+            onChange={handleChange}
+            required
+          />
+          <label htmlFor="match">Match</label>
+          <input
+            id="match"
+            type="number"
+            name="match"
+            placeholder="Match"
+            onChange={handleMatchChange}
+            required
+          />
 
-        <button type="submit">
-          Join
-        </button>
-      </form>
-    </CookiesProvider>
+          <button type="submit">
+            Join
+          </button>
+        </form>
+      </CookiesProvider>
+    </div>
   );
 }

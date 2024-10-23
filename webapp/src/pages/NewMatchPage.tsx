@@ -39,53 +39,55 @@ export default function NewMatchPage() {
   }
 
   return (
-    <CookiesProvider>
-      <h1>Create a new match</h1>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="name">Player name</label>
-        <input
-          id="name"
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={options.name || ""}
-          onChange={handleChange}
-          required
-        />
-        <details>
-          <summary>Settings</summary>
-          <fieldset>
-            <label htmlFor="speed">Speed</label>
-            <input
-              id="speed"
-              name="speed"
-              list="speeds"
-              type="range"
-              min="1"
-              max="5"
-              step="1"
-              value={options.speed || "3"}
-              onChange={handleChange}
-            />
-          </fieldset>
-          <fieldset>
-            <label htmlFor="debug">
+    <div className="container">
+      <CookiesProvider>
+        <h1>Create a new match</h1>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="name">Player name</label>
+          <input
+            id="name"
+            type="text"
+            name="name"
+            placeholder="Name"
+            value={options.name || ""}
+            onChange={handleChange}
+            required
+          />
+          <details>
+            <summary>Settings</summary>
+            <fieldset>
+              <label htmlFor="speed">Speed</label>
               <input
-                type="checkbox"
-                role="switch"
-                id="debug"
-                name="debug"
-                checked={options.debug || false}
+                id="speed"
+                name="speed"
+                list="speeds"
+                type="range"
+                min="1"
+                max="5"
+                step="1"
+                value={options.speed || "3"}
                 onChange={handleChange}
               />
-              Debug mode
-            </label>
-          </fieldset>
-        </details>
-        <button type="submit">
-          Start
-        </button>
-      </form>
-    </CookiesProvider>
+            </fieldset>
+            <fieldset>
+              <label htmlFor="debug">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  id="debug"
+                  name="debug"
+                  checked={options.debug || false}
+                  onChange={handleChange}
+                />
+                Debug mode
+              </label>
+            </fieldset>
+          </details>
+          <button type="submit">
+            Start
+          </button>
+        </form>
+      </CookiesProvider>
+    </div>
   );
 }
