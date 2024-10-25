@@ -5,28 +5,50 @@ import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card } from "../abstractions/Card";
 import { Suit } from "../abstractions/Suit";
-import CardComponent from "../components/CardComponent";
 import { DisplaySettings } from "../abstractions/DisplaySettings";
+import { Constants } from "../Constants";
+import { Zone } from "../abstractions/Zone";
+import { Position } from "../abstractions/Position";
+import { Size } from "../abstractions/Size";
+import { IController } from "../abstractions/IController";
+import ControlZone from "../components/ControlZone";
+import PlayerZone from "../components/PlayerZone";
+import { PlayerState } from "../abstractions/PlayerState";
+import { SeatPosition } from "../abstractions/SeatPosition";
 
 export default function MatchPage() {
-  const [socket, setSocket] = useState<Socket>();
-  const [size, setSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
+  // React states
   const { id } = useParams();
   const { state } = useLocation();
+
+  // API states
+  const [socket, setSocket] = useState<Socket>();
+
+  // Game states
   const name = state.name;
   const [cards, setCards] = useState<Array<Card>>([]);
-  const displaySettings = new DisplaySettings();
-  displaySettings.cardBack = "red.png"
+
+  // UI states
+  const [zone, setZone] = useState(new Zone(
+    new Position(0, 0),
+    new Size(window.innerWidth, window.innerHeight)
+  ));
+  const [players, setPlayers] = useState([
+    new PlayerState("Alice", 0, SeatPosition.South, []),
+    new PlayerState("Bob", 0, SeatPosition.East, []),
+    new PlayerState("Charlie", 0, SeatPosition.North, []),
+    new PlayerState("David", 0, SeatPosition.West, []),
+  ])
+  const displaySettings = new DisplaySettings("red.png");
 
   // Establish window size
   useEffect(() => {
     const handleResize = debounce(() => {
-      console.log(`Resizing - width: ${window.innerWidth}, height: ${window.innerHeight}`);
-      setSize({ width: window.innerWidth, height: window.innerHeight });
-    }, 100);
+      setZone(new Zone(
+        new Position(0, 0),
+        new Size(window.innerWidth, window.innerHeight)
+      ));
+    }, 1);
     window.addEventListener("resize", handleResize);
     return () => {
       handleResize.cancel();
@@ -112,13 +134,18 @@ export default function MatchPage() {
       card.suit,
       card.rank,
       !card.facedown,
+      card.selected,
       card.position
     )));
   }
 
-  const cardOnClick = (card: Card) => {
-    console.log(`clicked: ${card}`);
+  class Controller implements IController {
+    onPlayCard = (card: Card) => {
+      console.log(`clicked: ${card}`);
+    }
   }
+
+  const gameController = new Controller();
 
   return (
     !socket ? (
@@ -128,18 +155,11 @@ export default function MatchPage() {
       display: "grid",
       placeContent: "center",
       width: "100vw",
-      height: "100vh",
+      height: "100vh"
     }}>
-      <div className="grid" style={{
-        width: "500px"
-      }}>
-        <button>Add Player</button>
-        <button onClick={handleDeal}>Deal</button>
-        <button onClick={handleFlip}>Flip</button>
-      </div>
-
-      { cards.map((card) => {
-        return <CardComponent card={card} settings={displaySettings} onClick={cardOnClick} />
+      <ControlZone parentZone={zone} controller={gameController} />
+      { players.map((player) => {
+        return <PlayerZone player={player} parentZone={zone} settings={displaySettings} controller={gameController} />
       })}
     </motion.div>
   ));

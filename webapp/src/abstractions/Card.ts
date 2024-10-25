@@ -6,8 +6,11 @@ export class Card {
         public id: number,
         public suit: Suit,
         public rank: number,
+
+        // UI controls
         public facedown: boolean = false,
-        public position: Position = new Position(0, 0, 0)
+        public selected: boolean = false,
+        public position: Position = new Position(0, 0)
     ) {}
 
     public toString = () : string => {

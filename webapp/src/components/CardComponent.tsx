@@ -2,27 +2,27 @@ import { motion } from "framer-motion";
 import { Card } from "../abstractions/Card";
 import { DisplaySettings } from "../abstractions/DisplaySettings";
 import { Constants } from "../Constants";
-
-type CallbackType = (card: Card) => any;
+import { IController } from "../abstractions/IController";
 
 interface CardComponentArgument {
+  idx: number;
   card: Card;
   settings: DisplaySettings;
-  onClick: CallbackType;
+  controller: IController;
 }
 
-const CardComponent: React.FC<CardComponentArgument> = ({card, settings, onClick}) => {
+const CardComponent: React.FC<CardComponentArgument> = ({idx, card, settings, controller}) => {
   const altText = card.facedown ? "unknown" : `${card.suit} ${card.rank}`
   const imgSource = card.facedown ? settings.cardBack : `${card.suit}${card.rank}.png`
   return (
     <motion.img
       key={card.id}
-      onClick={() => onClick(card)}
+      onClick={() => controller.onPlayCard(card)}
       style={{
         position: "fixed",
         top: 0,
         left: 0,
-        zIndex: -card.position.z,
+        zIndex: -idx,
         width: Constants.cardWidth,
         height: Constants.cardHeight,
         borderRadius: Constants.cardRadius,
