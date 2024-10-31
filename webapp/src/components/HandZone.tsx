@@ -1,29 +1,26 @@
+import { ControllerInterface } from "../abstractions/ControllerInterface";
+import { Position, Zone } from "../abstractions/bounds";
+import { Seat } from "../abstractions/enums";
+import { CardState, OptionsState, PlayerState } from "../abstractions/states";
 import { Constants } from "../Constants";
-import { Zone } from "../abstractions/Zone";
-import { IController } from "../abstractions/IController";
-import { Position } from "../abstractions/Position";
-import { PlayerState } from "../abstractions/PlayerState";
-import CardComponent from "./CardComponent";
-import { DisplaySettings } from "../abstractions/DisplaySettings";
-import { SeatPosition } from "../abstractions/SeatPosition";
-import { CardState } from "../abstractions/CardState";
+import { CardComponent } from ".";
 
-interface HandZoneArgument {
+interface HandZoneInputs {
   player: PlayerState;
   zone: Zone;
-  settings: DisplaySettings;
-  controller: IController;
+  options: OptionsState;
+  controller: ControllerInterface;
 }
 
-const HandZone: React.FC<HandZoneArgument> = ({player, zone, settings, controller}) => {
+export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, controller}) => {
 
   let displayRange = 0;
   let displayStart = 0;
   let displayIncrement = 0;
 
-  switch(player.seatPosition) {
-    case SeatPosition.North:
-    case SeatPosition.South:
+  switch(player.seat) {
+    case Seat.North:
+    case Seat.South:
       displayRange =
         player.hand.length === 1
           ? Constants.cardWidth
@@ -38,11 +35,11 @@ const HandZone: React.FC<HandZoneArgument> = ({player, zone, settings, controlle
           false,
           false,
           0,
-          new Position(displayStart + i*displayIncrement, zone.position.y),
+          new Position(displayStart + i*displayIncrement, zone.top()),
         );
       }
       break;
-    case SeatPosition.East:
+    case Seat.East:
       displayRange =
         player.hand.length === 1
           ? Constants.cardWidth
@@ -61,7 +58,7 @@ const HandZone: React.FC<HandZoneArgument> = ({player, zone, settings, controlle
         );
       }
       break;
-    case SeatPosition.West:
+    case Seat.West:
       displayRange =
         player.hand.length === 1
           ? Constants.cardWidth
@@ -85,19 +82,17 @@ const HandZone: React.FC<HandZoneArgument> = ({player, zone, settings, controlle
   return (
     <div className="container" style={{
       position: "fixed",
-      left: zone.position.x,
-      top: zone.position.y,
+      left: zone.left(),
+      top: zone.top(),
       width: zone.size.width,
       height: zone.size.height,
       backgroundColor: Constants.backgroundColor,
     }}>
       { player.hand.map((card, idx) => {
-        return <CardComponent key={card.id} idx={idx} card={card} settings={settings} onClick={() => {
+        return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => {
           controller.onPlayCard(card);
         }} />
       })}
     </div>
   );
 }
-
-export default HandZone;

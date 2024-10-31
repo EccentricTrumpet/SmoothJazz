@@ -1,19 +1,19 @@
 import { motion } from "framer-motion";
-import { Card } from "../abstractions/Card";
-import { DisplaySettings } from "../abstractions/DisplaySettings";
+import { Card } from "../abstractions";
+import { OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
 
-interface CardComponentArgument {
+interface CardComponentInputs {
   idx: number;
   card: Card;
-  settings: DisplaySettings;
+  options: OptionsState;
   onClick?: () => any;
   animate?: boolean;
 }
 
-const CardComponent: React.FC<CardComponentArgument> = ({idx, card, settings, onClick = () => {}}) => {
+export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options, onClick = () => {}}) => {
   const altText = card.state?.facedown ? "unknown" : `${card.suit} ${card.rank}`
-  const imgSource = card.state?.facedown ? settings.cardBack : `${card.suit}${card.rank}.png`
+  const imgSource = card.state?.facedown ? options.cardBack : `${card.suit}${card.rank}.png`
   return (
     <motion.img
       key={card.id}
@@ -54,5 +54,3 @@ const CardComponent: React.FC<CardComponentArgument> = ({idx, card, settings, on
       }} />
   );
 }
-
-export default CardComponent;

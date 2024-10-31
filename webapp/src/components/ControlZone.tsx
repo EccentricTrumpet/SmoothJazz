@@ -1,21 +1,16 @@
 import { Constants } from "../Constants";
-import { Zone } from "../abstractions/Zone";
-import { IController } from "../abstractions/IController";
-import { Size } from "../abstractions/Size";
-import { Position } from "../abstractions/Position";
+import { Position, Size, Zone } from "../abstractions/bounds";
 
-
-interface ControlZoneArgument {
+interface ControlZoneInputs {
   parentZone: Zone;
-  controller: IController;
 }
 
-const ControlZone: React.FC<ControlZoneArgument> = ({parentZone, controller}) => {
+export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone}) => {
 
   const zone = new Zone(
     new Position(
-      parentZone.position.x + parentZone.size.width - Constants.margin - Constants.cardHeight,
-      parentZone.position.y + parentZone.size.height - Constants.margin - Constants.cardHeight,
+      parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,
+      parentZone.top() + parentZone.size.height - Constants.margin - Constants.cardHeight,
     ),
     new Size(Constants.cardHeight, Constants.cardHeight)
   )
@@ -26,8 +21,8 @@ const ControlZone: React.FC<ControlZoneArgument> = ({parentZone, controller}) =>
   return (
     <div className="container" style={{
       position: "fixed",
-      left: zone.position.x,
-      top: zone.position.y,
+      left: zone.left(),
+      top: zone.top(),
       width: zone.size.width,
       height: zone.size.height,
       backgroundColor: Constants.backgroundColor,
@@ -55,5 +50,3 @@ const ControlZone: React.FC<ControlZoneArgument> = ({parentZone, controller}) =>
     </div>
   );
 }
-
-export default ControlZone;

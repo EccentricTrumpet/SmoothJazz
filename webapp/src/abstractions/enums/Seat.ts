@@ -1,4 +1,4 @@
-export enum SeatPosition {
+export enum Seat {
     North,
     West,
     South,

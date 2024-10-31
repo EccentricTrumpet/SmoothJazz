@@ -1,23 +1,17 @@
+import { ControllerInterface } from "../abstractions";
+import { Position, Size, Zone } from "../abstractions/bounds";
+import { BoardState, CardState, OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
-import { Zone } from "../abstractions/Zone";
-import { IController } from "../abstractions/IController";
-import { Size } from "../abstractions/Size";
-import { Position } from "../abstractions/Position";
-import CardComponent from "./CardComponent";
-import { DisplaySettings } from "../abstractions/DisplaySettings";
-import { BoardState } from "../abstractions/BoardState";
-import { CardState } from "../abstractions/CardState";
-import { SeatPosition } from "../abstractions/SeatPosition";
+import { CardComponent } from ".";
 
-
-interface CenterZoneArgument {
+interface CenterZoneInputs {
   board: BoardState;
   parentZone: Zone;
-  settings: DisplaySettings;
-  controller: IController;
+  options: OptionsState;
+  controller: ControllerInterface;
 }
 
-const ControlZone: React.FC<CenterZoneArgument> = ({board, parentZone, settings, controller}) => {
+export const CenterZone: React.FC<CenterZoneInputs> = ({board, parentZone, options, controller}) => {
 
   const cardSize = new Size(Constants.cardWidth, Constants.cardHeight);
   const deckZone = new Zone(
@@ -29,15 +23,15 @@ const ControlZone: React.FC<CenterZoneArgument> = ({board, parentZone, settings,
   );
   const kittyZone = new Zone(
     new Position(
-      deckZone.position.x - Constants.margin - Constants.cardWidth,
-      deckZone.position.y
+      deckZone.left() - Constants.margin - Constants.cardWidth,
+      deckZone.top()
     ),
     cardSize
   );
   const discardZone = new Zone(
     new Position(
       deckZone.right() + Constants.margin,
-      deckZone.position.y
+      deckZone.top()
     ),
     cardSize
   );
@@ -54,7 +48,7 @@ const ControlZone: React.FC<CenterZoneArgument> = ({board, parentZone, settings,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        left: deckZone.position.x,
+        left: deckZone.left(),
         top: parentZone.center().y - 2*Constants.margin,
         width: Constants.cardWidth,
         height: 2*Constants.margin,
@@ -67,7 +61,7 @@ const ControlZone: React.FC<CenterZoneArgument> = ({board, parentZone, settings,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        left: deckZone.position.x,
+        left: deckZone.left(),
         top: parentZone.center().y,
         width: Constants.cardWidth,
         height: 2*Constants.margin,
@@ -78,27 +72,27 @@ const ControlZone: React.FC<CenterZoneArgument> = ({board, parentZone, settings,
       {/* Kitty */}
       <div className="container" style={{
         position: "fixed",
-        left: kittyZone.position.x,
-        top: kittyZone.position.y,
+        left: kittyZone.left(),
+        top: kittyZone.top(),
         width: kittyZone.size.width,
         height: kittyZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
         { board.kitty.map((card, idx) => {
-          return <CardComponent idx={idx} card={card} settings={settings} />
+          return <CardComponent idx={idx} card={card} options={options} />
         })}
       </div>
       {/* Deck */}
       <div className="container" style={{
         position: "fixed",
-        left: deckZone.position.x,
-        top: deckZone.position.y,
+        left: deckZone.left(),
+        top: deckZone.top(),
         width: deckZone.size.width,
         height: deckZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
         { board.deck.map((card, idx) => {
-          return <CardComponent key={card.id} idx={idx} card={card} settings={settings} onClick={() => {
+          return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => {
             controller.onDrawCard(card);
           }}/>
         })}
@@ -106,18 +100,16 @@ const ControlZone: React.FC<CenterZoneArgument> = ({board, parentZone, settings,
       {/* Discard */}
       <div className="container" style={{
         position: "fixed",
-        left: discardZone.position.x,
-        top: discardZone.position.y,
+        left: discardZone.left(),
+        top: discardZone.top(),
         width: discardZone.size.width,
         height: discardZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
         { board.discard.map((card, idx) => {
-          return <CardComponent idx={idx} card={card} settings={settings} />
+          return <CardComponent idx={idx} card={card} options={options} />
         })}
       </div>
     </>
   );
 }
-
-export default ControlZone;

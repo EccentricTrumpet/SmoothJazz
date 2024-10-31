@@ -1,5 +1,4 @@
-import { Position } from "./Position";
-import { Size } from "./Size";
+import { Position, Size } from ".";
 
 export class Zone {
     constructor(
@@ -7,8 +6,16 @@ export class Zone {
         public size: Size,
     ) {}
 
+    top(): number {
+        return this.position.y;
+    }
+
     bottom(): number {
         return this.position.y + this.size.height;
+    }
+
+    left(): number {
+        return this.position.x;
     }
 
     right(): number {

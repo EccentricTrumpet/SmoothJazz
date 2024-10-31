@@ -1,32 +1,28 @@
+import { ControllerInterface } from "../abstractions";
+import { Position, Size, Zone } from "../abstractions/bounds";
+import { Seat } from "../abstractions/enums";
+import { OptionsState, PlayerState } from "../abstractions/states";
 import { Constants } from "../Constants";
-import { Zone } from "../abstractions/Zone";
-import { IController } from "../abstractions/IController";
-import { Size } from "../abstractions/Size";
-import { Position } from "../abstractions/Position";
-import { PlayerState } from "../abstractions/PlayerState";
-import { DisplaySettings } from "../abstractions/DisplaySettings";
-import { SeatPosition } from "../abstractions/SeatPosition";
-import HandZone from "./HandZone";
+import { HandZone } from ".";
 
-
-interface ControlZoneArgument {
+interface PlayerZoneArgument {
   player: PlayerState;
   parentZone: Zone;
-  settings: DisplaySettings;
-  controller: IController;
+  options: OptionsState;
+  controller: ControllerInterface;
 }
 
-const ControlZone: React.FC<ControlZoneArgument> = ({player, parentZone, settings, controller}) => {
+export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, parentZone, options, controller}) => {
 
   let handZone: Zone;
   let nameZone: Zone;
 
-  switch(player.seatPosition) {
-    case SeatPosition.North:
+  switch(player.seat) {
+    case Seat.North:
       handZone = new Zone(
         new Position(
-          parentZone.position.x + 2*Constants.margin + Constants.cardHeight,
-          parentZone.position.y + Constants.margin
+          parentZone.left() + 2*Constants.margin + Constants.cardHeight,
+          parentZone.top() + Constants.margin
         ),
         new Size(
           parentZone.size.width - 2*(2*Constants.margin + Constants.cardHeight),
@@ -41,11 +37,11 @@ const ControlZone: React.FC<ControlZoneArgument> = ({player, parentZone, setting
         new Size(Constants.cardHeight, 2*Constants.margin)
       );
       break;
-    case SeatPosition.East:
+    case Seat.East:
       handZone = new Zone(
         new Position(
           parentZone.right() - Constants.margin - Constants.cardHeight,
-          parentZone.position.y + 2*Constants.margin + Constants.cardHeight
+          parentZone.top() + 2*Constants.margin + Constants.cardHeight
         ),
         new Size(
           Constants.cardHeight,
@@ -54,16 +50,16 @@ const ControlZone: React.FC<ControlZoneArgument> = ({player, parentZone, setting
       );
       nameZone = new Zone(
         new Position(
-          handZone.position.x,
-          handZone.position.y - 3*Constants.margin
+          handZone.left(),
+          handZone.top() - 3*Constants.margin
         ),
         new Size(Constants.cardHeight, 2*Constants.margin)
       );
       break;
-    case SeatPosition.South:
+    case Seat.South:
       handZone = new Zone(
         new Position(
-          parentZone.position.x + 2*Constants.margin + Constants.cardHeight,
+          parentZone.left() + 2*Constants.margin + Constants.cardHeight,
           parentZone.bottom() - Constants.margin - Constants.cardHeight
         ),
         new Size(
@@ -74,16 +70,16 @@ const ControlZone: React.FC<ControlZoneArgument> = ({player, parentZone, setting
       nameZone = new Zone(
         new Position(
           handZone.center().x - Constants.cardHeight/2,
-          handZone.position.y - 3*Constants.margin,
+          handZone.top() - 3*Constants.margin,
         ),
         new Size(Constants.cardHeight, 2*Constants.margin)
       );
       break;
-    case SeatPosition.West:
+    case Seat.West:
       handZone = new Zone(
         new Position(
-          parentZone.position.x + Constants.margin,
-          parentZone.position.y + 2*Constants.margin + Constants.cardHeight
+          parentZone.left() + Constants.margin,
+          parentZone.top() + 2*Constants.margin + Constants.cardHeight
         ),
         new Size(
           Constants.cardHeight,
@@ -92,8 +88,8 @@ const ControlZone: React.FC<ControlZoneArgument> = ({player, parentZone, setting
       );
       nameZone = new Zone(
         new Position(
-          handZone.position.x,
-          handZone.position.y - 3*Constants.margin
+          handZone.left(),
+          handZone.top() - 3*Constants.margin
         ),
         new Size(Constants.cardHeight, 2*Constants.margin)
       );
@@ -107,17 +103,15 @@ const ControlZone: React.FC<ControlZoneArgument> = ({player, parentZone, setting
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        left: nameZone.position.x,
-        top: nameZone.position.y,
+        left: nameZone.left(),
+        top: nameZone.top(),
         width: nameZone.size.width,
         height: nameZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
         <h4 style={{ margin: 0 }}>{player.name}</h4>
       </div>
-      <HandZone player={player} zone={handZone} settings={settings} controller={controller} />
+      <HandZone player={player} zone={handZone} options={options} controller={controller} />
     </>
   );
 }
-
-export default ControlZone;

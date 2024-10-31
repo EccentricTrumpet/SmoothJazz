@@ -1,5 +1,5 @@
-import { CardState } from "./CardState";
-import { Suit } from "./Suit";
+import { CardState } from "./states";
+import { Suit } from "./enums";
 
 export class Card {
     constructor(

@@ -1,5 +1,5 @@
-import { Card } from "./Card";
-import { Suit } from "./Suit";
+import { Card } from "../Card";
+import { Suit } from "../enums";
 
 // This will be removed once BE integration is complete
 function shuffle<T>(array: T[]): T[] {

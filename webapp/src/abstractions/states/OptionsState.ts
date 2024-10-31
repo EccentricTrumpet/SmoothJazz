@@ -1,4 +1,4 @@
-export class DisplaySettings {
+export class OptionsState {
     constructor(
         public cardBack: string = ""
     ) {}

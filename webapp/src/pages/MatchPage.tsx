@@ -3,18 +3,11 @@ import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
-import { Card } from "../abstractions/Card";
-import { DisplaySettings } from "../abstractions/DisplaySettings";
-import { Zone } from "../abstractions/Zone";
-import { Position } from "../abstractions/Position";
-import { Size } from "../abstractions/Size";
-import { IController } from "../abstractions/IController";
-import ControlZone from "../components/ControlZone";
-import PlayerZone from "../components/PlayerZone";
-import { PlayerState } from "../abstractions/PlayerState";
-import { SeatPosition } from "../abstractions/SeatPosition";
-import CenterZone from "../components/CenterZone";
-import { BoardState } from "../abstractions/BoardState";
+import { Card, ControllerInterface } from "../abstractions";
+import { Position, Size, Zone } from "../abstractions/bounds";
+import { Seat } from "../abstractions/enums";
+import { BoardState, OptionsState, PlayerState } from "../abstractions/states";
+import { CenterZone, ControlZone, PlayerZone } from "../components";
 
 export default function MatchPage() {
   // React states
@@ -27,20 +20,20 @@ export default function MatchPage() {
   // Game states
   const name = state.name;
   const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [boardState, setBoardState] = useState(new BoardState(true));
+  const [players, setPlayers] = useState([
+    new PlayerState("Albert", 0, 0, Seat.South, []),
+    new PlayerState("Betty", 1, 1, Seat.East, []),
+    new PlayerState("Charlie", 2, 2, Seat.North, []),
+    new PlayerState("Diane", 3, 3, Seat.West, []),
+  ])
+  const options = new OptionsState("red.png");
 
-  // UI states
+  // Other states
   const [zone, setZone] = useState(new Zone(
     new Position(0, 0),
     new Size(window.innerWidth, window.innerHeight)
   ));
-  const [boardState, setBoardState] = useState(new BoardState(true));
-  const [players, setPlayers] = useState([
-    new PlayerState("Albert", 0, 0, SeatPosition.South, []),
-    new PlayerState("Betty", 1, 1, SeatPosition.East, []),
-    new PlayerState("Charlie", 2, 2, SeatPosition.North, []),
-    new PlayerState("Diane", 3, 3, SeatPosition.West, []),
-  ])
-  const displaySettings = new DisplaySettings("red.png");
 
   // Establish window size
   useEffect(() => {
@@ -109,7 +102,7 @@ export default function MatchPage() {
     }
   }, [socket, name, id]);
 
-  class Controller implements IController {
+  class Controller implements ControllerInterface {
     onDrawCard = (card: Card) => {
       const nextPlayers = players.map((player) => {
         if (player.index === currentPlayer) {
@@ -121,7 +114,7 @@ export default function MatchPage() {
             card.state,
           )
           const nextHand = [...player.hand, nextCard];
-          return new PlayerState(player.name, player.id, player.index, player.seatPosition, nextHand);
+          return new PlayerState(player.name, player.id, player.index, player.seat, nextHand);
         }
         else {
           return player;
@@ -160,10 +153,10 @@ export default function MatchPage() {
       width: "100vw",
       height: "100vh"
     }}>
-      <ControlZone parentZone={zone} controller={gameController} />
-      <CenterZone board={boardState} parentZone={zone} settings={displaySettings} controller={gameController} />
+      <ControlZone parentZone={zone} />
+      <CenterZone board={boardState} parentZone={zone} options={options} controller={gameController} />
       { players.map((player) => {
-        return <PlayerZone key={player.id} player={player} parentZone={zone} settings={displaySettings} controller={gameController} />
+        return <PlayerZone key={player.id} player={player} parentZone={zone} options={options} controller={gameController} />
       })}
     </motion.div>
   ));
