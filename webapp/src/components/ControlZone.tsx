@@ -38,20 +38,20 @@ const ControlZone: React.FC<ControlZoneArgument> = ({parentZone, controller}) =>
         justifyContent: "center",
         alignItems: "center",
         marginBottom: Constants.margin
-      }}>Add Player</button>
+      }}>Test A</button>
       <button style={{
         height: buttonHeight,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         marginBottom: Constants.margin
-      }}>Deal</button>
+      }}>Test B</button>
       <button style={{
         height: buttonHeight,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-      }}>Flip</button>
+      }}>Play</button>
     </div>
   );
 }

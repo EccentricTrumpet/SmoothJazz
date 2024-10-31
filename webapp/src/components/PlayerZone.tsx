@@ -4,9 +4,9 @@ import { IController } from "../abstractions/IController";
 import { Size } from "../abstractions/Size";
 import { Position } from "../abstractions/Position";
 import { PlayerState } from "../abstractions/PlayerState";
-import CardComponent from "./CardComponent";
 import { DisplaySettings } from "../abstractions/DisplaySettings";
 import { SeatPosition } from "../abstractions/SeatPosition";
+import HandZone from "./HandZone";
 
 
 interface ControlZoneArgument {
@@ -113,20 +113,9 @@ const ControlZone: React.FC<ControlZoneArgument> = ({player, parentZone, setting
         height: nameZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
-        <h2>{player.name}</h2>
+        <h4 style={{ margin: 0 }}>{player.name}</h4>
       </div>
-      <div className="container" style={{
-        position: "fixed",
-        left: handZone.position.x,
-        top: handZone.position.y,
-        width: handZone.size.width,
-        height: handZone.size.height,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        { player.hand.map((card, idx) => {
-          return <CardComponent idx={idx} card={card} settings={settings} controller={controller} />
-        })}
-      </div>
+      <HandZone player={player} zone={handZone} settings={settings} controller={controller} />
     </>
   );
 }

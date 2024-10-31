@@ -1,4 +1,4 @@
-import { Position } from "./Position";
+import { CardState } from "./CardState";
 import { Suit } from "./Suit";
 
 export class Card {
@@ -8,10 +8,19 @@ export class Card {
         public rank: number,
 
         // UI controls
-        public facedown: boolean = false,
-        public selected: boolean = false,
-        public position: Position = new Position(0, 0)
+        public state: CardState | undefined = undefined,
+        public prevState: CardState | undefined = undefined
     ) {}
+
+    public clone = (state: CardState | undefined = undefined) : Card => {
+        return new Card(
+            this.id,
+            this.suit,
+            this.rank,
+            state,
+            this.state,
+        )
+    }
 
     public toString = () : string => {
         return `[Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;

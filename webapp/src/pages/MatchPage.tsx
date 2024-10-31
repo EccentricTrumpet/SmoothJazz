@@ -4,9 +4,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card } from "../abstractions/Card";
-import { Suit } from "../abstractions/Suit";
 import { DisplaySettings } from "../abstractions/DisplaySettings";
-import { Constants } from "../Constants";
 import { Zone } from "../abstractions/Zone";
 import { Position } from "../abstractions/Position";
 import { Size } from "../abstractions/Size";
@@ -15,6 +13,8 @@ import ControlZone from "../components/ControlZone";
 import PlayerZone from "../components/PlayerZone";
 import { PlayerState } from "../abstractions/PlayerState";
 import { SeatPosition } from "../abstractions/SeatPosition";
+import CenterZone from "../components/CenterZone";
+import { BoardState } from "../abstractions/BoardState";
 
 export default function MatchPage() {
   // React states
@@ -26,18 +26,19 @@ export default function MatchPage() {
 
   // Game states
   const name = state.name;
-  const [cards, setCards] = useState<Array<Card>>([]);
+  const [currentPlayer, setCurrentPlayer] = useState(0);
 
   // UI states
   const [zone, setZone] = useState(new Zone(
     new Position(0, 0),
     new Size(window.innerWidth, window.innerHeight)
   ));
+  const [boardState, setBoardState] = useState(new BoardState(true));
   const [players, setPlayers] = useState([
-    new PlayerState("Alice", 0, SeatPosition.South, []),
-    new PlayerState("Bob", 0, SeatPosition.East, []),
-    new PlayerState("Charlie", 0, SeatPosition.North, []),
-    new PlayerState("David", 0, SeatPosition.West, []),
+    new PlayerState("Albert", 0, 0, SeatPosition.South, []),
+    new PlayerState("Betty", 1, 1, SeatPosition.East, []),
+    new PlayerState("Charlie", 2, 2, SeatPosition.North, []),
+    new PlayerState("Diane", 3, 3, SeatPosition.West, []),
   ])
   const displaySettings = new DisplaySettings("red.png");
 
@@ -108,38 +109,40 @@ export default function MatchPage() {
     }
   }, [socket, name, id]);
 
-  const handleDeal = () => {
-    const id = cards.length;
-    const index = id % 54;
-    const rank = index % 13 + 1;
-    let suit = Suit.Joker;
-    if (index < 13) {
-      suit = Suit.Spade;
-    } else if (index < 26) {
-      suit = Suit.Heart;
-    } else if (index < 39) {
-      suit = Suit.Club;
-    } else if (index < 52) {
-      suit = Suit.Diamond;
+  class Controller implements IController {
+    onDrawCard = (card: Card) => {
+      const nextPlayers = players.map((player) => {
+        if (player.index === currentPlayer) {
+          const nextCard = new Card(
+            card.id,
+            card.suit,
+            card.rank,
+            undefined,
+            card.state,
+          )
+          const nextHand = [...player.hand, nextCard];
+          return new PlayerState(player.name, player.id, player.index, player.seatPosition, nextHand);
+        }
+        else {
+          return player;
+        }
+      });
+
+      setPlayers(nextPlayers);
+
+      setBoardState(new BoardState(
+        false,
+        boardState.deck.filter(deckCard => card.id !== deckCard.id),
+        boardState.kitty,
+        boardState.discard,
+        boardState.points
+      ));
+
+      setCurrentPlayer((currentPlayer + 1) % players.length);
+
+      console.log(`Deck size: ${boardState.deck.length}`);
     }
 
-    let newCard = new Card(id, suit, rank);
-    newCard.position.x = cards.length*25;
-    setCards(prevCards => [...prevCards, newCard]);
-  }
-
-  const handleFlip = () => {
-    setCards(cards => cards.map((card) => new Card(
-      card.id,
-      card.suit,
-      card.rank,
-      !card.facedown,
-      card.selected,
-      card.position
-    )));
-  }
-
-  class Controller implements IController {
     onPlayCard = (card: Card) => {
       console.log(`clicked: ${card}`);
     }
@@ -158,8 +161,9 @@ export default function MatchPage() {
       height: "100vh"
     }}>
       <ControlZone parentZone={zone} controller={gameController} />
+      <CenterZone board={boardState} parentZone={zone} settings={displaySettings} controller={gameController} />
       { players.map((player) => {
-        return <PlayerZone player={player} parentZone={zone} settings={displaySettings} controller={gameController} />
+        return <PlayerZone key={player.id} player={player} parentZone={zone} settings={displaySettings} controller={gameController} />
       })}
     </motion.div>
   ));
