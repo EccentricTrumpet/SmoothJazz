@@ -6,5 +6,24 @@ export class CardState {
         public selected: boolean = false,
         public rotate: number = 0,
         public position: Position = new Position(0, 0),
+        public offset: Position = new Position(0, 0),
     ) {}
+
+    x(): number {
+        return this.position.x + this.offset.x;
+    }
+
+    y(): number {
+        return this.position.y + this.offset.y;
+    }
+
+    clone(): CardState {
+        return new CardState(
+            this.facedown,
+            this.selected,
+            this.rotate,
+            this.position.clone(),
+            this.offset.clone()
+        )
+    }
 }

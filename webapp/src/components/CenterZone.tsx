@@ -36,10 +36,6 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, parentZone, optio
     cardSize
   );
 
-  for (let card of board.deck) {
-    card.state = new CardState(false, false, 0, deckZone.position);
-  }
-
   return (
     <>
       {/* Score UI */}

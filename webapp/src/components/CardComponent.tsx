@@ -33,19 +33,19 @@ export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options
       initial={
         card.prevState
           ? {
-              x: card.prevState.position.x,
-              y: card.prevState.position.y,
+              x: card.prevState.x(),
+              y: card.prevState.y(),
               rotate: card.prevState.rotate,
             }
           : {
-              x: card.state?.position.x,
-              y: card.state?.position.y,
+              x: card.state?.x(),
+              y: card.state?.y(),
               rotate: card.state?.rotate,
             }
       }
       animate={{
-        x: card.state?.position.x,
-        y: card.state?.position.y,
+        x: card.state?.x(),
+        y: card.state?.y(),
         rotate: card.state?.rotate,
       }}
       transition={{

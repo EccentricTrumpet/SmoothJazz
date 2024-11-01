@@ -8,21 +8,21 @@ export class Card {
         public rank: number,
 
         // UI controls
-        public state: CardState | undefined = undefined,
-        public prevState: CardState | undefined = undefined
+        public state: CardState,
+        public prevState: CardState
     ) {}
 
-    public clone = (state: CardState | undefined = undefined) : Card => {
+    public clone = () : Card => {
         return new Card(
             this.id,
             this.suit,
             this.rank,
-            state,
-            this.state,
+            this.state.clone(),
+            this.state.clone(),
         )
     }
 
     public toString = () : string => {
-        return `[Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
+        return `[${this.state?.selected ? '*' : ''}Card id: ${this.id} suit: ${this.suit} rank: ${this.rank} state: ${!!this.state} prevState: ${!!this.prevState}]`;
     }
 }

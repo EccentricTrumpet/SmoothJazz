@@ -1,5 +1,8 @@
+import { Position } from "../bounds";
 import { Card } from "../Card";
 import { Suit } from "../enums";
+import { CardState } from ".";
+import { Constants } from "../../Constants";
 
 // This will be removed once BE integration is complete
 function shuffle<T>(array: T[]): T[] {
@@ -13,13 +16,13 @@ function shuffle<T>(array: T[]): T[] {
 
 export class BoardState {
     constructor(
-        initializeDeck: boolean = false,
+        deckCenter: Position | undefined = undefined,
         public deck: Card[] = [],
         public kitty: Card[] = [],
         public discard: Card[] = [],
         public points: number = 0,
     ) {
-        if (initializeDeck) {
+        if (deckCenter) {
             let ids = shuffle(Array.from(Array(108).keys()));
             let cardIndices = shuffle(Array.from(Array(108).keys()));
 
@@ -35,7 +38,27 @@ export class BoardState {
                 } else if (index < 52) {
                 suit = Suit.Diamond;
                 }
-                this.deck.push(new Card(ids[i], suit, index % 13 + 1));
+                this.deck.push(
+                    new Card(
+                        ids[i],
+                        suit,
+                        index % 13 + 1,
+                        new CardState(
+                            false,
+                            false,
+                            0,
+                            new Position(deckCenter.x - Constants.cardWidth/2, deckCenter.y - Constants.cardHeight/2),
+                            new Position(0, 0)
+                        ),
+                        new CardState(
+                            false,
+                            false,
+                            0,
+                            new Position(deckCenter.x - Constants.cardWidth/2, deckCenter.y - Constants.cardHeight/2),
+                            new Position(0, 0)
+                        )
+                    )
+                );
             }
         }
     }
