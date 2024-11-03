@@ -5,10 +5,10 @@ import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { Seat } from "../abstractions/enums";
-import { BoardState, CardState, OptionsState, PlayerState } from "../abstractions/states";
+import { BoardState, OptionsState, PlayerState } from "../abstractions/states";
+import { JoinRequest, MatchResponse } from "../abstractions/messages";
 import { CenterZone, ControlZone, PlayerZone } from "../components";
-import { Constants } from "../Constants";
+import { JoinResponse } from "../abstractions/messages/JoinResponse";
 
 export default function MatchPage() {
   // React states
@@ -25,15 +25,13 @@ export default function MatchPage() {
   ));
 
   // Game states
-  const name = state.name;
+  const name: string = state.name;
   const [currentPlayer, setCurrentPlayer] = useState(0);
   const [boardState, setBoardState] = useState(new BoardState(zone.center()));
-  const [players, setPlayers] = useState([
-    new PlayerState("Albert", 0, 0, Seat.South, []),
-    new PlayerState("Betty", 1, 1, Seat.East, []),
-    new PlayerState("Charlie", 2, 2, Seat.North, []),
-    new PlayerState("Diane", 3, 3, Seat.West, []),
-  ])
+
+  // Assume the new player sits in the South seat upon joining
+  const matchResponse: MatchResponse = state.matchResponse;
+  const [players, setPlayers] = useState(matchResponse.players);
   const options = new OptionsState("red.png");
 
   // Establish window size
@@ -86,12 +84,28 @@ export default function MatchPage() {
         console.log(`${player_name} has left the match`);
       });
 
-      socket.on("join", (player_name) => {
-        console.log(`${player_name} has joined the match`);
+      socket.on("join", (response) => {
+        const joinResponse = new JoinResponse(response);
+        console.log(`${joinResponse.name} (${joinResponse.id}) has joined the match`);
+
+        const newPlayer = new PlayerState(
+          joinResponse.id,
+          joinResponse.name,
+          PlayerState.getSeat(joinResponse.id, matchResponse.seatOffset, matchResponse.numPlayers)
+        );
+
+        console.log(`new player: ${newPlayer.id} ${newPlayer.name} ${newPlayer.seat}`);
+
+        // Need to use callback to ensure atomicity
+        setPlayers(prevPlayers => [...prevPlayers, new PlayerState(
+          joinResponse.id,
+          joinResponse.name,
+          PlayerState.getSeat(joinResponse.id, matchResponse.seatOffset, matchResponse.numPlayers)
+        )]);
       });
 
       // Join match
-      socket.emit("join", name, id);
+      socket.emit("join", new JoinRequest(Number(id), name));
 
       return () => {
         // Teardown
@@ -101,14 +115,14 @@ export default function MatchPage() {
         socket.off("leave");
       };
     }
-  }, [socket, name, id]);
+  }, [socket, name, id, matchResponse]);
 
   class Controller implements ControllerInterface {
     onDrawCard = (card: Card) => {
       // Add card to current player's hand
       const nextPlayers = players.map((player) => {
-        if (player.index === currentPlayer) {
-          return new PlayerState(player.name, player.id, player.index, player.seat, [...player.hand, card.clone()]);
+        if (player.id === currentPlayer) {
+          return new PlayerState(player.id, player.name, player.seat, [...player.hand, card.clone()]);
         }
         else {
           return player;
@@ -145,7 +159,7 @@ export default function MatchPage() {
           }
         });
 
-        return updated ? new PlayerState(player.name, player.id, player.index, player.seat, nextHand) : player;
+        return updated ? new PlayerState(player.id, player.name, player.seat, nextHand) : player;
       });
       setPlayers(nextPlayers);
     }

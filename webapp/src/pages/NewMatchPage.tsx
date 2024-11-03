@@ -1,41 +1,41 @@
 import { useEffect, useState } from 'react';
 import { CookiesProvider, useCookies } from 'react-cookie'
-import { Options } from '../scripts/Options'
 import { useNavigate } from 'react-router-dom';
+import { CookieState } from '../abstractions/states';
+import { MatchResponse } from '../abstractions/messages';
 
 export default function NewMatchPage() {
   const [cookie, setCookie] = useCookies(['shengji'])
-  const [options, setOptions] = useState(Options);
+  const [cookieState, setCookieState] = useState(new CookieState());
   const navigate = useNavigate()
 
   useEffect(() => {
     const savedOptions = cookie['shengji'];
-    setOptions({
-      name: savedOptions?.['name'] || "",
-      speed: savedOptions?.['speed'] || "",
-      debug: savedOptions?.['debug'] || false
-    });
+    setCookieState(new CookieState(
+      savedOptions?.['name'],
+      JSON.parse(savedOptions?.['debug'] || false)
+    ));
   }, [cookie])
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const name = event.target.name;
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-    setOptions(values => ({...values, [name]: value}));
+    setCookieState(values => ({...values, [name]: value}));
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setCookie('shengji', options, { path: '/'});
-    const name = options.name
+    setCookie('shengji', cookieState, { path: '/'});
+    const name = cookieState.name
     const response = await fetch('http://localhost:5001/match', {
       method: 'POST',
       headers:new Headers({
         'Content-type': 'application/json'
       }),
-      body: JSON.stringify(options)
+      body: JSON.stringify(cookieState)
     });
-    const match_id = parseInt(await response.text());
-    navigate(`/${match_id}`, { state: { name: name } });
+    const matchResponse = new MatchResponse(await response.text());
+    navigate(`/${matchResponse.matchId}`, { state: { name: name, matchResponse: matchResponse } });
   }
 
   return (
@@ -49,26 +49,12 @@ export default function NewMatchPage() {
             type="text"
             name="name"
             placeholder="Name"
-            value={options.name || ""}
+            value={cookieState.name}
             onChange={handleChange}
             required
           />
           <details>
             <summary>Settings</summary>
-            <fieldset>
-              <label htmlFor="speed">Speed</label>
-              <input
-                id="speed"
-                name="speed"
-                list="speeds"
-                type="range"
-                min="1"
-                max="5"
-                step="1"
-                value={options.speed || "3"}
-                onChange={handleChange}
-              />
-            </fieldset>
             <fieldset>
               <label htmlFor="debug">
                 <input
@@ -76,7 +62,7 @@ export default function NewMatchPage() {
                   role="switch"
                   id="debug"
                   name="debug"
-                  checked={options.debug || false}
+                  checked={cookieState.debug || false}
                   onChange={handleChange}
                 />
                 Debug mode

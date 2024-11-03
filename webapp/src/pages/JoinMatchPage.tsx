@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
 import { CookiesProvider, useCookies } from 'react-cookie'
-import { Options } from '../scripts/Options'
 import { useNavigate } from 'react-router-dom';
+import { CookieState } from '../abstractions/states';
 
 export default function JoinMatchPage() {
   const [cookie, setCookie] = useCookies(['shengji'])
-  const [options, setOptions] = useState(Options());
+  const [cookieState, setCookieState] = useState(new CookieState());
   const [match, setMatch] = useState(-1);
   const navigate = useNavigate()
 
   useEffect(() => {
     const savedOptions = cookie['shengji'];
-    setOptions({
+    setCookieState({
       name: savedOptions?.['name'] || "",
-      speed: savedOptions?.['speed'] || "",
       debug: savedOptions?.['debug'] || false
     });
   }, [cookie])
@@ -21,7 +20,7 @@ export default function JoinMatchPage() {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const name = event.target.name;
     const value = event.target.value;
-    setOptions(values => ({...values, [name]: value}));
+    setCookieState(values => ({...values, [name]: value}));
   }
 
   const handleMatchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,8 +29,8 @@ export default function JoinMatchPage() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setCookie('shengji', options, { path: '/'})
-    navigate(`/${match}`, { state: { name: options.name } });
+    setCookie('shengji', cookieState, { path: '/'})
+    navigate(`/${match}`, { state: { name: cookieState.name } });
   }
 
   return (
@@ -45,7 +44,7 @@ export default function JoinMatchPage() {
             type="text"
             name="name"
             placeholder="Name"
-            value={options.name || ""}
+            value={cookieState.name || ""}
             onChange={handleChange}
             required
           />

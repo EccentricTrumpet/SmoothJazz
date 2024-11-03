@@ -1,6 +1,6 @@
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { BoardState, CardState, OptionsState } from "../abstractions/states";
+import { BoardState, OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardComponent } from ".";
 
@@ -35,6 +35,11 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, parentZone, optio
     ),
     cardSize
   );
+
+  board.deck.forEach((card, index) => {
+    card.state.position = deckZone.position.clone();
+    card.state.position.x += index/3;
+  });
 
   return (
     <>

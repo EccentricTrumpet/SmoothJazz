@@ -32,7 +32,7 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
       for (let i = 0; i < player.hand.length; i++) {
         player.hand[i].state!.position = new Position(displayStart + i*displayIncrement, zone.top());
         player.hand[i].state!.offset = player.hand[i].state?.selected
-          ? new Position(0, 2*Constants.margin)
+          ? new Position(0, Constants.margin)
           : new Position(0, 0);
       }
       break;
@@ -49,7 +49,7 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
       for (let i = 0; i < player.hand.length; i++) {
         player.hand[i].state!.position = new Position(displayStart + i*displayIncrement, zone.top());
         player.hand[i].state!.offset = player.hand[i].state?.selected
-          ? new Position(0, -2*Constants.margin)
+          ? new Position(0, -Constants.margin)
           : new Position(0, 0);
       }
       break;
@@ -67,7 +67,7 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
         player.hand[i].state!.rotate = -90;
         player.hand[i].state!.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart - i*displayIncrement);
         player.hand[i].state!.offset = player.hand[i].state?.selected
-          ? new Position(-2*Constants.margin, 0)
+          ? new Position(-Constants.margin, 0)
           : new Position(0, 0);
       }
       break;
@@ -85,7 +85,7 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
         player.hand[i].state!.rotate = 90;
         player.hand[i].state!.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart + i*displayIncrement);
         player.hand[i].state!.offset = player.hand[i].state?.selected
-          ? new Position(2*Constants.margin, 0)
+          ? new Position(Constants.margin, 0)
           : new Position(0, 0);
       }
       break;

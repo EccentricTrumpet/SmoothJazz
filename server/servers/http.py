@@ -2,9 +2,10 @@ import logging
 from flask import Flask, render_template, request
 from flask.views import MethodView
 from flask_cors import CORS
-from services.match_service import MatchService
+from services.match import MatchService
 
 
+# Debugging only, to be deprecated
 class HelloAPI(MethodView):
     init_every_request = False
 
@@ -26,15 +27,11 @@ class MatchAPI(MethodView):
         self.__match_service: MatchService = match_service
 
     def post(self):
-        creator = request.json["name"]
-        speed = int(request.json["speed"])
         debug = bool(request.json["debug"])
 
-        logging.info(
-            f"Creating new match - creator: {creator}, speed: {speed}, debug: {debug}"
-        )
+        logging.info(f"Creating new match - debug: {debug}")
 
-        return self.__match_service.create_match(creator, 0.5 / speed, debug)
+        return self.__match_service.create(debug).json()
 
 
 class HttpServer:
