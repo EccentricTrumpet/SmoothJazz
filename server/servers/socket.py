@@ -1,7 +1,7 @@
 import logging
 from flask_socketio import Namespace, SocketIO, emit, join_room, leave_room
 from flask import Flask, request
-from abstractions.messages import JoinRequest
+from abstractions.messages import DrawRequest, JoinRequest
 from services.match import MatchService
 
 
@@ -34,11 +34,23 @@ class MatchNamespace(Namespace):
         """event listener when client disconnects to the server"""
         logging.info(f"Client {request.sid} has disconnected")
 
+    def on_data(self, data, match_id):
+        """event listener when client types a message"""
+        logging.info(f"client {request.sid} sent data: {str(data)}")
+        emit("data", data, to=match_id, broadcast=True)
+
+    def on_leave(self, player_name, match_id):
+        """event listener when client leaves a match"""
+        logging.info(
+            f"Player {player_name} [{request.sid}] leaving match: {str(match_id)}"
+        )
+        leave_room(match_id)
+        emit("leave", player_name, to=match_id, broadcast=True)
+
     def on_join(self, payload):
         """event listener when client joins a match"""
-
         join_request = JoinRequest(payload, request.sid)
-        print(join_request)
+
         logging.info(
             f"Player {join_request.player_name} [{join_request.socket_id}] joining match: {join_request.match_id}"
         )
@@ -49,18 +61,20 @@ class MatchNamespace(Namespace):
         for response in responses:
             emit(response.event, response.json(), to=response.recipient, broadcast=True)
 
-    def on_leave(self, player_name, match_id):
-        """event listener when client leaves a match"""
-        logging.info(
-            f"Player {player_name} [{request.sid}] leaving match: {str(match_id)}"
-        )
-        leave_room(match_id)
-        emit("leave", player_name, to=match_id, broadcast=True)
+    def on_draw(self, payload):
+        """event listener when client draws a card"""
+        draw_request = DrawRequest(payload)
 
-    def on_data(self, data, match_id):
-        """event listener when client types a message"""
-        logging.info(f"client {request.sid} sent data: {str(data)}")
-        emit("data", data, to=match_id, broadcast=True)
+        responses = self.__match_service.draw(draw_request)
+
+        for response in responses:
+            emit(
+                response.event,
+                response.json(),
+                to=response.recipient,
+                broadcast=response.broadcast,
+                include_self=response.include_self,
+            )
 
 
 def initialize(app: Flask, match_service: MatchService) -> SocketIO:

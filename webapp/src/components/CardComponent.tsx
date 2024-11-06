@@ -12,8 +12,8 @@ interface CardComponentInputs {
 }
 
 export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options, onClick = () => {}}) => {
-  const altText = card.state?.facedown ? "unknown" : `${card.suit} ${card.rank}`
-  const imgSource = card.state?.facedown ? options.cardBack : `${card.suit}${card.rank}.png`
+  const altText = card.state.facedown ? "unknown" : `${card.suit} ${card.rank}`
+  const imgSource = card.state.facedown ? options.cardBack : `${card.suit}${card.rank}.png`
   return (
     <motion.img
       key={card.id}
@@ -38,15 +38,15 @@ export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options
               rotate: card.prevState.rotate,
             }
           : {
-              x: card.state?.x(),
-              y: card.state?.y(),
-              rotate: card.state?.rotate,
+              x: card.state.x(),
+              y: card.state.y(),
+              rotate: card.state.rotate,
             }
       }
       animate={{
-        x: card.state?.x(),
-        y: card.state?.y(),
-        rotate: card.state?.rotate,
+        x: card.state.x(),
+        y: card.state.y(),
+        rotate: card.state.rotate,
       }}
       transition={{
         x: { type: "linear" },

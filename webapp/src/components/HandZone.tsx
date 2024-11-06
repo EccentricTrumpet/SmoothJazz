@@ -30,8 +30,8 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
           : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(player.hand.length-1));
       displayStart = zone.center().x - displayRange/2;
       for (let i = 0; i < player.hand.length; i++) {
-        player.hand[i].state!.position = new Position(displayStart + i*displayIncrement, zone.top());
-        player.hand[i].state!.offset = player.hand[i].state?.selected
+        player.hand[i].state.position = new Position(displayStart + i*displayIncrement, zone.top());
+        player.hand[i].state.offset = player.hand[i].state.selected
           ? new Position(0, Constants.margin)
           : new Position(0, 0);
       }
@@ -47,8 +47,8 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
           : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(player.hand.length-1));
       displayStart = zone.center().x - displayRange/2;
       for (let i = 0; i < player.hand.length; i++) {
-        player.hand[i].state!.position = new Position(displayStart + i*displayIncrement, zone.top());
-        player.hand[i].state!.offset = player.hand[i].state?.selected
+        player.hand[i].state.position = new Position(displayStart + i*displayIncrement, zone.top());
+        player.hand[i].state.offset = player.hand[i].state.selected
           ? new Position(0, -Constants.margin)
           : new Position(0, 0);
       }
@@ -64,9 +64,9 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
           : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(player.hand.length-1));
       displayStart = zone.center().y + displayRange/2 - Constants.cardHeight + (Constants.cardHeight - Constants.cardWidth)/2;
       for (let i = 0; i < player.hand.length; i++) {
-        player.hand[i].state!.rotate = -90;
-        player.hand[i].state!.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart - i*displayIncrement);
-        player.hand[i].state!.offset = player.hand[i].state?.selected
+        player.hand[i].state.rotate = -90;
+        player.hand[i].state.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart - i*displayIncrement);
+        player.hand[i].state.offset = player.hand[i].state.selected
           ? new Position(-Constants.margin, 0)
           : new Position(0, 0);
       }
@@ -82,9 +82,9 @@ export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, contr
           : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(player.hand.length-1));
       displayStart = zone.center().y - displayRange/2- (Constants.cardHeight - Constants.cardWidth)/2;
       for (let i = 0; i < player.hand.length; i++) {
-        player.hand[i].state!.rotate = 90;
-        player.hand[i].state!.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart + i*displayIncrement);
-        player.hand[i].state!.offset = player.hand[i].state?.selected
+        player.hand[i].state.rotate = 90;
+        player.hand[i].state.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart + i*displayIncrement);
+        player.hand[i].state.offset = player.hand[i].state.selected
           ? new Position(Constants.margin, 0)
           : new Position(0, 0);
       }

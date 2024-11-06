@@ -6,21 +6,13 @@ import { CardComponent } from ".";
 
 interface CenterZoneInputs {
   board: BoardState;
-  parentZone: Zone;
+  deckZone: Zone;
   options: OptionsState;
   controller: ControllerInterface;
 }
 
-export const CenterZone: React.FC<CenterZoneInputs> = ({board, parentZone, options, controller}) => {
-
+export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options, controller}) => {
   const cardSize = new Size(Constants.cardWidth, Constants.cardHeight);
-  const deckZone = new Zone(
-    new Position(
-      parentZone.center().x - Constants.cardWidth/2,
-      parentZone.center().y - Constants.cardHeight/2
-    ),
-    cardSize
-  );
   const kittyZone = new Zone(
     new Position(
       deckZone.left() - Constants.margin - Constants.cardWidth,
@@ -36,10 +28,14 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, parentZone, optio
     cardSize
   );
 
-  board.deck.forEach((card, index) => {
-    card.state.position = deckZone.position.clone();
-    card.state.position.x += index/3;
-  });
+  for (let card of board.deck) {
+    card.state.position.x = deckZone.position.x;
+    card.state.position.y = deckZone.position.y;
+    if (card.prevState) {
+      card.prevState.position.x = deckZone.position.x;
+      card.prevState.position.y = deckZone.position.y;
+    }
+  }
 
   return (
     <>
@@ -50,7 +46,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, parentZone, optio
         justifyContent: "center",
         alignItems: "center",
         left: deckZone.left(),
-        top: parentZone.center().y - 2*Constants.margin,
+        top: deckZone.center().y - 2*Constants.margin,
         width: Constants.cardWidth,
         height: 2*Constants.margin,
         backgroundColor: Constants.backgroundColor,
@@ -63,7 +59,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, parentZone, optio
         justifyContent: "center",
         alignItems: "center",
         left: deckZone.left(),
-        top: parentZone.center().y,
+        top: deckZone.center().y,
         width: Constants.cardWidth,
         height: 2*Constants.margin,
         backgroundColor: Constants.backgroundColor,

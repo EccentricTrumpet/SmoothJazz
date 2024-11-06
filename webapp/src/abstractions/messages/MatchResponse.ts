@@ -2,6 +2,7 @@ import { PlayerState } from "../states";
 
 export class MatchResponse {
     matchId: number;
+    debug: boolean;
     numPlayers: number;
     seatOffset: number;
     players: PlayerState[] = [];
@@ -9,6 +10,7 @@ export class MatchResponse {
     constructor(jsonText: string) {
         var jsonObj = JSON.parse(jsonText);
         this.matchId = Number(jsonObj["id"]);
+        this.debug = Boolean(jsonObj["debug"]);
         this.numPlayers = Number(jsonObj["numPlayers"]);
         this.seatOffset = jsonObj.players.length;
         for (const player of jsonObj.players) {

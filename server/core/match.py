@@ -1,8 +1,10 @@
 from itertools import count
 from typing import Iterator, List, Sequence
-from abstractions.enums import MatchPhase
-from abstractions.types import Player
+from abstractions.enums import MatchPhase, Suit
+from abstractions.types import Card, Player
 from abstractions.messages import (
+    DrawRequest,
+    DrawResponse,
     GameStartResponse,
     JoinRequest,
     JoinResponse,
@@ -55,12 +57,41 @@ class Match:
             for i in range(len(self.players), self.num_players):
                 responses.append(self.__add_player(f"Mock{i}", request.socket_id))
 
+        # Start the game if all players have joined
         if len(self.players) == self.num_players:
             new_game = Game(self.__id, self.players, 0, 2)
             self.__games.append(new_game)
             responses.append(
-                GameStartResponse(self.__id, new_game.current_player_id, new_game.deck)
+                GameStartResponse(
+                    self.__id,
+                    new_game.active_player_id,
+                    len(new_game.deck),
+                    new_game.phase,
+                )
             )
             self.__phase = MatchPhase.STARTED
 
         return responses
+
+    def draw(self, request: DrawRequest) -> Sequence[DrawResponse]:
+        response = self.__games[-1].draw(request)
+
+        if response == None:
+            return []
+
+        if self.__debug:
+            return [response]
+        else:
+            # Send a full response to the player who drew the card and broadcast
+            # a response without card suit and rank to everyone else
+            return [
+                response,
+                DrawResponse(
+                    self.__id,
+                    response.player_id,
+                    response.phase,
+                    response.activePlayerId,
+                    [Card(card.id, Suit.UNKNOWN, 0) for card in response.cards],
+                    broadcast=True,
+                ),
+            ]

@@ -1,6 +1,11 @@
 from itertools import count
 from typing import Dict, Iterator, Sequence
-from abstractions.messages import JoinRequest, SocketResponse, MatchResponse
+from abstractions.messages import (
+    DrawRequest,
+    JoinRequest,
+    SocketResponse,
+    MatchResponse,
+)
 from core.match import Match
 
 
@@ -14,8 +19,11 @@ class MatchService:
         match_id = next(self.__match_id)
         new_match = Match(match_id, debug)
         self.__matches[match_id] = new_match
-        return MatchResponse(match_id, new_match.num_players, new_match.players)
+        return MatchResponse(match_id, debug, new_match.num_players, new_match.players)
 
     def join(self, request: JoinRequest) -> Sequence[SocketResponse]:
         # TODO: Handle match not found
         return self.__matches[request.match_id].join(request)
+
+    def draw(self, request: DrawRequest) -> Sequence[SocketResponse]:
+        return self.__matches[request.match_id].draw(request)

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 from abstractions.enums import Suit
 
 
@@ -22,5 +22,8 @@ class Player:
     ) -> None:
         self.id = id
         self.name = name
-        self.__socket_id = socket_id
+        self.socket_id = socket_id
         self.__hand = hand
+
+    def draw(self, cards: Sequence[Card]) -> None:
+        self.__hand.extend(cards)

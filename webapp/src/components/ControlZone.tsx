@@ -1,11 +1,18 @@
 import { Constants } from "../Constants";
+import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
+import { GamePhase } from "../abstractions/enums";
+import { GameState } from "../abstractions/states";
 
 interface ControlZoneInputs {
   parentZone: Zone;
+  gameState: GameState;
+  playerId: number;
+  controller: ControllerInterface;
+  debug: boolean;
 }
 
-export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone}) => {
+export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState, playerId, controller, debug}) => {
 
   const zone = new Zone(
     new Position(
@@ -15,8 +22,28 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone}) => {
     new Size(Constants.cardHeight, Constants.cardHeight)
   )
 
-  const buttonCount = 3;
-  const buttonHeight = (Constants.cardHeight - (buttonCount - 1)*Constants.margin)/3;
+  let buttonText = "";
+  let buttonAction = () => {};
+  let buttonDisabled = false;
+
+  switch(gameState.gamePhase) {
+    case GamePhase.Draw:
+      buttonText = "Declare";
+      buttonAction = controller.onDeclare(debug ? gameState.activePlayerId : playerId);
+      break;
+    case GamePhase.Reserve:
+      buttonDisabled = true;
+      break;
+    case GamePhase.Kitty:
+      buttonText = "Hide";
+      break;
+    case GamePhase.Play:
+      buttonText = "Play";
+      break;
+    case GamePhase.End:
+      buttonText = "Next Game";
+      break;
+  }
 
   return (
     <div className="container" style={{
@@ -25,28 +52,23 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone}) => {
       top: zone.top(),
       width: zone.size.width,
       height: zone.size.height,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
       backgroundColor: Constants.backgroundColor,
     }}>
-      <button style={{
-        height: buttonHeight,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: Constants.margin
-      }}>Test A</button>
-      <button style={{
-        height: buttonHeight,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: Constants.margin
-      }}>Test B</button>
-      <button style={{
-        height: buttonHeight,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}>Play</button>
+      {buttonText && buttonText.length > 0 && (
+        <button
+          className={buttonDisabled ? "disabled" : ""}
+          onClick={buttonAction}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}>
+          {buttonText}
+        </button>
+      )}
     </div>
   );
 }
