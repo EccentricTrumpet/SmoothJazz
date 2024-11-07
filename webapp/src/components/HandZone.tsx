@@ -1,18 +1,21 @@
 import { ControllerInterface } from "../abstractions/ControllerInterface";
 import { Position, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
-import { OptionsState, PlayerState } from "../abstractions/states";
+import { OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardComponent } from ".";
 
 interface HandZoneInputs {
   player: PlayerState;
+  trumpState: TrumpState;
   zone: Zone;
   options: OptionsState;
   controller: ControllerInterface;
 }
 
-export const HandZone: React.FC<HandZoneInputs> = ({player, zone, options, controller}) => {
+export const HandZone: React.FC<HandZoneInputs> = ({player, trumpState, zone, options, controller}) => {
+  // Sort cards for display
+  player.hand.sort((a, b) => trumpState.getSortOrder(a) - trumpState.getSortOrder(b));
 
   let displayRange = 0;
   let displayStart = 0;

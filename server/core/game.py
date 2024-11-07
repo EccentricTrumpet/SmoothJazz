@@ -2,16 +2,17 @@ import random
 from typing import List, Sequence
 from abstractions.enums import GamePhase, Trump, Suit
 from abstractions.types import Card, Player
-from abstractions.messages import DrawRequest, DrawResponse
+from abstractions.messages import DrawRequest, DrawResponse, GameStartResponse
 
 
 class Game:
     def __init__(
         self,
         match_id: int,
-        players: Sequence[Player],
-        lead_player_id: int,
+        num_cards: int,
         trump_rank: int,
+        lead_player_id: int,
+        players: Sequence[Player],
     ) -> None:
         # Inputs
         self.__match_id = match_id
@@ -20,69 +21,78 @@ class Game:
         self.__trump_rank = trump_rank
 
         # Private
+        self.__phase = GamePhase.DRAW
         self.__trump_state = Trump.NONE
         self.__trump_suit = Suit.UNKNOWN
         self.__score = 0
         self.__kitty: List[Card] = []
         self.__discard: List[Card] = []
-
-        # Public
-        self.phase = GamePhase.DRAW
-        self.deck: List[Card] = []
-        self.active_player_id = lead_player_id
+        self.__deck: List[Card] = []
+        self.__active_player_id = lead_player_id
 
         # 1 deck for every 2 players, rounded down
-        indices = list(range(54 * (len(self.__players) // 2)))
+        indices = list(range(num_cards))
         random.shuffle(indices)  # Pre-shuffle indices it won't match card order
         suits = list(Suit)
 
-        for i in range(54 * (len(self.__players) // 2)):
+        for i in range(num_cards):
             card_index = i % 54
             suit_index = card_index // 13
             rank_index = card_index % 13 + 1
-            self.deck.append(Card(indices[i], suits[suit_index], rank_index))
+            self.__deck.append(Card(indices[i], suits[suit_index], rank_index))
 
-        random.shuffle(self.deck)
+        random.shuffle(self.__deck)
+
+    def start(self) -> GameStartResponse:
+        return GameStartResponse(
+            self.__match_id,
+            self.__active_player_id,
+            len(self.__deck),
+            self.__trump_rank,
+            self.__phase,
+        )
 
     def draw(self, request: DrawRequest) -> DrawResponse | None:
-        if request.player_id != self.active_player_id:
+        if request.player_id != self.__active_player_id:
             return None
 
-        if self.phase == GamePhase.DRAW:
+        if self.__phase == GamePhase.DRAW:
             # Draw card
-            card = self.deck.pop()
+            card = self.__deck.pop()
             player = self.__players[request.player_id]
             player.draw([card])
 
             # Update states
-            self.active_player_id = (self.active_player_id + 1) % len(self.__players)
-            if len(self.deck) == 8:
-                self.phase = GamePhase.RESERVE
+            self.__active_player_id = (self.__active_player_id + 1) % len(
+                self.__players
+            )
+            if len(self.__deck) == 8:
+                self.__phase = GamePhase.RESERVE
 
             return DrawResponse(
                 player.socket_id,
                 player.id,
-                self.phase,
-                self.active_player_id,
+                self.__phase,
+                self.__active_player_id,
                 [card],
                 include_self=True,
             )
 
-        elif self.phase == GamePhase.RESERVE:
+        elif self.__phase == GamePhase.RESERVE:
             # Draw cards
-            cards = self.deck
+            cards = self.__deck
             player = self.__players[request.player_id]
             player.draw(cards)
 
             # Update states
-            self.deck = []
-            self.phase == GamePhase.KITTY
+            self.__deck = []
+            self.__phase == GamePhase.KITTY
 
             return DrawResponse(
                 player.socket_id,
-                self.active_player_id,
-                self.phase,
-                self.active_player_id,
+                self.__active_player_id,
+                self.__phase,
+                self.__active_player_id,
                 cards,
                 include_self=True,
             )

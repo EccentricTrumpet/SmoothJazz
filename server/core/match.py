@@ -5,9 +5,9 @@ from abstractions.types import Card, Player
 from abstractions.messages import (
     DrawRequest,
     DrawResponse,
-    GameStartResponse,
     JoinRequest,
     JoinResponse,
+    MatchResponse,
     SocketResponse,
 )
 from .game import Game
@@ -20,23 +20,32 @@ class Match:
         debug: bool = False,
         num_players: int = 4,
     ) -> None:
-        # Private
         self.__id = id
         self.__debug = debug
-        self.__phase = MatchPhase.CREATED
-        self.__games: List[Game] = []
+        self.__num_players = num_players
 
         # Monotonically increasing ids
         self.__player_id: Iterator[int] = count()
 
-        # Public
-        self.num_players = num_players
-        self.players: List[Player] = []
+        # Private
+        self.__phase = MatchPhase.CREATED
+        # 1 deck for every 2 players, rounded down
+        self.__num_cards = 54 * (self.__num_players // 2)
+        self.__games: List[Game] = []
+        self.__players: List[Player] = []
+
+    def current_state(self) -> MatchResponse:
+        return MatchResponse(
+            self.__id,
+            self.__debug,
+            self.__num_players,
+            self.__players,
+        )
 
     def __add_player(self, name: str, socket_id: str) -> JoinResponse:
         player_id = next(self.__player_id)
         new_player = Player(player_id, name, socket_id)
-        self.players.append(new_player)
+        self.__players.append(new_player)
         return JoinResponse(self.__id, new_player.id, new_player.name)
 
     def join(self, request: JoinRequest) -> Sequence[JoinResponse]:
@@ -53,22 +62,15 @@ class Match:
 
         responses.append(self.__add_player(request.player_name, request.socket_id))
 
-        if self.__debug and len(self.players) == 1:
-            for i in range(len(self.players), self.num_players):
+        if self.__debug and len(self.__players) == 1:
+            for i in range(len(self.__players), self.__num_players):
                 responses.append(self.__add_player(f"Mock{i}", request.socket_id))
 
         # Start the game if all players have joined
-        if len(self.players) == self.num_players:
-            new_game = Game(self.__id, self.players, 0, 2)
+        if len(self.__players) == self.__num_players:
+            new_game = Game(self.__id, self.__num_cards, 2, 0, self.__players)
             self.__games.append(new_game)
-            responses.append(
-                GameStartResponse(
-                    self.__id,
-                    new_game.active_player_id,
-                    len(new_game.deck),
-                    new_game.phase,
-                )
-            )
+            responses.append(new_game.start())
             self.__phase = MatchPhase.STARTED
 
         return responses

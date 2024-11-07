@@ -3,3 +3,4 @@
 export * from './GamePhase';
 export * from './Seat';
 export * from './Suit';
+export * from './TrumpType';

@@ -5,10 +5,10 @@ import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { BoardState, CardState, GameState, OptionsState, PlayerState } from "../abstractions/states";
+import { BoardState, CardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { DrawRequest, GameStartResponse, JoinRequest, JoinResponse, MatchResponse } from "../abstractions/messages";
 import { CenterZone, ControlZone, PlayerZone } from "../components";
-import { GamePhase, Suit } from "../abstractions/enums";
+import { Suit } from "../abstractions/enums";
 import { DrawResponse } from "../abstractions/messages/DrawResponse";
 import { Constants } from "../Constants";
 
@@ -39,6 +39,7 @@ export default function MatchPage() {
   const [playerId, setPlayerId] = useState(-1);
   const [gameState, setGameState] = useState(new GameState());
   const [boardState, setBoardState] = useState(new BoardState());
+  const [trumpState, setTrumpState] = useState(new TrumpState(0, 0));
 
   // Assume the new player sits in the South seat upon joining
   const matchResponse: MatchResponse = state.matchResponse;
@@ -114,6 +115,7 @@ export default function MatchPage() {
         const gameStartResponse = new GameStartResponse(response);
 
         setGameState(new GameState(gameStartResponse.activePlayerId, gameStartResponse.gamePhase));
+        setTrumpState(new TrumpState(gameStartResponse.deckSize, gameStartResponse.trumpRank));
         setBoardState(new BoardState(
           Array(gameStartResponse.deckSize).fill('').map((_, i) =>
             new Card(-(1 + i), Suit.Unknown, 0, new CardState(
@@ -229,7 +231,7 @@ export default function MatchPage() {
       <ControlZone parentZone={zone} gameState={gameState} playerId={playerId} controller={gameController} debug={matchResponse.debug} />
       <CenterZone board={boardState} deckZone={deckZone} options={options} controller={gameController} />
       { players.map((player) => {
-        return <PlayerZone key={player.id} player={player} parentZone={zone} options={options} controller={gameController} />
+        return <PlayerZone key={player.id} player={player} trumpState={trumpState} parentZone={zone} options={options} controller={gameController} />
       })}
     </motion.div>
   ));

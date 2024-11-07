@@ -93,6 +93,7 @@ class GameStartResponse(SocketResponse):
         recipient: str,
         active_player_id: int,
         deck_size: int,
+        trump_rank: int,
         game_phase: GamePhase,
     ):
         self.event = "gameStart"
@@ -101,12 +102,14 @@ class GameStartResponse(SocketResponse):
         self.include_self = True
         self.__active_player_id = active_player_id
         self.__deck_size = deck_size
+        self.__trump_rank = trump_rank
         self.__game_phase = game_phase
 
     def json(self) -> dict:
         return {
             "activePlayerId": self.__active_player_id,
             "deckSize": self.__deck_size,
+            "trumpRank": self.__trump_rank,
             "gamePhase": self.__game_phase,
         }
 

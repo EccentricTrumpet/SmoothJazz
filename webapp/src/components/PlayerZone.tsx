@@ -1,18 +1,19 @@
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
-import { OptionsState, PlayerState } from "../abstractions/states";
+import { OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { HandZone } from ".";
 
 interface PlayerZoneArgument {
   player: PlayerState;
+  trumpState: TrumpState;
   parentZone: Zone;
   options: OptionsState;
   controller: ControllerInterface;
 }
 
-export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, parentZone, options, controller}) => {
+export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, parentZone, options, controller}) => {
 
   let handZone: Zone;
   let nameZone: Zone;
@@ -115,7 +116,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, parentZone, op
       }}>
         <h4 style={{ margin: 0 }}>{player.name}</h4>
       </div>
-      <HandZone player={player} zone={handZone} options={options} controller={controller} />
+      <HandZone player={player} trumpState={trumpState} zone={handZone} options={options} controller={controller} />
     </>
   );
 }

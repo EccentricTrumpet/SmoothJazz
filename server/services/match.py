@@ -19,7 +19,7 @@ class MatchService:
         match_id = next(self.__match_id)
         new_match = Match(match_id, debug)
         self.__matches[match_id] = new_match
-        return MatchResponse(match_id, debug, new_match.num_players, new_match.players)
+        return new_match.current_state()
 
     def join(self, request: JoinRequest) -> Sequence[SocketResponse]:
         # TODO: Handle match not found
