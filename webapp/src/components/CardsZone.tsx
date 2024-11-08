@@ -107,7 +107,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
     }}>
       { cards.map((card, idx) => {
         return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => {
-          controller.onSelectCard(card);
+          controller.onSelect(card);
         }} />
       })}
     </div>

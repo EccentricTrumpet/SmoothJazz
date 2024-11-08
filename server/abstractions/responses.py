@@ -80,7 +80,7 @@ class JoinResponse(SocketResponse):
         return {"id": self.__id, "name": self.__name}
 
 
-class GameStartResponse(SocketResponse):
+class StartResponse(SocketResponse):
     def __init__(
         self,
         recipient: str,
@@ -159,5 +159,34 @@ class TrumpResponse(SocketResponse):
             "trumps": [
                 {"id": trump.id, "suit": trump.suit, "rank": trump.rank}
                 for trump in self.trumps
+            ],
+        }
+
+
+class KittyResponse(SocketResponse):
+    def __init__(
+        self,
+        recipient: str,
+        player_id: int,
+        phase: GamePhase,
+        cards: Sequence[Card],
+        broadcast: bool = False,
+        include_self: bool = False,
+    ):
+        self.event = "kitty"
+        self.recipient = recipient
+        self.player_id = player_id
+        self.phase = phase
+        self.cards = cards
+        self.broadcast = broadcast
+        self.include_self = include_self
+
+    def json(self) -> dict:
+        return {
+            "playerId": self.player_id,
+            "phase": self.phase,
+            "cards": [
+                {"id": card.id, "suit": card.suit, "rank": card.rank}
+                for card in self.cards
             ],
         }

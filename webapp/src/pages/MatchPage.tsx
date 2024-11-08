@@ -6,7 +6,7 @@ import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { BoardState, CardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { CardInfo, DrawRequest, GameStartResponse, JoinRequest, JoinResponse, MatchResponse, TrumpRequest, TrumpResponse } from "../abstractions/messages";
+import { CardInfo, DrawRequest, StartResponse, JoinRequest, JoinResponse, KittyRequest, MatchResponse, TrumpRequest, TrumpResponse, KittyResponse } from "../abstractions/messages";
 import { CenterZone, ControlZone, PlayerZone } from "../components";
 import { GamePhase, Suit } from "../abstractions/enums";
 import { DrawResponse } from "../abstractions/messages/DrawResponse";
@@ -96,6 +96,7 @@ export default function MatchPage() {
     if (socket) {
       // Receive messages
       socket.on("data", (data) => {
+        console.log(`raw join response: ${JSON.stringify(data)}`);
       });
 
       socket.on("leave", (player_name) => {
@@ -103,6 +104,7 @@ export default function MatchPage() {
       });
 
       socket.on("join", (response) => {
+        console.log(`raw join response: ${JSON.stringify(response)}`);
         const joinResponse = new JoinResponse(response);
 
         if (joinResponse.name === name) {
@@ -118,12 +120,13 @@ export default function MatchPage() {
       });
 
       socket.on("gameStart", (response) => {
-        const gameStartResponse = new GameStartResponse(response);
+        console.log(`raw start response: ${JSON.stringify(response)}`);
+        const startResponse = new StartResponse(response);
 
-        setGameState(new GameState(gameStartResponse.activePlayerId, gameStartResponse.gamePhase));
-        setTrumpState(new TrumpState(gameStartResponse.deckSize, gameStartResponse.gameRank));
+        setGameState(new GameState(startResponse.activePlayerId, startResponse.gamePhase));
+        setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
         setBoardState(new BoardState(
-          Array(gameStartResponse.deckSize).fill('').map((_, i) =>
+          Array(startResponse.deckSize).fill('').map((_, i) =>
             new Card(-(1 + i), Suit.Unknown, 0, new CardState(
               true,
               false,
@@ -136,6 +139,7 @@ export default function MatchPage() {
       });
 
       socket.on("draw", (response) => {
+        console.log(`raw draw response: ${JSON.stringify(response)}`);
         const drawResponse = new DrawResponse(response);
 
         let drawnCards: Card[];
@@ -179,12 +183,12 @@ export default function MatchPage() {
           return newPlayerState;
         }));
 
-        // Set new active player
+        // Set new game state
         setGameState(_ => new GameState(drawResponse.activePlayerId, drawResponse.phase));
       });
 
       socket.on("trump", (response) => {
-        console.log(`raw response: ${JSON.stringify(response)}`);
+        console.log(`raw trump response: ${JSON.stringify(response)}`);
         const trumpResponse = new TrumpResponse(response);
 
         // Add new card to player's hand
@@ -217,12 +221,50 @@ export default function MatchPage() {
           trumpResponse.trumps[0].suit));
       });
 
+      socket.on("kitty", (response) => {
+        console.log(`raw kitty response: ${JSON.stringify(response)}`);
+        const kittyResponse = new KittyResponse(response);
+        const kitty: Card[] = [];
+
+        // Add new cards to player's hand
+        setPlayers(prevPlayers => prevPlayers.map((player) => {
+          if (player.id === kittyResponse.playerId) {
+            const [newKitty, newHand] = partition(player.hand, (card) => {
+              return kittyResponse.cards.some((kittyCard) => kittyCard.id === card.id);
+            });
+
+            for (const card of newKitty) {
+              const newCard = card.clone()
+              newCard.state.selected = false;
+              newCard.state.facedown = true;
+              kitty.push(newCard);
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, newHand, player.staging);
+          }
+          else {
+            return player;
+          }
+        }));
+
+        setBoardState(prevBoardState => new BoardState(
+          prevBoardState.deck,
+          kitty,
+          prevBoardState.discard,
+          prevBoardState.points
+        ));
+
+        // Set new game state
+        setGameState(prevGameState => new GameState(prevGameState.activePlayerId, kittyResponse.phase));
+      });
+
       // Join match
       socket.emit("join", new JoinRequest(Number(matchId), name));
 
       return () => {
         // Teardown
         socket.emit("leave", name, matchId);
+        socket.off("kitty");
         socket.off("trump");
         socket.off("draw");
         socket.off("gameStart");
@@ -235,7 +277,7 @@ export default function MatchPage() {
   }, [socket, name, matchId, matchResponse]);
 
   class Controller implements ControllerInterface {
-    onDeclare = (playerId: number) => {
+    onShow(playerId: number) {
       const trumps: CardInfo[] = [];
       for (const card of players[playerId].hand) {
         if (card.state.selected) {
@@ -249,13 +291,13 @@ export default function MatchPage() {
       socket?.emit("trump", new TrumpRequest(matchId, playerId, trumps));
     }
 
-    onDrawCard = () => {
+    onDraw() {
       if (matchResponse.debug || playerId === gameState.activePlayerId) {
         socket?.emit("draw", new DrawRequest(matchId, gameState.activePlayerId));
       }
     }
 
-    onSelectCard = (selectedCard: Card) => {
+    onSelect(selectedCard: Card) {
       const nextPlayers = players.map((player) => {
         let updated = false;
 
@@ -275,6 +317,23 @@ export default function MatchPage() {
       });
       setPlayers(nextPlayers);
     }
+
+    onHide(playerId: number) {
+      const cards: CardInfo[] = [];
+      for (const card of players[playerId].hand) {
+        if (card.state.selected) {
+          cards.push(new CardInfo(
+            card.id,
+            card.suit,
+            card.rank
+          ))
+        }
+      }
+      socket?.emit("kitty", new KittyRequest(matchId, playerId, cards));
+    };
+
+    onPlay = (playerId: number) => {};
+    onNext = (playerId: number) => {};
   }
 
   const gameController = new Controller();

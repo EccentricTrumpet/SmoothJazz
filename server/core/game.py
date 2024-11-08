@@ -2,8 +2,13 @@ import random
 from typing import List, Sequence
 from abstractions.enums import GamePhase, Suit, TrumpType
 from abstractions.types import Card, Player
-from abstractions.requests import DrawRequest, TrumpRequest
-from abstractions.responses import DrawResponse, GameStartResponse, TrumpResponse
+from abstractions.requests import DrawRequest, KittyRequest, TrumpRequest
+from abstractions.responses import (
+    DrawResponse,
+    StartResponse,
+    KittyResponse,
+    TrumpResponse,
+)
 
 
 class Game:
@@ -48,8 +53,8 @@ class Game:
 
         random.shuffle(self.__deck)
 
-    def start(self) -> GameStartResponse:
-        return GameStartResponse(
+    def start(self) -> StartResponse:
+        return StartResponse(
             self.__match_id,
             self.__active_player_id,
             len(self.__deck),
@@ -143,10 +148,7 @@ class Game:
 
         # Must fortify or declare trump that is of higher priority
         if not fortify and trump_type <= self.__trump_type:
-            print(f"Trump priority not high enough")
             return None
-
-        print("Trump declared successfully")
 
         # Update states
         self.__trump_suit = request.trumps[0].suit
@@ -158,3 +160,33 @@ class Game:
             self.__kitty_player_id = self.__trump_declarer_id
 
         return TrumpResponse(self.__match_id, request.player_id, request.trumps)
+
+    def kitty(self, request: KittyRequest) -> KittyResponse | None:
+        # Only hide kitty during the kitty phase
+        if self.__phase != GamePhase.KITTY:
+            return None
+
+        # Only kitty player can hide kitty
+        if request.player_id != self.__kitty_player_id:
+            return None
+
+        # Number of cards must be correct
+        if len(request.cards) != 8:
+            return None
+
+        kitty_player = self.__players[request.player_id]
+
+        # Player must possess the cards
+        if not kitty_player.has_cards(request.cards):
+            return None
+
+        # Hide kitty
+        kitty_player.play(request.cards)
+        self.__kitty = request.cards
+
+        # Update states
+        self.__phase = GamePhase.PLAY
+
+        return KittyResponse(
+            self.__match_id, request.player_id, self.__phase, request.cards, True, True
+        )

@@ -1,6 +1,6 @@
 import { GamePhase } from "../enums";
 
-export class GameStartResponse {
+export class StartResponse {
     activePlayerId: number;
     deckSize: number;
     gameRank: number;

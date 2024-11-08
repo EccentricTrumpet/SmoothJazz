@@ -30,7 +30,7 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
     case GamePhase.Draw:
       buttonText = "Declare";
       buttonAction = () => {
-        controller.onDeclare(debug ? gameState.activePlayerId : playerId)
+        controller.onShow(debug ? gameState.activePlayerId : playerId)
       };
       break;
     case GamePhase.Reserve:
@@ -38,12 +38,21 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
       break;
     case GamePhase.Kitty:
       buttonText = "Hide";
+      buttonAction = () => {
+        controller.onHide(debug ? gameState.activePlayerId : playerId)
+      };
       break;
     case GamePhase.Play:
       buttonText = "Play";
+      buttonAction = () => {
+        controller.onPlay(debug ? gameState.activePlayerId : playerId)
+      };
       break;
     case GamePhase.End:
       buttonText = "Next Game";
+      buttonAction = () => {
+        controller.onNext(debug ? gameState.activePlayerId : playerId)
+      };
       break;
   }
 

@@ -40,3 +40,8 @@ class Player:
             return False
 
         return True
+
+    # Always call has_cards before calling play
+    def play(self, cards: Sequence[Card]) -> None:
+        card_ids = set([card.id for card in cards])
+        self.__hand = [card for card in cards if card.id not in card_ids]

@@ -4,6 +4,7 @@ from abstractions.responses import SocketResponse
 from abstractions.requests import (
     DrawRequest,
     JoinRequest,
+    KittyRequest,
     TrumpRequest,
 )
 from core.match import Match
@@ -32,3 +33,7 @@ class MatchService:
     def trump(self, request: TrumpRequest) -> SocketResponse | None:
         # TODO: Handle match not found
         return self.__matches[request.match_id].trump(request)
+
+    def kitty(self, request: KittyRequest) -> Sequence[SocketResponse]:
+        # TODO: Handle match not found
+        return self.__matches[request.match_id].kitty(request)

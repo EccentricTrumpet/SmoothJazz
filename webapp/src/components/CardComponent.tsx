@@ -16,7 +16,6 @@ export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options
   const imgSource = card.state.facedown ? options.cardBack : `${card.suit}${card.rank}.png`
   return (
     <motion.img
-      key={card.id}
       onClick={() => onClick()}
       style={{
         position: "fixed",

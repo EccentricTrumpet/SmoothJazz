@@ -28,6 +28,12 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
     cardSize
   );
 
+
+  for (let card of board.kitty) {
+    card.state.position.x = kittyZone.position.x;
+    card.state.position.y = kittyZone.position.y;
+  }
+
   for (let card of board.deck) {
     card.state.position.x = deckZone.position.x;
     card.state.position.y = deckZone.position.y;
@@ -39,46 +45,6 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
 
   return (
     <>
-      {/* Score UI */}
-      <div className="container" style={{
-        position: "fixed",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        left: deckZone.left(),
-        top: deckZone.center().y - 3*Constants.margin,
-        width: Constants.cardWidth,
-        height: 3*Constants.margin,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        <h4 style={{ margin: 0 }}>Points:</h4>
-      </div>
-      <div className="container" style={{
-        position: "fixed",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        left: deckZone.left(),
-        top: deckZone.center().y,
-        width: Constants.cardWidth,
-        height: 3*Constants.margin,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        <h4 style={{ margin: 0 }}>{board.points}</h4>
-      </div>
-      {/* Kitty */}
-      <div className="container" style={{
-        position: "fixed",
-        left: kittyZone.left(),
-        top: kittyZone.top(),
-        width: kittyZone.size.width,
-        height: kittyZone.size.height,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        { board.kitty.map((card, idx) => {
-          return <CardComponent idx={idx} card={card} options={options} />
-        })}
-      </div>
       {/* Deck count UI */}
       { board.deck.length > 0 && (
         <>
@@ -110,7 +76,46 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
           </div>
         </>
       )}
-
+      {/* Kitty */}
+      <div className="container" style={{
+        position: "fixed",
+        left: kittyZone.left(),
+        top: kittyZone.top(),
+        width: kittyZone.size.width,
+        height: kittyZone.size.height,
+        backgroundColor: Constants.backgroundColor,
+      }}>
+        { board.kitty.map((card, idx) => {
+          return <CardComponent key={card.id} idx={idx} card={card} options={options} />
+        })}
+      </div>
+      {/* Score UI */}
+      <div className="container" style={{
+        position: "fixed",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        left: deckZone.left(),
+        top: deckZone.center().y - 3*Constants.margin,
+        width: Constants.cardWidth,
+        height: 3*Constants.margin,
+        backgroundColor: Constants.backgroundColor,
+      }}>
+        <h4 style={{ margin: 0 }}>Points:</h4>
+      </div>
+      <div className="container" style={{
+        position: "fixed",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        left: deckZone.left(),
+        top: deckZone.center().y,
+        width: Constants.cardWidth,
+        height: 3*Constants.margin,
+        backgroundColor: Constants.backgroundColor,
+      }}>
+        <h4 style={{ margin: 0 }}>{board.points}</h4>
+      </div>
       {/* Deck */}
       <div className="container" style={{
         position: "fixed",
@@ -122,7 +127,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
       }}>
         { board.deck.map((card, idx) => {
           return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => {
-            controller.onDrawCard();
+            controller.onDraw();
           }}/>
         })}
       </div>

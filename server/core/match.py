@@ -5,11 +5,13 @@ from abstractions.types import Card, Player
 from abstractions.requests import (
     DrawRequest,
     JoinRequest,
+    KittyRequest,
     TrumpRequest,
 )
 from abstractions.responses import (
     DrawResponse,
     JoinResponse,
+    KittyResponse,
     MatchResponse,
     SocketResponse,
     TrumpResponse,
@@ -107,3 +109,25 @@ class Match:
     def trump(self, request: TrumpRequest) -> TrumpResponse | None:
         print(f"[ player_id: {request.player_id} trumps: {len(request.trumps)} ]")
         return self.__games[-1].trump(request)
+
+    def kitty(self, request: KittyRequest) -> Sequence[KittyResponse]:
+        response = self.__games[-1].kitty(request)
+
+        if response == None:
+            return []
+
+        if self.__debug:
+            return [response]
+        else:
+            # Send a full response to the player who drew the card and broadcast
+            # a response without card suit and rank to everyone else
+            return [
+                response,
+                KittyResponse(
+                    self.__id,
+                    response.player_id,
+                    response.phase,
+                    [Card(card.id, Suit.UNKNOWN, 0) for card in response.cards],
+                    broadcast=True,
+                ),
+            ]
