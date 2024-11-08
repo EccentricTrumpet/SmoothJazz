@@ -46,9 +46,9 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
         justifyContent: "center",
         alignItems: "center",
         left: deckZone.left(),
-        top: deckZone.center().y - 2*Constants.margin,
+        top: deckZone.center().y - 3*Constants.margin,
         width: Constants.cardWidth,
-        height: 2*Constants.margin,
+        height: 3*Constants.margin,
         backgroundColor: Constants.backgroundColor,
       }}>
         <h4 style={{ margin: 0 }}>Points:</h4>
@@ -61,7 +61,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
         left: deckZone.left(),
         top: deckZone.center().y,
         width: Constants.cardWidth,
-        height: 2*Constants.margin,
+        height: 3*Constants.margin,
         backgroundColor: Constants.backgroundColor,
       }}>
         <h4 style={{ margin: 0 }}>{board.points}</h4>
@@ -79,6 +79,38 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
           return <CardComponent idx={idx} card={card} options={options} />
         })}
       </div>
+      {/* Deck count UI */}
+      { board.deck.length > 0 && (
+        <>
+          <div className="container" style={{
+            position: "fixed",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            left: kittyZone.left(),
+            top: deckZone.center().y - 3*Constants.margin,
+            width: Constants.cardWidth,
+            height: 3*Constants.margin,
+            backgroundColor: Constants.backgroundColor,
+          }}>
+            <h4 style={{ margin: 0 }}>Deck:</h4>
+          </div>
+          <div className="container" style={{
+            position: "fixed",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            left: kittyZone.left(),
+            top: deckZone.center().y,
+            width: Constants.cardWidth,
+            height: 3*Constants.margin,
+            backgroundColor: Constants.backgroundColor,
+          }}>
+            <h4 style={{ margin: 0 }}>{board.deck.length}</h4>
+          </div>
+        </>
+      )}
+
       {/* Deck */}
       <div className="container" style={{
         position: "fixed",
@@ -90,7 +122,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
       }}>
         { board.deck.map((card, idx) => {
           return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => {
-            controller.onDrawCard(card);
+            controller.onDrawCard();
           }}/>
         })}
       </div>

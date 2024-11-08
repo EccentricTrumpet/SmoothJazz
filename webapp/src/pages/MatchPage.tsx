@@ -6,11 +6,17 @@ import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { BoardState, CardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { DrawRequest, GameStartResponse, JoinRequest, JoinResponse, MatchResponse } from "../abstractions/messages";
+import { CardInfo, DrawRequest, GameStartResponse, JoinRequest, JoinResponse, MatchResponse, TrumpRequest, TrumpResponse } from "../abstractions/messages";
 import { CenterZone, ControlZone, PlayerZone } from "../components";
-import { Suit } from "../abstractions/enums";
+import { GamePhase, Suit } from "../abstractions/enums";
 import { DrawResponse } from "../abstractions/messages/DrawResponse";
 import { Constants } from "../Constants";
+
+function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
+  return array.reduce(([pass, fail], elem) => {
+    return condition(elem) ? [[...pass, elem], fail] : [pass, [...fail, elem]];
+  }, [[], []] as [T[], T[]]);
+}
 
 export default function MatchPage() {
   // React states
@@ -115,7 +121,7 @@ export default function MatchPage() {
         const gameStartResponse = new GameStartResponse(response);
 
         setGameState(new GameState(gameStartResponse.activePlayerId, gameStartResponse.gamePhase));
-        setTrumpState(new TrumpState(gameStartResponse.deckSize, gameStartResponse.trumpRank));
+        setTrumpState(new TrumpState(gameStartResponse.deckSize, gameStartResponse.gameRank));
         setBoardState(new BoardState(
           Array(gameStartResponse.deckSize).fill('').map((_, i) =>
             new Card(-(1 + i), Suit.Unknown, 0, new CardState(
@@ -132,40 +138,83 @@ export default function MatchPage() {
       socket.on("draw", (response) => {
         const drawResponse = new DrawResponse(response);
 
-        for (const card of drawResponse.cards) {
-          // Remove card from deck
-          let topCard: Card;
-          setBoardState(prevBoardState => {
-            topCard = prevBoardState.deck[prevBoardState.deck.length - 1];
-            return new BoardState(
-              prevBoardState.deck.slice(0, -1),
-              prevBoardState.kitty,
-              prevBoardState.discard,
-              prevBoardState.points
-            )
-          });
+        let drawnCards: Card[];
+        setBoardState(prevBoardState => {
+          drawnCards = prevBoardState.deck.slice(-drawResponse.cards.length);
+          return new BoardState(
+            prevBoardState.deck.slice(0, -drawResponse.cards.length),
+            prevBoardState.kitty,
+            prevBoardState.discard,
+            prevBoardState.points
+          )
+        });
 
-          // Add new card to player's hand
-          setPlayers(prevPlayers => prevPlayers.map((player) => {
-            if (player.id === drawResponse.id) {
-              const newCard = topCard.clone();
-              newCard.id = card.id;
-              newCard.suit = card.suit;
-              newCard.rank = card.rank;
-              newCard.state.facedown = false;
+        // Add new cards to player's hand
+        setPlayers(prevPlayers => prevPlayers.map((player) => {
+          let newPlayerState: PlayerState;
+          if (player.id === drawResponse.id) {
+            for (let i = 0; i < drawnCards.length; i++) {
+              drawnCards[i].prepareState();
+              drawnCards[i].id = drawResponse.cards[i].id;
+              drawnCards[i].suit = drawResponse.cards[i].suit;
+              drawnCards[i].rank = drawResponse.cards[i].rank;
+              drawnCards[i].state.facedown = false;
+            }
 
-              return new PlayerState(player.id, player.name, player.seat, [...player.hand, newCard]);
+            newPlayerState = new PlayerState(player.id, player.name, player.seat, [...player.hand, ...drawnCards], player.staging);
+          }
+          else {
+            newPlayerState = player;
+          }
+
+          // Withdraw any declared trumps in preparation for game start
+          if (drawResponse.phase === GamePhase.Kitty && newPlayerState.staging.length > 0) {
+            for (const card of newPlayerState.staging) {
+              card.prepareState();
             }
-            else {
-              return player;
-            }
-          }));
-        }
+            newPlayerState.hand = [...newPlayerState.hand, ...newPlayerState.staging];
+            newPlayerState.staging = [];
+          }
+
+          return newPlayerState;
+        }));
 
         // Set new active player
-        setGameState(_prevGameState => {
-          return new GameState(drawResponse.activePlayerId, drawResponse.phase);
-        })
+        setGameState(_ => new GameState(drawResponse.activePlayerId, drawResponse.phase));
+      });
+
+      socket.on("trump", (response) => {
+        console.log(`raw response: ${JSON.stringify(response)}`);
+        const trumpResponse = new TrumpResponse(response);
+
+        // Add new card to player's hand
+        setPlayers(prevPlayers => prevPlayers.map((player) => {
+          if (player.id === trumpResponse.playerId) {
+            const [newStaging, newHand] = partition(player.hand, (card) => {
+              return trumpResponse.trumps.some((trump) => trump.id === card.id);
+            });
+
+            for (const card of newStaging) {
+              card.state.selected = false;
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.staging, ...newStaging]);
+          }
+          else if (player.staging.length > 0) {
+            for (const card of player.staging) {
+              card.prepareState();
+            }
+            return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...player.staging]);
+          }
+          else {
+            return player;
+          }
+        }));
+
+        setTrumpState(prevTrumpState => new TrumpState(
+          prevTrumpState.numCards,
+          prevTrumpState.trumpRank,
+          trumpResponse.trumps[0].suit));
       });
 
       // Join match
@@ -174,6 +223,8 @@ export default function MatchPage() {
       return () => {
         // Teardown
         socket.emit("leave", name, matchId);
+        socket.off("trump");
+        socket.off("draw");
         socket.off("gameStart");
         socket.off("join");
         socket.off("leave");
@@ -185,12 +236,22 @@ export default function MatchPage() {
 
   class Controller implements ControllerInterface {
     onDeclare = (playerId: number) => {
-
+      const trumps: CardInfo[] = [];
+      for (const card of players[playerId].hand) {
+        if (card.state.selected) {
+          trumps.push(new CardInfo(
+            card.id,
+            card.suit,
+            card.rank
+          ))
+        }
+      }
+      socket?.emit("trump", new TrumpRequest(matchId, playerId, trumps));
     }
 
-    onDrawCard = (card: Card) => {
+    onDrawCard = () => {
       if (matchResponse.debug || playerId === gameState.activePlayerId) {
-        socket?.emit("draw", new DrawRequest(matchId, gameState.activePlayerId))
+        socket?.emit("draw", new DrawRequest(matchId, gameState.activePlayerId));
       }
     }
 
@@ -228,10 +289,26 @@ export default function MatchPage() {
       width: "100vw",
       height: "100vh"
     }}>
-      <ControlZone parentZone={zone} gameState={gameState} playerId={playerId} controller={gameController} debug={matchResponse.debug} />
-      <CenterZone board={boardState} deckZone={deckZone} options={options} controller={gameController} />
+      <ControlZone
+        parentZone={zone}
+        gameState={gameState}
+        playerId={playerId}
+        controller={gameController}
+        debug={matchResponse.debug} />
+      <CenterZone
+        board={boardState}
+        deckZone={deckZone}
+        options={options}
+        controller={gameController} />
       { players.map((player) => {
-        return <PlayerZone key={player.id} player={player} trumpState={trumpState} parentZone={zone} options={options} controller={gameController} />
+        return <PlayerZone
+          key={player.id}
+          player={player}
+          activePlayerId={gameState.activePlayerId}
+          trumpState={trumpState}
+          parentZone={zone}
+          options={options}
+          controller={gameController} />
       })}
     </motion.div>
   ));

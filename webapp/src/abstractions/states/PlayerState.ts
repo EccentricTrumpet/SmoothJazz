@@ -7,7 +7,8 @@ export class PlayerState {
         public id: number,
         public name: string,
         public seat: Seat,
-        public hand: Card[] = []
+        public hand: Card[] = [],
+        public staging: Card[] = []
     ) {}
 
     public static getSeat(playerId: number, seatOffset: number, numPlayers: number): Seat {

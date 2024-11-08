@@ -1,5 +1,5 @@
 import { Card } from "../Card";
-import { Suit, TrumpType } from "../enums";
+import { Suit } from "../enums";
 
 export class TrumpState {
     public sortOrder = new Map<string, number>();
@@ -7,8 +7,7 @@ export class TrumpState {
     constructor(
         public numCards: number,
         public trumpRank: number,
-        public trumpSuit = Suit.Unknown,
-        public trumpType = TrumpType.None
+        public trumpSuit = Suit.Unknown
     ) {
         let nonTrumpSuits: Suit[];
         switch(trumpSuit) {

@@ -3,5 +3,5 @@
 export * from './CardComponent';
 export * from './CenterZone';
 export * from './ControlZone';
-export * from './HandZone';
+export * from './CardsZone';
 export * from './PlayerZone';

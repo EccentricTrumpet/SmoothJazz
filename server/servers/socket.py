@@ -1,7 +1,7 @@
 import logging
 from flask_socketio import Namespace, SocketIO, emit, join_room, leave_room
 from flask import Flask, request
-from abstractions.messages import DrawRequest, JoinRequest
+from abstractions.requests import DrawRequest, JoinRequest, TrumpRequest
 from services.match import MatchService
 
 
@@ -63,11 +63,22 @@ class MatchNamespace(Namespace):
 
     def on_draw(self, payload):
         """event listener when client draws a card"""
-        draw_request = DrawRequest(payload)
-
-        responses = self.__match_service.draw(draw_request)
+        responses = self.__match_service.draw(DrawRequest(payload))
 
         for response in responses:
+            emit(
+                response.event,
+                response.json(),
+                to=response.recipient,
+                broadcast=response.broadcast,
+                include_self=response.include_self,
+            )
+
+    def on_trump(self, payload):
+        """event listener when client draws a card"""
+        response = self.__match_service.trump(TrumpRequest(payload))
+
+        if response != None:
             emit(
                 response.event,
                 response.json(),

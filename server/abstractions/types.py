@@ -27,3 +27,16 @@ class Player:
 
     def draw(self, cards: Sequence[Card]) -> None:
         self.__hand.extend(cards)
+
+    def has_cards(self, cards: Sequence[Card]) -> bool:
+        card_ids = set([card.id for card in cards])
+
+        # Ensure all cards in sequence are unique
+        if len(card_ids) != len(cards):
+            return False
+
+        # Ensure all cards exist in hand
+        if len(card_ids - set([card.id for card in self.__hand])) > 0:
+            return False
+
+        return True

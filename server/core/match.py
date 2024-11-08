@@ -2,13 +2,17 @@ from itertools import count
 from typing import Iterator, List, Sequence
 from abstractions.enums import MatchPhase, Suit
 from abstractions.types import Card, Player
-from abstractions.messages import (
+from abstractions.requests import (
     DrawRequest,
-    DrawResponse,
     JoinRequest,
+    TrumpRequest,
+)
+from abstractions.responses import (
+    DrawResponse,
     JoinResponse,
     MatchResponse,
     SocketResponse,
+    TrumpResponse,
 )
 from .game import Game
 
@@ -34,7 +38,7 @@ class Match:
         self.__games: List[Game] = []
         self.__players: List[Player] = []
 
-    def current_state(self) -> MatchResponse:
+    def response(self) -> MatchResponse:
         return MatchResponse(
             self.__id,
             self.__debug,
@@ -68,7 +72,9 @@ class Match:
 
         # Start the game if all players have joined
         if len(self.__players) == self.__num_players:
-            new_game = Game(self.__id, self.__num_cards, 2, 0, self.__players)
+            new_game = Game(
+                len(self.__games), self.__id, self.__num_cards, 2, 0, self.__players
+            )
             self.__games.append(new_game)
             responses.append(new_game.start())
             self.__phase = MatchPhase.STARTED
@@ -97,3 +103,7 @@ class Match:
                     broadcast=True,
                 ),
             ]
+
+    def trump(self, request: TrumpRequest) -> TrumpResponse | None:
+        print(f"[ player_id: {request.player_id} trumps: {len(request.trumps)} ]")
+        return self.__games[-1].trump(request)

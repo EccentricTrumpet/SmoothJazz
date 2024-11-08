@@ -12,7 +12,12 @@ export class Card {
         public prevState: CardState | undefined = undefined
     ) {}
 
-    public clone = () : Card => {
+    public prepareState() {
+        this.prevState = this.state;
+        this.state = this.state.clone();
+    }
+
+    public clone() : Card {
         return new Card(
             this.id,
             this.suit,

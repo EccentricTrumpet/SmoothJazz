@@ -1,7 +1,7 @@
 from enum import IntEnum, StrEnum
 
 
-class Trump(IntEnum):
+class TrumpType(IntEnum):
     NONE = 0
     SINGLE = 1
     PAIR = 2

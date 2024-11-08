@@ -67,13 +67,6 @@ class SocketResponse(ABC):
     include_self = property(get_include_self, set_include_self)
 
 
-class JoinRequest:
-    def __init__(self, payload: str, socket_id: str):
-        self.match_id = int(payload["matchId"])
-        self.player_name: str = payload["playerName"]
-        self.socket_id = socket_id
-
-
 class JoinResponse(SocketResponse):
     def __init__(self, recipient: str, id: int, name: str):
         self.event = "join"
@@ -93,7 +86,7 @@ class GameStartResponse(SocketResponse):
         recipient: str,
         active_player_id: int,
         deck_size: int,
-        trump_rank: int,
+        game_rank: int,
         game_phase: GamePhase,
     ):
         self.event = "gameStart"
@@ -102,22 +95,16 @@ class GameStartResponse(SocketResponse):
         self.include_self = True
         self.__active_player_id = active_player_id
         self.__deck_size = deck_size
-        self.__trump_rank = trump_rank
+        self.__game_rank = game_rank
         self.__game_phase = game_phase
 
     def json(self) -> dict:
         return {
             "activePlayerId": self.__active_player_id,
             "deckSize": self.__deck_size,
-            "trumpRank": self.__trump_rank,
+            "gameRank": self.__game_rank,
             "gamePhase": self.__game_phase,
         }
-
-
-class DrawRequest:
-    def __init__(self, payload: str):
-        self.match_id = int(payload["matchId"])
-        self.player_id = int(payload["playerId"])
 
 
 class DrawResponse(SocketResponse):
@@ -148,5 +135,29 @@ class DrawResponse(SocketResponse):
             "cards": [
                 {"id": card.id, "suit": card.suit, "rank": card.rank}
                 for card in self.cards
+            ],
+        }
+
+
+class TrumpResponse(SocketResponse):
+    def __init__(
+        self,
+        recipient: str,
+        player_id: int,
+        trumps: Sequence[Card],
+    ):
+        self.event = "trump"
+        self.recipient = recipient
+        self.broadcast = True
+        self.include_self = True
+        self.player_id = player_id
+        self.trumps = trumps
+
+    def json(self) -> dict:
+        return {
+            "playerId": self.player_id,
+            "trumps": [
+                {"id": trump.id, "suit": trump.suit, "rank": trump.rank}
+                for trump in self.trumps
             ],
         }

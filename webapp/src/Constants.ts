@@ -5,7 +5,7 @@ export class Constants {
     public static readonly cardHeight: number = 168;
     public static readonly cardRadius: number = 5;
     public static readonly cardOverlap: number = 25;
-    public static readonly margin: number = 20;
+    public static readonly margin: number = 10;
     public static readonly seatingArrangement: {[id: number]: Seat[]} = {
         4: [Seat.South, Seat.East, Seat.North, Seat.West]
     }
