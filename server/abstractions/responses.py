@@ -89,7 +89,7 @@ class StartResponse(SocketResponse):
         game_rank: int,
         game_phase: GamePhase,
     ):
-        self.event = "gameStart"
+        self.event = "start"
         self.recipient = recipient
         self.broadcast = True
         self.include_self = True

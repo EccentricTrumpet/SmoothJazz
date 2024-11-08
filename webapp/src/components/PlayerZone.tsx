@@ -18,7 +18,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
 
   let handZone: Zone;
   let nameZone: Zone;
-  let stagingZone: Zone;
+  let playingZone: Zone;
   let nameRotate: number = 0;
 
   switch(player.seat) {
@@ -40,7 +40,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
         ),
         new Size(Constants.cardHeight, 3*Constants.margin)
       );
-      stagingZone = new Zone(
+      playingZone = new Zone(
         new Position(
           handZone.center().x - Constants.cardHeight,
           nameZone.bottom() + Constants.margin
@@ -69,7 +69,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
         ),
         new Size(Constants.cardHeight, 3*Constants.margin)
       );
-      stagingZone = new Zone(
+      playingZone = new Zone(
         new Position(
           handZone.left() - 2*Constants.margin - nameZone.size.height - Constants.cardHeight,
           nameZone.center().y - Constants.cardHeight
@@ -99,7 +99,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
         ),
         new Size(Constants.cardHeight, 3*Constants.margin)
       );
-      stagingZone = new Zone(
+      playingZone = new Zone(
         new Position(
           handZone.center().x - Constants.cardHeight,
           nameZone.top() - Constants.margin - Constants.cardHeight
@@ -128,7 +128,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
         ),
         new Size(Constants.cardHeight, 3*Constants.margin)
       );
-      stagingZone = new Zone(
+      playingZone = new Zone(
         new Position(
           handZone.right() + 2*Constants.margin + nameZone.size.height,
           nameZone.center().y - Constants.cardHeight
@@ -144,7 +144,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
 
   return (
     <>
-      <CardsZone cards={player.staging} seat={player.seat} trumpState={trumpState} zone={stagingZone} options={options} controller={controller} />
+      <CardsZone cards={player.playing} seat={player.seat} trumpState={trumpState} zone={playingZone} options={options} controller={controller} />
       <div className="container" style={{
         position: "fixed",
         display: "flex",

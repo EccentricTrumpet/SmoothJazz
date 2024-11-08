@@ -119,7 +119,7 @@ export default function MatchPage() {
         )]);
       });
 
-      socket.on("gameStart", (response) => {
+      socket.on("start", (response) => {
         console.log(`raw start response: ${JSON.stringify(response)}`);
         const startResponse = new StartResponse(response);
 
@@ -165,19 +165,19 @@ export default function MatchPage() {
               drawnCards[i].state.facedown = false;
             }
 
-            newPlayerState = new PlayerState(player.id, player.name, player.seat, [...player.hand, ...drawnCards], player.staging);
+            newPlayerState = new PlayerState(player.id, player.name, player.seat, [...player.hand, ...drawnCards], player.playing);
           }
           else {
             newPlayerState = player;
           }
 
           // Withdraw any declared trumps in preparation for game start
-          if (drawResponse.phase === GamePhase.Kitty && newPlayerState.staging.length > 0) {
-            for (const card of newPlayerState.staging) {
+          if (drawResponse.phase === GamePhase.Kitty && newPlayerState.playing.length > 0) {
+            for (const card of newPlayerState.playing) {
               card.prepareState();
             }
-            newPlayerState.hand = [...newPlayerState.hand, ...newPlayerState.staging];
-            newPlayerState.staging = [];
+            newPlayerState.hand = [...newPlayerState.hand, ...newPlayerState.playing];
+            newPlayerState.playing = [];
           }
 
           return newPlayerState;
@@ -194,21 +194,21 @@ export default function MatchPage() {
         // Add new card to player's hand
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.id === trumpResponse.playerId) {
-            const [newStaging, newHand] = partition(player.hand, (card) => {
+            const [newPlaying, newHand] = partition(player.hand, (card) => {
               return trumpResponse.trumps.some((trump) => trump.id === card.id);
             });
 
-            for (const card of newStaging) {
+            for (const card of newPlaying) {
               card.state.selected = false;
             }
 
-            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.staging, ...newStaging]);
+            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
           }
-          else if (player.staging.length > 0) {
-            for (const card of player.staging) {
+          else if (player.playing.length > 0) {
+            for (const card of player.playing) {
               card.prepareState();
             }
-            return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...player.staging]);
+            return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...player.playing]);
           }
           else {
             return player;
@@ -237,10 +237,11 @@ export default function MatchPage() {
               const newCard = card.clone()
               newCard.state.selected = false;
               newCard.state.facedown = true;
+              newCard.state.rotate = 0;
               kitty.push(newCard);
             }
 
-            return new PlayerState(player.id, player.name, player.seat, newHand, player.staging);
+            return new PlayerState(player.id, player.name, player.seat, newHand, player.playing);
           }
           else {
             return player;
@@ -267,7 +268,7 @@ export default function MatchPage() {
         socket.off("kitty");
         socket.off("trump");
         socket.off("draw");
-        socket.off("gameStart");
+        socket.off("start");
         socket.off("join");
         socket.off("leave");
         socket.off("data");
@@ -313,7 +314,7 @@ export default function MatchPage() {
           }
         });
 
-        return updated ? new PlayerState(player.id, player.name, player.seat, nextHand) : player;
+        return updated ? new PlayerState(player.id, player.name, player.seat, nextHand, player.playing) : player;
       });
       setPlayers(nextPlayers);
     }

@@ -34,7 +34,7 @@ class Game:
         self.__kitty: List[Card] = []
         self.__discard: List[Card] = []
         self.__deck: List[Card] = []
-        self.__trump_declarer_id_id = -1
+        self.__trump_declarer_id = -1
         self.__trump_suit = Suit.UNKNOWN
         self.__trump_type = TrumpType.NONE
         self.__kitty_player_id = lead_player_id
@@ -143,7 +143,7 @@ class Game:
             self.__trump_type == TrumpType.SINGLE
             and trump_type == TrumpType.SINGLE
             and self.__trump_suit == request.trumps[0].suit
-            and self.__trump_declarer_id_id == request.player_id
+            and self.__trump_declarer_id == request.player_id
         )
 
         # Must fortify or declare trump that is of higher priority
