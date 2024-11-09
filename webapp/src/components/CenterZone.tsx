@@ -28,10 +28,11 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
     cardSize
   );
 
-
   for (let card of board.kitty) {
     card.state.position.x = kittyZone.position.x;
     card.state.position.y = kittyZone.position.y;
+    card.state.offset.x = 0;
+    card.state.offset.y = 0;
   }
 
   for (let card of board.deck) {
@@ -41,6 +42,11 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
       card.prevState.position.x = deckZone.position.x;
       card.prevState.position.y = deckZone.position.y;
     }
+  }
+
+  for (let card of board.discard) {
+    card.state.position.x = discardZone.position.x;
+    card.state.position.y = discardZone.position.y;
   }
 
   return (
@@ -141,7 +147,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
         backgroundColor: Constants.backgroundColor,
       }}>
         { board.discard.map((card, idx) => {
-          return <CardComponent idx={idx} card={card} options={options} />
+          return <CardComponent key={card.id} idx={idx} card={card} options={options} />
         })}
       </div>
     </>

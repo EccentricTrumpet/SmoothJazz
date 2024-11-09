@@ -2,13 +2,18 @@ import random
 from typing import List, Sequence
 from abstractions.enums import GamePhase, Suit, TrumpType
 from abstractions.types import Card, Player
-from abstractions.requests import DrawRequest, KittyRequest, TrumpRequest
+from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, TrumpRequest
 from abstractions.responses import (
     DrawResponse,
+    PlayResponse,
+    SocketResponse,
     StartResponse,
     KittyResponse,
+    TrickResponse,
     TrumpResponse,
 )
+from core.order import Order
+from core.trick import Trick
 
 
 class Game:
@@ -32,13 +37,16 @@ class Game:
         self.__phase = GamePhase.DRAW
         self.__score = 0
         self.__kitty: List[Card] = []
-        self.__discard: List[Card] = []
         self.__deck: List[Card] = []
         self.__trump_declarer_id = -1
         self.__trump_suit = Suit.UNKNOWN
         self.__trump_type = TrumpType.NONE
         self.__kitty_player_id = lead_player_id
         self.__active_player_id = lead_player_id
+        self.__order = Order(self.__game_rank)
+        self.__defenders = set()
+        self.__attackers = set()
+        self.__tricks: List[Trick] = []
 
         # 1 deck for every 2 players, rounded down
         indices = list(range(num_cards))
@@ -138,17 +146,19 @@ class Game:
 
         trump_type = self.__resolve_trump_type(request.trumps)
 
-        # Allow fortification from a single to a pair by the trump declarer only
-        fortify = (
-            self.__trump_type == TrumpType.SINGLE
-            and trump_type == TrumpType.SINGLE
-            and self.__trump_suit == request.trumps[0].suit
-            and self.__trump_declarer_id == request.player_id
-        )
-
-        # Must fortify or declare trump that is of higher priority
-        if not fortify and trump_type <= self.__trump_type:
-            return None
+        if self.__trump_declarer_id != request.player_id:
+            # If declarer is different from current declarer, trumps must be of a higher priority
+            if trump_type <= self.__trump_type:
+                return None
+        else:
+            # If declarer is same as current declarer, only allow fortify
+            if (
+                self.__trump_type != TrumpType.SINGLE
+                or trump_type != TrumpType.SINGLE
+                or self.__trump_suit != request.trumps[0].suit
+            ):
+                return None
+            trump_type = TrumpType.PAIR
 
         # Update states
         self.__trump_suit = request.trumps[0].suit
@@ -186,7 +196,59 @@ class Game:
 
         # Update states
         self.__phase = GamePhase.PLAY
+        self.__order.reset(self.__trump_suit)
+
+        # Assign teams (fixed teams)
+        num_players = len(self.__players)
+        for offset in range(0, num_players, 2):
+            self.__defenders.add((self.__kitty_player_id + offset) % num_players)
+        for offset in range(1, num_players, 2):
+            self.__attackers.add((self.__kitty_player_id + offset) % num_players)
 
         return KittyResponse(
             self.__match_id, request.player_id, self.__phase, request.cards, True, True
         )
+
+    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
+        if len(self.__tricks) == 0 or self.__tricks[-1].is_done():
+            self.__tricks.append(Trick(len(self.__players)))
+
+        responses: List[SocketResponse] = []
+        player = self.__players[request.player_id]
+        trick = self.__tricks[-1]
+
+        a = player.has_cards(request.cards)
+        b = trick.play(request)
+        if a and b:
+            player.play(request.cards)
+
+            if not trick.is_done():
+                self.__active_player_id = (self.__active_player_id + 1) % len(
+                    self.__players
+                )
+
+            responses.append(
+                PlayResponse(
+                    self.__match_id,
+                    request.player_id,
+                    self.__active_player_id,
+                    request.cards,
+                )
+            )
+
+        if trick.is_done():
+            if trick.winner_id in self.__attackers:
+                self.__score += trick.score
+            self.__active_player_id = (trick.winner_id + 1) % len(self.__players)
+
+            if player.is_empty_handed():
+                # Game ended
+                self.__phase = GamePhase.END
+
+            responses.append(
+                TrickResponse(
+                    self.__match_id, self.__score, self.__active_player_id, self.__phase
+                )
+            )
+
+        return responses

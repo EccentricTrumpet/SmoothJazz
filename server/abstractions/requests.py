@@ -37,3 +37,14 @@ class KittyRequest:
             self.cards.append(
                 Card(int(card["id"]), Suit(card["suit"]), int(card["rank"]))
             )
+
+
+class PlayRequest:
+    def __init__(self, payload: dict):
+        self.match_id = int(payload["matchId"])
+        self.player_id = int(payload["playerId"])
+        self.cards: Sequence[Card] = []
+        for card in payload["cards"]:
+            self.cards.append(
+                Card(int(card["id"]), Suit(card["suit"]), int(card["rank"]))
+            )

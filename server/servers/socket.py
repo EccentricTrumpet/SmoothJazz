@@ -1,7 +1,13 @@
 import logging
 from flask_socketio import Namespace, SocketIO, emit, join_room, leave_room
 from flask import Flask, request
-from abstractions.requests import DrawRequest, JoinRequest, KittyRequest, TrumpRequest
+from abstractions.requests import (
+    DrawRequest,
+    JoinRequest,
+    KittyRequest,
+    PlayRequest,
+    TrumpRequest,
+)
 from services.match import MatchService
 
 
@@ -90,6 +96,19 @@ class MatchNamespace(Namespace):
     def on_kitty(self, payload):
         """event listener when client draws a card"""
         responses = self.__match_service.kitty(KittyRequest(payload))
+
+        for response in responses:
+            emit(
+                response.event,
+                response.json(),
+                to=response.recipient,
+                broadcast=response.broadcast,
+                include_self=response.include_self,
+            )
+
+    def on_play(self, payload):
+        """event listener when client draws a card"""
+        responses = self.__match_service.play(PlayRequest(payload))
 
         for response in responses:
             emit(

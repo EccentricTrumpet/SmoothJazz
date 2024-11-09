@@ -5,12 +5,32 @@ import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { BoardState, CardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { CardInfo, DrawRequest, StartResponse, JoinRequest, JoinResponse, KittyRequest, MatchResponse, TrumpRequest, TrumpResponse, KittyResponse } from "../abstractions/messages";
+import {
+  BoardState,
+  CardState,
+  GameState,
+  OptionsState,
+  PlayerState,
+  TrumpState } from "../abstractions/states";
+import {
+  CardInfo,
+  DrawRequest,
+  DrawResponse,
+  StartResponse,
+  JoinRequest,
+  JoinResponse,
+  KittyRequest,
+  MatchResponse,
+  TrumpRequest,
+  TrumpResponse,
+  KittyResponse,
+  PlayRequest,
+  PlayResponse,
+  TrickResponse } from "../abstractions/messages";
 import { CenterZone, ControlZone, PlayerZone } from "../components";
 import { GamePhase, Suit } from "../abstractions/enums";
-import { DrawResponse } from "../abstractions/messages/DrawResponse";
 import { Constants } from "../Constants";
+import { waitFor } from "@testing-library/react";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
   return array.reduce(([pass, fail], elem) => {
@@ -123,7 +143,7 @@ export default function MatchPage() {
         console.log(`raw start response: ${JSON.stringify(response)}`);
         const startResponse = new StartResponse(response);
 
-        setGameState(new GameState(startResponse.activePlayerId, startResponse.gamePhase));
+        setGameState(new GameState(startResponse.activePlayerId, startResponse.phase));
         setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
         setBoardState(new BoardState(
           Array(startResponse.deckSize).fill('').map((_, i) =>
@@ -191,7 +211,7 @@ export default function MatchPage() {
         console.log(`raw trump response: ${JSON.stringify(response)}`);
         const trumpResponse = new TrumpResponse(response);
 
-        // Add new card to player's hand
+        // Move declared trump cards to the play zone and let previous declarer pick up their cards
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.id === trumpResponse.playerId) {
             const [newPlaying, newHand] = partition(player.hand, (card) => {
@@ -259,12 +279,75 @@ export default function MatchPage() {
         setGameState(prevGameState => new GameState(prevGameState.activePlayerId, kittyResponse.phase));
       });
 
+      socket.on("play", (response) => {
+        console.log(`raw play response: ${JSON.stringify(response)}`);
+        const playResponse = new PlayResponse(response);
+
+        setPlayers(prevPlayers => prevPlayers.map((player) => {
+          if (player.id === playResponse.playerId) {
+            const [newPlaying, newHand] = partition(player.hand, (card) => {
+              return playResponse.cards.some((playedCard) => playedCard.id === card.id);
+            });
+
+            for (const card of newPlaying) {
+              card.state.selected = false;
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
+          }
+
+          else {
+            return player;
+          }
+        }));
+
+        // Set new game state
+        setGameState(prevGameState => new GameState(playResponse.activePlayerId, prevGameState.phase));
+      });
+
+      socket.on("trick", (response) => {
+        console.log(`raw trick response: ${JSON.stringify(response)}`);
+        const trickResponse = new TrickResponse(response);
+        const discardedCards: Card[] = [];
+
+        // Remove played cards from players
+        setPlayers(prevPlayers => {
+          const newPlayers = prevPlayers.map((player) => {
+            for (const card of player.playing) {
+              const discardedCard = card.clone();
+              discardedCard.state.rotate = 0;
+              discardedCards.push(discardedCard);
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, player.hand);
+          });
+
+          // Some state update mechanism is requiring this to be inside of setPlayers
+          // Otherwise the discarded cards aren't appended correctly
+
+          // Add discarded cards to pile and update points
+          setBoardState(prevBoardState => new BoardState(
+            prevBoardState.deck,
+            prevBoardState.kitty,
+            [...prevBoardState.discard, ...discardedCards],
+            trickResponse.points
+          ));
+
+          return newPlayers;
+        });
+
+        // Set new game state
+        setGameState(_ => new GameState(trickResponse.activePlayerId, trickResponse.phase));
+      });
+
       // Join match
       socket.emit("join", new JoinRequest(Number(matchId), name));
 
       return () => {
         // Teardown
         socket.emit("leave", name, matchId);
+        socket.off("trick")
+        socket.off("play")
         socket.off("kitty");
         socket.off("trump");
         socket.off("draw");
@@ -333,7 +416,20 @@ export default function MatchPage() {
       socket?.emit("kitty", new KittyRequest(matchId, playerId, cards));
     };
 
-    onPlay = (playerId: number) => {};
+    onPlay = (playerId: number) => {
+      const cards: CardInfo[] = [];
+      for (const card of players[playerId].hand) {
+        if (card.state.selected) {
+          cards.push(new CardInfo(
+            card.id,
+            card.suit,
+            card.rank
+          ))
+        }
+      }
+      socket?.emit("play", new PlayRequest(matchId, playerId, cards));
+    };
+
     onNext = (playerId: number) => {};
   }
 

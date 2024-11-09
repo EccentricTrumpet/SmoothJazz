@@ -11,5 +11,5 @@ export class Constants {
     }
 
     // Debugging
-    public static readonly backgroundColor: string = "rgba(255, 0, 0, 0.0)";
+    public static readonly backgroundColor: string = "rgba(255, 0, 0, 0.5)";
 }

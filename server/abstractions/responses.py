@@ -87,7 +87,7 @@ class StartResponse(SocketResponse):
         active_player_id: int,
         deck_size: int,
         game_rank: int,
-        game_phase: GamePhase,
+        phase: GamePhase,
     ):
         self.event = "start"
         self.recipient = recipient
@@ -96,14 +96,14 @@ class StartResponse(SocketResponse):
         self.__active_player_id = active_player_id
         self.__deck_size = deck_size
         self.__game_rank = game_rank
-        self.__game_phase = game_phase
+        self.__phase = phase
 
     def json(self) -> dict:
         return {
             "activePlayerId": self.__active_player_id,
             "deckSize": self.__deck_size,
             "gameRank": self.__game_rank,
-            "gamePhase": self.__game_phase,
+            "phase": self.__phase,
         }
 
 
@@ -189,4 +189,55 @@ class KittyResponse(SocketResponse):
                 {"id": card.id, "suit": card.suit, "rank": card.rank}
                 for card in self.cards
             ],
+        }
+
+
+class PlayResponse(SocketResponse):
+    def __init__(
+        self,
+        recipient: str,
+        player_id: int,
+        active_player_id: int,
+        cards: Sequence[Card],
+    ):
+        self.event = "play"
+        self.recipient = recipient
+        self.player_id = player_id
+        self.active_player_id = active_player_id
+        self.cards = cards
+        self.broadcast = True
+        self.include_self = True
+
+    def json(self) -> dict:
+        return {
+            "playerId": self.player_id,
+            "activePlayerId": self.active_player_id,
+            "cards": [
+                {"id": card.id, "suit": card.suit, "rank": card.rank}
+                for card in self.cards
+            ],
+        }
+
+
+class TrickResponse(SocketResponse):
+    def __init__(
+        self,
+        recipient: str,
+        points: int,
+        active_player_id: int,
+        phase: GamePhase,
+    ):
+        self.event = "trick"
+        self.recipient = recipient
+        self.points = points
+        self.active_player_id = active_player_id
+        self.phase = phase
+        self.broadcast = True
+        self.include_self = True
+
+    def json(self) -> dict:
+        return {
+            "points": self.points,
+            "activePlayerId": self.active_player_id,
+            "phase": self.phase,
         }

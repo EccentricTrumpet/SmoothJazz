@@ -1,15 +1,13 @@
 import { GamePhase } from "../enums";
 
-export class StartResponse {
+export class TrickResponse {
+    points: number;
     activePlayerId: number;
-    deckSize: number;
-    gameRank: number;
     phase: GamePhase;
 
     constructor(jsonObj: any) {
+        this.points = Number(jsonObj['points']);
         this.activePlayerId = Number(jsonObj['activePlayerId']);
-        this.deckSize = Number(jsonObj['deckSize']);
-        this.gameRank = Number(jsonObj['gameRank']);
         this.phase = jsonObj['phase'] as GamePhase;
     }
 }

@@ -6,6 +6,7 @@ from abstractions.requests import (
     DrawRequest,
     JoinRequest,
     KittyRequest,
+    PlayRequest,
     TrumpRequest,
 )
 from abstractions.responses import (
@@ -50,7 +51,7 @@ class Match:
 
     def __add_player(self, name: str, socket_id: str) -> JoinResponse:
         player_id = next(self.__player_id)
-        new_player = Player(player_id, name, socket_id)
+        new_player = Player(player_id, name, socket_id, [])
         self.__players.append(new_player)
         return JoinResponse(self.__id, new_player.id, new_player.name)
 
@@ -107,7 +108,6 @@ class Match:
             ]
 
     def trump(self, request: TrumpRequest) -> TrumpResponse | None:
-        print(f"[ player_id: {request.player_id} trumps: {len(request.trumps)} ]")
         return self.__games[-1].trump(request)
 
     def kitty(self, request: KittyRequest) -> Sequence[KittyResponse]:
@@ -131,3 +131,6 @@ class Match:
                     broadcast=True,
                 ),
             ]
+
+    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
+        return self.__games[-1].play(request)

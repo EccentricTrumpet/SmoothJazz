@@ -4,6 +4,6 @@ import { GamePhase } from "../enums";
 export class GameState {
     constructor(
         public activePlayerId = 0,
-        public gamePhase = GamePhase.Draw
+        public phase = GamePhase.Draw
     ) {}
 }

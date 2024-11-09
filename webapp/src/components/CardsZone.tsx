@@ -37,7 +37,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
       for (let i = 0; i < cards.length; i++) {
         cards[i].state.position = new Position(displayStart + i*displayIncrement, zone.top());
         cards[i].state.offset = cards[i].state.selected
-          ? new Position(0, Constants.margin)
+          ? new Position(0, Constants.cardOverlap)
           : new Position(0, 0);
       }
       break;
@@ -54,7 +54,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
       for (let i = 0; i < cards.length; i++) {
         cards[i].state.position = new Position(displayStart + i*displayIncrement, zone.top());
         cards[i].state.offset = cards[i].state.selected
-          ? new Position(0, -Constants.margin)
+          ? new Position(0, -Constants.cardOverlap)
           : new Position(0, 0);
       }
       break;
@@ -72,7 +72,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
         cards[i].state.rotate = -90;
         cards[i].state.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart - i*displayIncrement);
         cards[i].state.offset = cards[i].state.selected
-          ? new Position(-Constants.margin, 0)
+          ? new Position(-Constants.cardOverlap, 0)
           : new Position(0, 0);
       }
       break;
@@ -90,7 +90,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
         cards[i].state.rotate = 90;
         cards[i].state.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart + i*displayIncrement);
         cards[i].state.offset = cards[i].state.selected
-          ? new Position(Constants.margin, 0)
+          ? new Position(Constants.cardOverlap, 0)
           : new Position(0, 0);
       }
       break;

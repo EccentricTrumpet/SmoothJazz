@@ -18,7 +18,7 @@ class Player:
         id: int,
         name: str,
         socket_id: str,
-        hand: List[Card] = [],
+        hand: List[Card],
     ) -> None:
         self.id = id
         self.name = name
@@ -44,4 +44,10 @@ class Player:
     # Always call has_cards before calling play
     def play(self, cards: Sequence[Card]) -> None:
         card_ids = set([card.id for card in cards])
-        self.__hand = [card for card in cards if card.id not in card_ids]
+        self.__hand = [card for card in self.__hand if card.id not in card_ids]
+
+    def is_empty_handed(self) -> bool:
+        return len(self.__hand) == 0
+
+    def card_count(self):
+        return len(self.__hand)
