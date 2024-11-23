@@ -1,5 +1,8 @@
-from typing import List, Sequence
+from typing import List, Sequence, TypeVar
 from abstractions.enums import Suit
+
+
+TCard = TypeVar("TCard", bound="Card")
 
 
 class Card:
@@ -7,6 +10,9 @@ class Card:
         self.id = id
         self.suit = suit
         self.rank = rank
+
+    def is_equivalent_to(self, card: TCard) -> bool:
+        return self.suit == card.suit and self.rank == card.rank
 
     def __str__(self):
         return f"[ Card ({self.id}) - {self.suit} {self.rank} ]"

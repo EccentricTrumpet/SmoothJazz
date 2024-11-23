@@ -9,6 +9,7 @@ flask-socketio = "*"
 flask-cors = "*"
 
 [dev-packages]
+timeout-decorator = "*"
 
 [requires]
 python_version = "3.12"

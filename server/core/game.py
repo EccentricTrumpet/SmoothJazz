@@ -5,6 +5,7 @@ from abstractions.types import Card, Player
 from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, TrumpRequest
 from abstractions.responses import (
     DrawResponse,
+    GameResponse,
     PlayResponse,
     SocketResponse,
     StartResponse,
@@ -71,6 +72,7 @@ class Game:
         )
 
     def draw(self, request: DrawRequest) -> DrawResponse | None:
+        # Only active player can draw
         if request.player_id != self.__active_player_id:
             return None
 
@@ -209,46 +211,54 @@ class Game:
             self.__match_id, request.player_id, self.__phase, request.cards, True, True
         )
 
-    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
-        if len(self.__tricks) == 0 or self.__tricks[-1].is_done():
-            self.__tricks.append(Trick(len(self.__players)))
+    def play(self, request: PlayRequest) -> SocketResponse:
+        # Only play during the play phase
+        if self.__phase != GamePhase.PLAY:
+            return []
 
-        responses: List[SocketResponse] = []
+        # Only active player can play
+        if request.player_id != self.__active_player_id:
+            return []
+
+        # Create new trick if needed
+        if len(self.__tricks) == 0 or self.__tricks[-1].is_done():
+            self.__tricks.append(Trick(len(self.__players), self.__order))
+
         player = self.__players[request.player_id]
         trick = self.__tricks[-1]
 
-        a = player.has_cards(request.cards)
-        b = trick.play(request)
-        if a and b:
-            player.play(request.cards)
+        # Try processing play request
+        if not trick.try_play(player, request.cards):
+            return []
 
-            if not trick.is_done():
-                self.__active_player_id = (self.__active_player_id + 1) % len(
-                    self.__players
-                )
+        # Play cards from player's hands
+        player.play(request.cards)
 
-            responses.append(
-                PlayResponse(
-                    self.__match_id,
-                    request.player_id,
-                    self.__active_player_id,
-                    request.cards,
-                )
-            )
+        # Update play states
+        self.__active_player_id = (self.__active_player_id + 1) % len(self.__players)
+        response = PlayResponse(
+            self.__match_id,
+            request.player_id,
+            self.__active_player_id,
+            request.cards,
+        )
 
+        # Update trick states on end
         if trick.is_done():
             if trick.winner_id in self.__attackers:
                 self.__score += trick.score
-            self.__active_player_id = (trick.winner_id + 1) % len(self.__players)
+            self.__active_player_id = trick.winner_id
 
-            if player.is_empty_handed():
-                # Game ended
-                self.__phase = GamePhase.END
-
-            responses.append(
-                TrickResponse(
-                    self.__match_id, self.__score, self.__active_player_id, self.__phase
-                )
+            response = TrickResponse(
+                self.__match_id, self.__score, self.__active_player_id, response
             )
 
-        return responses
+            # Update game states on end
+            if player.is_empty_handed():
+                self.__phase = GamePhase.END
+
+                # Update states
+
+                response = GameResponse(self.__match_id, response)
+
+        return response

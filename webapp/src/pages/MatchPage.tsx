@@ -305,9 +305,30 @@ export default function MatchPage() {
         setGameState(prevGameState => new GameState(playResponse.activePlayerId, prevGameState.phase));
       });
 
-      socket.on("trick", (response) => {
+      socket.on("trick", async (response) => {
         console.log(`raw trick response: ${JSON.stringify(response)}`);
         const trickResponse = new TrickResponse(response);
+
+        setPlayers(prevPlayers => prevPlayers.map((player) => {
+          if (player.id === trickResponse.play.playerId) {
+            const [newPlaying, newHand] = partition(player.hand, (card) => {
+              return trickResponse.play.cards.some((playedCard) => playedCard.id === card.id);
+            });
+
+            for (const card of newPlaying) {
+              card.state.selected = false;
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
+          }
+
+          else {
+            return player;
+          }
+        }));
+
+        await new Promise(f => setTimeout(f, 1000));
+
         const discardedCards: Card[] = [];
 
         // Remove played cards from players
@@ -337,7 +358,7 @@ export default function MatchPage() {
         });
 
         // Set new game state
-        setGameState(_ => new GameState(trickResponse.activePlayerId, trickResponse.phase));
+        setGameState(prevGameState => new GameState(trickResponse.activePlayerId, prevGameState.phase));
       });
 
       // Join match

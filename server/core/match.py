@@ -132,5 +132,5 @@ class Match:
                 ),
             ]
 
-    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
+    def play(self, request: PlayRequest) -> SocketResponse | None:
         return self.__games[-1].play(request)

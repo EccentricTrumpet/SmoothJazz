@@ -16,6 +16,7 @@ class Order:
         self.__all_ranks.remove(self.__trump_rank)
 
     def reset(self, trump_suit: Suit):
+        self.__trump_suit = trump_suit
         non_trump_suits = [
             suit
             for suit in [Suit.SPADE, Suit.HEART, Suit.CLUB, Suit.DIAMOND]

@@ -108,9 +108,9 @@ class MatchNamespace(Namespace):
 
     def on_play(self, payload):
         """event listener when client draws a card"""
-        responses = self.__match_service.play(PlayRequest(payload))
+        response = self.__match_service.play(PlayRequest(payload))
 
-        for response in responses:
+        if response != None:
             emit(
                 response.event,
                 response.json(),

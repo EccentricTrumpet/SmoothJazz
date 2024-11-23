@@ -39,6 +39,6 @@ class MatchService:
         # TODO: Handle match not found
         return self.__matches[request.match_id].kitty(request)
 
-    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
+    def play(self, request: PlayRequest) -> SocketResponse | None:
         # TODO: Handle match not found
         return self.__matches[request.match_id].play(request)

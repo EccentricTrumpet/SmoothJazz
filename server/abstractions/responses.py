@@ -225,13 +225,13 @@ class TrickResponse(SocketResponse):
         recipient: str,
         points: int,
         active_player_id: int,
-        phase: GamePhase,
+        play: PlayResponse,
     ):
         self.event = "trick"
         self.recipient = recipient
         self.points = points
         self.active_player_id = active_player_id
-        self.phase = phase
+        self.play = play
         self.broadcast = True
         self.include_self = True
 
@@ -239,5 +239,23 @@ class TrickResponse(SocketResponse):
         return {
             "points": self.points,
             "activePlayerId": self.active_player_id,
-            "phase": self.phase,
+            "play": self.play.json(),
+        }
+
+
+class GameResponse(SocketResponse):
+    def __init__(
+        self,
+        recipient: str,
+        trick: TrickResponse,
+    ):
+        self.event = "trick"
+        self.recipient = recipient
+        self.trick = trick
+        self.broadcast = True
+        self.include_self = True
+
+    def json(self) -> dict:
+        return {
+            "trick": self.trick.json(),
         }
