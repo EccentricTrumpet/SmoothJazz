@@ -5,7 +5,11 @@ from abstractions.types import Card
 from abstractions.enums import Suit
 from core.format import Format
 from core.order import Order
-from test.utils import BJ, SJ, initialize_cards
+from test.utils import initialize
+from test.jokers import JB, JR
+from test.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, ST
+from test.hearts import H2, H3, H4, H5, H6, H7, H8, HA, HK
+from test.diamonds import D2, D3, D4, D5, D6, D7, D8, D9
 
 
 class FormatCreateTests(TestCase):
@@ -13,17 +17,17 @@ class FormatCreateTests(TestCase):
     def test_format_create_single(self) -> None:
         order = Order(2)
         cases = [
-            ((SJ, Suit.JOKER), (True, Suit.JOKER)),
-            ((SJ, Suit.SPADE), (True, Suit.JOKER)),
-            (("H2", Suit.JOKER), (True, Suit.HEART)),
-            (("H3", Suit.HEART), (True, Suit.HEART)),
-            (("H3", Suit.JOKER), (False, Suit.HEART)),
+            ((JB, Suit.JOKER), (True, Suit.JOKER)),
+            ((JB, Suit.SPADE), (True, Suit.JOKER)),
+            ((H2, Suit.JOKER), (True, Suit.HEART)),
+            ((H3, Suit.HEART), (True, Suit.HEART)),
+            ((H3, Suit.JOKER), (False, Suit.HEART)),
         ]
 
         for setup, expected in cases:
             with self.subTest(setup=setup, expected=expected):
                 (raw_card, trump_suit) = setup
-                cards = initialize_cards([raw_card])
+                cards = initialize([raw_card])
                 order.reset(trump_suit)
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
@@ -41,17 +45,17 @@ class FormatCreateTests(TestCase):
     def test_format_create_pair(self) -> None:
         order = Order(2)
         cases = [
-            (([SJ, SJ], Suit.JOKER), (True, Suit.JOKER)),
-            (([SJ, SJ], Suit.SPADE), (True, Suit.JOKER)),
-            ((["H2", "H2"], Suit.JOKER), (True, Suit.HEART)),
-            ((["H3", "H3"], Suit.HEART), (True, Suit.HEART)),
-            ((["H3", "H3"], Suit.JOKER), (False, Suit.HEART)),
+            (([JB, JB], Suit.JOKER), (True, Suit.JOKER)),
+            (([JB, JB], Suit.SPADE), (True, Suit.JOKER)),
+            (([H2, H2], Suit.JOKER), (True, Suit.HEART)),
+            (([H3, H3], Suit.HEART), (True, Suit.HEART)),
+            (([H3, H3], Suit.JOKER), (False, Suit.HEART)),
         ]
 
         for setup, expected in cases:
             with self.subTest(setup=setup, expected=expected):
                 (raw_cards, trump_suit) = setup
-                cards = initialize_cards(raw_cards)
+                cards = initialize(raw_cards)
                 order.reset(trump_suit)
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
@@ -73,22 +77,22 @@ class FormatCreateTests(TestCase):
         order = Order(2)
         cases = [
             # Big and small Jokers
-            (([BJ, BJ, SJ, SJ], 2, Suit.JOKER), (True, Suit.JOKER)),
-            (([BJ, BJ, SJ, SJ], 2, Suit.SPADE), (True, Suit.JOKER)),
+            (([JR, JR, JB, JB], 2, Suit.JOKER), (True, Suit.JOKER)),
+            (([JR, JR, JB, JB], 2, Suit.SPADE), (True, Suit.JOKER)),
             # Small Joker and trump suit trump rank pair
-            (([SJ, SJ, "S2", "S2"], 2, Suit.SPADE), (True, Suit.UNKNOWN)),
+            (([JB, JB, S2, S2], 2, Suit.SPADE), (True, Suit.UNKNOWN)),
             # Small Joker and trump rank pair, when no trump suit
-            (([SJ, SJ, "S2", "S2"], 2, Suit.JOKER), (True, Suit.UNKNOWN)),
+            (([JB, JB, S2, S2], 2, Suit.JOKER), (True, Suit.UNKNOWN)),
             # Non-trump rank pair and trump suit ace pair
-            ((["H2", "H2", "S1", "S1"], 2, Suit.SPADE), (True, Suit.UNKNOWN)),
+            (([H2, H2, SA, SA], 2, Suit.SPADE), (True, Suit.UNKNOWN)),
             # Trump consecutive pairs
-            ((["S4", "S4", "S3", "S3"], 2, Suit.SPADE), (True, Suit.SPADE)),
+            (([S4, S4, S3, S3], 2, Suit.SPADE), (True, Suit.SPADE)),
             # Trump non-consecutive pairs, separated by trump rank
-            ((["S4", "S4", "S2", "S2"], 3, Suit.SPADE), (True, Suit.SPADE)),
+            (([S4, S4, S2, S2], 3, Suit.SPADE), (True, Suit.SPADE)),
             # Non-trump consecutive pairs
-            ((["S4", "S4", "S3", "S3"], 2, Suit.HEART), (False, Suit.SPADE)),
+            (([S4, S4, S3, S3], 2, Suit.HEART), (False, Suit.SPADE)),
             # # Non-trump non-consecutive pairs, separated by trump rank
-            ((["S4", "S4", "S2", "S2"], 3, Suit.HEART), (False, Suit.SPADE)),
+            (([S4, S4, S2, S2], 3, Suit.HEART), (False, Suit.SPADE)),
         ]
 
         for setup, expected in cases:
@@ -96,7 +100,7 @@ class FormatCreateTests(TestCase):
                 (raw_cards, trump_rank, trump_suit) = setup
                 order = Order(trump_rank)
                 order.reset(trump_suit)
-                cards = initialize_cards(raw_cards)
+                cards = initialize(raw_cards)
                 shuffle(cards)
                 format = Format(order, cards)
 
@@ -125,14 +129,14 @@ class FormatCreateTests(TestCase):
 
         cases = [
             # Trumps
-            ([SJ, "S2", "S13"], (True, Suit.UNKNOWN)),
+            ([JB, S2, SK], (True, Suit.UNKNOWN)),
             # Non trumps
-            (["H1", "H13", "H3"], (False, Suit.HEART)),
+            ([HA, HK, H3], (False, Suit.HEART)),
         ]
 
         for setup, expected in cases:
             with self.subTest(setup=setup, expected=expected):
-                cards = initialize_cards(setup)
+                cards = initialize(setup)
                 shuffle(cards)
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
@@ -154,22 +158,22 @@ class FormatCreateTests(TestCase):
     def test_format_create_toss_pairs(self) -> None:
         cases = [
             # Small Joker and non-trump suit trump rank pair
-            ([SJ, SJ, "H2", "H2"], (True, Suit.UNKNOWN)),
+            ([JB, JB, H2, H2], (True, Suit.UNKNOWN)),
             # 2 non-trump suit trump rank pairs
-            (["C2", "C2", "H2", "H2"], (True, Suit.UNKNOWN)),
+            ([D2, D2, H2, H2], (True, Suit.UNKNOWN)),
             # Trump consecutive pair, with one of trump rank
-            (["S2", "S2", "S3", "S3"], (True, Suit.SPADE)),
+            ([S2, S2, S3, S3], (True, Suit.SPADE)),
             # Trump non-consecutive pair
-            (["S2", "S2", "S4", "S4"], (True, Suit.SPADE)),
+            ([S2, S2, S4, S4], (True, Suit.SPADE)),
             # Non-trump non-consecutive pair
-            (["H5", "H5", "H3", "H3"], (False, Suit.HEART)),
+            ([H5, H5, H3, H3], (False, Suit.HEART)),
         ]
 
         for setup, expected in cases:
             with self.subTest(setup=setup, expected=expected):
                 order = Order(2)
                 order.reset(Suit.SPADE)
-                cards = initialize_cards(setup)
+                cards = initialize(setup)
                 shuffle(cards)
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
@@ -195,22 +199,7 @@ class FormatCreateTests(TestCase):
         cases = [
             # Multiple tractors are sorted by length, then highest card
             (
-                [
-                    BJ,
-                    BJ,
-                    SJ,
-                    SJ,
-                    "H2",
-                    "H2",
-                    "S1",
-                    "S1",
-                    "S13",
-                    "S13",
-                    "S8",
-                    "S8",
-                    "S7",
-                    "S7",
-                ],
+                [JR, JR, JB, JB, H2, H2, SA, SA, SK, SK, S8, S8, S7, S7],
                 (
                     (True, Suit.UNKNOWN, 3, 0, 0),
                     [
@@ -224,7 +213,7 @@ class FormatCreateTests(TestCase):
             ),
             # Trump suit trump rank pair, and 2 non-trump suit trump rank pairs, trump suit ace pair
             (
-                ["S2", "S2", "H2", "H2", "C2", "C2", "S1", "S1"],
+                [S2, S2, H2, H2, "C2", "C2", SA, SA],
                 (
                     (True, Suit.UNKNOWN, 1, 1, 0),
                     [(6, Card(0, Suit.SPADE, 2))],
@@ -234,22 +223,7 @@ class FormatCreateTests(TestCase):
             ),
             # Combination of tractors, pairs and singles
             (
-                [
-                    SJ,
-                    "H2",
-                    "H2",
-                    "S1",
-                    "S13",
-                    "S13",
-                    "S11",
-                    "S11",
-                    "S10",
-                    "S10",
-                    "S8",
-                    "S8",
-                    "S7",
-                    "S7",
-                ],
+                [JB, H2, H2, SA, SK, SK, SJ, SJ, ST, ST, S8, S8, S7, S7],
                 (
                     (True, Suit.UNKNOWN, 2, 2, 2),
                     [
@@ -264,7 +238,7 @@ class FormatCreateTests(TestCase):
 
         for setup, expected in cases:
             with self.subTest(setup=setup, expected=expected):
-                cards = initialize_cards(setup)
+                cards = initialize(setup)
                 shuffle(cards)
                 format = Format(order, cards)
                 (
@@ -301,4 +275,189 @@ class FormatCreateTests(TestCase):
                     self.assertTrue(highest_card.is_equivalent_to(single.highest_card))
 
 
-# Test that multiple trump suit trump rank and Non-trump Suit trump Rank tractors are all legal plays against a tractor
+class FormatBeatTests(TestCase):
+
+    def test_format_beat_length_mismatch(self) -> None:
+        order = Order(2)
+        order.reset(Suit.SPADE)
+
+        cases = [
+            # Total length mismatch
+            (([H3], [H3, H4]), False),
+            # Tractors length mismatch
+            (
+                (
+                    [H3, H3, H4, H4, H5, H5, H6, H6],
+                    [D3, D3, D4, D4, D6, D6, D7, D7],
+                ),
+                False,
+            ),
+            # Pairs length mismatch
+            (
+                (
+                    [H3, H3, H4, H4, H5, H5, H7, H7],
+                    [D3, D3, D4, D4, D6, D6, D8, D8],
+                ),
+                False,
+            ),
+            # Singles length mismatch
+            (
+                (
+                    [H3, H3, H4, H4, H5, H5, H6],
+                    [D3, D3, D4, D4, D5, D6, D7],
+                ),
+                False,
+            ),
+            # Winning cases
+            (
+                (
+                    [S3, S3, S4, S4, S5, S6, S6],
+                    [S7, S7, S8, S8, S9, ST, ST],
+                ),
+                True,
+            ),
+        ]
+
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (play1, play2) = tuple(map(initialize, setup))
+                format1 = Format(order, play1)
+                format2 = Format(order, play2)
+                self.assertEqual(expected, format2.beats(format1))
+
+    def test_format_beat_tractors(self) -> None:
+        order = Order(2)
+        order.reset(Suit.SPADE)
+
+        cases = [
+            # Tractors length mismatch
+            (
+                (
+                    [D3, D3, D4, D4, D5, D5, D7, D7, D8, D8, D9, D9],
+                    [JR, JR, JB, JB, S2, S2, H2, H2, S9, S9, S8, S8],
+                ),
+                False,
+            ),
+            # Non-trump lost on high card
+            (
+                ([D5, D5, D6, D6], [D3, D3, D4, D4]),
+                False,
+            ),
+            # Trump lost on high card
+            (
+                ([JR, JR, JB, JB], [S3, S3, S4, S4]),
+                False,
+            ),
+            # Non-trump trumped
+            (
+                ([D5, D5, D6, D6], [S3, S3, S4, S4]),
+                True,
+            ),
+            # Only highest tractor of a given length is considered
+            (
+                (
+                    [JR, JR, JB, JB, S7, S7, S6, S6],
+                    [S2, S2, H2, H2, S9, S9, S8, S8],
+                ),
+                False,
+            ),
+            (
+                (
+                    [S2, S2, H2, H2, S9, S9, S8, S8],
+                    [JR, JR, JB, JB, S7, S7, S6, S6],
+                ),
+                True,
+            ),
+            # Tractors of different lengths considered
+            (
+                (
+                    [JR, JR, JB, JB, S6, S6, S5, S5, S4, S4],
+                    [S2, S2, H2, H2, S9, S9, S8, S8, S7, S7],
+                ),
+                False,
+            ),
+            (
+                (
+                    [S2, S2, H2, H2, S9, S9, S8, S8, S7, S7],
+                    [JR, JR, JB, JB, S6, S6, S5, S5, S4, S4],
+                ),
+                False,
+            ),
+            (
+                (
+                    [S2, S2, H2, H2, S6, S6, S5, S5, S4, S4],
+                    [JR, JR, JB, JB, S9, S9, S8, S8, S7, S7],
+                ),
+                True,
+            ),
+            # Winning cases
+            (([S3, S3, S4, S4], [S2, S2, H2, H2]), True),
+            (([H3, H3, H4, H4], [H7, H7, H8, H8]), True),
+        ]
+
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (play1, play2) = tuple(map(initialize, setup))
+                format1 = Format(order, play1)
+                format2 = Format(order, play2)
+                self.assertEqual(expected, format2.beats(format1))
+
+    def test_format_beat_pairs(self) -> None:
+        order = Order(2)
+        order.reset(Suit.SPADE)
+
+        cases = [
+            # Non-trump lost on high card
+            (([D5, D5], [D3, D3]), False),
+            # Trump lost on high card
+            (([JR, JR], [S3, S3]), False),
+            # Non-trump trumped
+            (([D5, D5], [S3, S3]), True),
+            # Only highest pair is considered
+            (([JR, JR, S7, S7], [JB, JB, S9, S9]), False),
+            (([JB, JB, S9, S9], [JR, JR, S7, S7]), True),
+            # Winning cases
+            (([S3, S3], [S2, S2]), True),
+            (([H3, H3], [H7, H7]), True),
+        ]
+
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (play1, play2) = tuple(map(initialize, setup))
+                format1 = Format(order, play1)
+                format2 = Format(order, play2)
+                self.assertEqual(expected, format2.beats(format1))
+
+    def test_format_beat_singles(self) -> None:
+        order = Order(2)
+        order.reset(Suit.SPADE)
+
+        cases = [
+            # Non-trump lost on high card
+            (([D5], [D3]), False),
+            # Trump lost on high card
+            (([JR], [S3]), False),
+            # Non-trump trumped
+            (([D5], [S3]), True),
+            # Only highest single is considered
+            (([JR, S7], [JB, S9]), False),
+            (([JB, S9], [JR, S7]), True),
+            # Equivalent card loses
+            (([D5], [D5]), False),
+            (([S2], [S2]), False),
+            # Winning cases
+            (([S3], [S2]), True),
+            (([H3], [H7]), True),
+        ]
+
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (play1, play2) = tuple(map(initialize, setup))
+                format1 = Format(order, play1)
+                format2 = Format(order, play2)
+                self.assertEqual(expected, format2.beats(format1))
+
+
+class FormatMatchTests(TestCase):
+    # Test that multiple trump suit trump rank and non-trump suit trump rank tractors are all legal plays against a tractor
+    pass

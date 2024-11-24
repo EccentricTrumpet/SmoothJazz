@@ -361,12 +361,22 @@ export default function MatchPage() {
         setGameState(prevGameState => new GameState(trickResponse.activePlayerId, prevGameState.phase));
       });
 
+      socket.on("game", async (response) => {
+        console.log(`raw game response: ${JSON.stringify(response)}`);
+      });
+
+      socket.on("next", async (response) => {
+        console.log(`raw next response: ${JSON.stringify(response)}`);
+      });
+
       // Join match
       socket.emit("join", new JoinRequest(Number(matchId), name));
 
       return () => {
         // Teardown
         socket.emit("leave", name, matchId);
+        socket.off("next")
+        socket.off("game")
         socket.off("trick")
         socket.off("play")
         socket.off("kitty");

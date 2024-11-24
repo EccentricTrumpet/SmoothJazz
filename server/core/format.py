@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence, Set, Tuple, TypeVar
+from typing import List, Sequence, Set, Tuple, TypeVar
 from abstractions.enums import Suit
 from abstractions.types import Card
 from core.order import Order
@@ -95,13 +95,13 @@ class Format:
 
     def __create(
         self, cards: Sequence[Card]
-    ) -> Tuple[Sequence[Single], Sequence[Pair], Sequence[Tractor]]:
+    ) -> Tuple[List[Single], List[Pair], List[Tractor]]:
         sorted_cards = sorted(
             cards, key=lambda card: (self.__order.for_card(card), card.suit)
         )
-        singles: Sequence[Single] = []
-        pairs: Sequence[Pair] = []
-        tractors: Sequence[Tractor] = []
+        singles: List[Single] = []
+        pairs: List[Pair] = []
+        tractors: List[Tractor] = []
 
         # Resolve singles and pairs
         i = 0
@@ -117,8 +117,8 @@ class Format:
 
         # Resolve tractors
         i = 0
-        orphan_pairs: Sequence[Pair] = []
-        deduped_pairs: Sequence[Pair] = []
+        orphan_pairs: List[Pair] = []
+        deduped_pairs: List[Pair] = []
         last_card_order = -1
 
         # Separate duplicate non-trump pairs when resolving tractors
@@ -168,18 +168,64 @@ class Format:
             single.reset()
 
     def reform_with(self, format: TFormat):
-        self.tractors = [tractor.complement for tractor in format.tractors]
-        self.pairs = [pair.complement for pair in format.pairs]
-        self.singles = [single.complement for single in format.singles]
+        pass
+        # self.tractors = [tractor.complement for tractor in format.tractors]
+        # self.pairs = [pair.complement for pair in format.pairs]
+        # self.singles = [single.complement for single in format.singles]
 
     def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Sequence[Card]:
+        order = self.__order
         return [
             card
             for card in self.__cards
-            if (include_trumps and self.__order.is_trump(card))
-            or (
-                not include_trumps
-                and not self.__order.is_trump(card)
-                and card.suit == suit
-            )
+            if (include_trumps and order.is_trump(card))
+            or (not include_trumps and not order.is_trump(card) and card.suit == suit)
         ]
+
+    def sort(self):
+        order = self.__order
+        self.tractors.sort(key=lambda t: (-t.length, order.for_card(t.highest_card)))
+        self.pairs.sort(key=lambda p: order.for_card(p.highest_card))
+        self.singles.sort(key=lambda s: order.for_card(s.highest_card))
+
+    def beats(self, other: TFormat) -> bool:
+        # This check will be obsolete once format matching is completed
+        # For now this is a quick sanity check for prototyping
+        if (
+            self.length != other.length
+            or len(self.tractors) != len(other.tractors)
+            or len(self.pairs) != len(other.pairs)
+            or len(self.singles) != len(other.singles)
+        ):
+            print("Format comparison lost: length mismatch")
+            return False
+
+        order = self.__order
+        tractor_length = 0
+
+        for tractor, other_tractor in zip(self.tractors, other.tractors):
+            if tractor.length != other_tractor.length:
+                print("Format comparison lost: tractor length mismatch")
+                return False
+            if tractor.length != tractor_length:
+                tractor_length = tractor.length
+                # Highest tractor of a given length, compare highest cards
+                if order.for_card(tractor.highest_card) >= order.for_card(
+                    other_tractor.highest_card
+                ):
+                    print("Format comparison lost: tractor order")
+                    return False
+
+        if len(self.pairs) > 0 and order.for_card(
+            self.pairs[0].highest_card
+        ) >= order.for_card(other.pairs[0].highest_card):
+            print("Format comparison lost: pair order")
+            return False
+
+        if len(self.singles) > 0 and order.for_card(
+            self.singles[0].highest_card
+        ) >= order.for_card(other.singles[0].highest_card):
+            print("Format comparison lost: single order")
+            return False
+
+        return True

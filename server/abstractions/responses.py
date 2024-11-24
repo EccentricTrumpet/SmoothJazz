@@ -250,7 +250,7 @@ class GameResponse(SocketResponse):
         recipient: str,
         trick: TrickResponse,
     ):
-        self.event = "trick"
+        self.event = "game"
         self.recipient = recipient
         self.trick = trick
         self.broadcast = True
