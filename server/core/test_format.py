@@ -1,55 +1,28 @@
+from unittest import TestCase
 from itertools import batched
 from random import shuffle
-from typing import List
-import unittest
-from core.order import Order
 from abstractions.types import Card
 from abstractions.enums import Suit
 from core.format import Format
-
-# Jokers
-BJ = "J2"
-SJ = "J1"
+from core.order import Order
+from test.utils import BJ, SJ, initialize_cards
 
 
-# Utility to generate a list of cards
-def initialize_cards(cards: List[str]) -> List[Card]:
-    card_list = []
-    for card in cards:
-        card_list.append(Card(len(card_list), Suit(card[0]), int(card[1:])))
-    return card_list
-
-
-class FormatCreateTests(unittest.TestCase):
-
-    def test_format_create_mixed_suits(self) -> None:
-        order = Order(2)
-        cards = initialize_cards([SJ, "S2", "S13"])
-        shuffle(cards)
-        format = Format(order, cards)
-
-        self.assertTrue(format.is_toss)
-        self.assertFalse(format.all_trumps)
-        self.assertEqual(3, format.length)
-        self.assertEqual(Suit.UNKNOWN, format.suit)
-        self.assertEqual(0, len(format.tractors))
-        self.assertEqual(0, len(format.pairs))
-        self.assertEqual(0, len(format.singles))
+class FormatCreateTests(TestCase):
 
     def test_format_create_single(self) -> None:
         order = Order(2)
         cases = [
-            (SJ, Suit.JOKER, (True, Suit.JOKER)),
-            (SJ, Suit.SPADE, (True, Suit.JOKER)),
-            ("H2", Suit.JOKER, (True, Suit.HEART)),
-            ("H3", Suit.HEART, (True, Suit.HEART)),
-            ("H3", Suit.JOKER, (False, Suit.HEART)),
+            ((SJ, Suit.JOKER), (True, Suit.JOKER)),
+            ((SJ, Suit.SPADE), (True, Suit.JOKER)),
+            (("H2", Suit.JOKER), (True, Suit.HEART)),
+            (("H3", Suit.HEART), (True, Suit.HEART)),
+            (("H3", Suit.JOKER), (False, Suit.HEART)),
         ]
 
-        for raw_card, trump_suit, expected in cases:
-            with self.subTest(
-                raw_card=raw_card, trump_suit=trump_suit, expected=expected
-            ):
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (raw_card, trump_suit) = setup
                 cards = initialize_cards([raw_card])
                 order.reset(trump_suit)
                 format = Format(order, cards)
@@ -68,17 +41,16 @@ class FormatCreateTests(unittest.TestCase):
     def test_format_create_pair(self) -> None:
         order = Order(2)
         cases = [
-            ([SJ, SJ], Suit.JOKER, (True, Suit.JOKER)),
-            ([SJ, SJ], Suit.SPADE, (True, Suit.JOKER)),
-            (["H2", "H2"], Suit.JOKER, (True, Suit.HEART)),
-            (["H3", "H3"], Suit.HEART, (True, Suit.HEART)),
-            (["H3", "H3"], Suit.JOKER, (False, Suit.HEART)),
+            (([SJ, SJ], Suit.JOKER), (True, Suit.JOKER)),
+            (([SJ, SJ], Suit.SPADE), (True, Suit.JOKER)),
+            ((["H2", "H2"], Suit.JOKER), (True, Suit.HEART)),
+            ((["H3", "H3"], Suit.HEART), (True, Suit.HEART)),
+            ((["H3", "H3"], Suit.JOKER), (False, Suit.HEART)),
         ]
 
-        for raw_cards, trump_suit, expected in cases:
-            with self.subTest(
-                raw_cards=raw_cards, trump_suit=trump_suit, expected=expected
-            ):
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (raw_cards, trump_suit) = setup
                 cards = initialize_cards(raw_cards)
                 order.reset(trump_suit)
                 format = Format(order, cards)
@@ -101,27 +73,27 @@ class FormatCreateTests(unittest.TestCase):
         order = Order(2)
         cases = [
             # Big and small Jokers
-            ([BJ, BJ, SJ, SJ], (2, Suit.JOKER), (True, Suit.JOKER)),
-            ([BJ, BJ, SJ, SJ], (2, Suit.SPADE), (True, Suit.JOKER)),
+            (([BJ, BJ, SJ, SJ], 2, Suit.JOKER), (True, Suit.JOKER)),
+            (([BJ, BJ, SJ, SJ], 2, Suit.SPADE), (True, Suit.JOKER)),
             # Small Joker and trump suit trump rank pair
-            ([SJ, SJ, "S2", "S2"], (2, Suit.SPADE), (True, Suit.UNKNOWN)),
+            (([SJ, SJ, "S2", "S2"], 2, Suit.SPADE), (True, Suit.UNKNOWN)),
             # Small Joker and trump rank pair, when no trump suit
-            ([SJ, SJ, "S2", "S2"], (2, Suit.JOKER), (True, Suit.UNKNOWN)),
+            (([SJ, SJ, "S2", "S2"], 2, Suit.JOKER), (True, Suit.UNKNOWN)),
             # Non-trump rank pair and trump suit ace pair
-            (["H2", "H2", "S1", "S1"], (2, Suit.SPADE), (True, Suit.UNKNOWN)),
+            ((["H2", "H2", "S1", "S1"], 2, Suit.SPADE), (True, Suit.UNKNOWN)),
             # Trump consecutive pairs
-            (["S4", "S4", "S3", "S3"], (2, Suit.SPADE), (True, Suit.SPADE)),
+            ((["S4", "S4", "S3", "S3"], 2, Suit.SPADE), (True, Suit.SPADE)),
             # Trump non-consecutive pairs, separated by trump rank
-            (["S4", "S4", "S2", "S2"], (3, Suit.SPADE), (True, Suit.SPADE)),
+            ((["S4", "S4", "S2", "S2"], 3, Suit.SPADE), (True, Suit.SPADE)),
             # Non-trump consecutive pairs
-            (["S4", "S4", "S3", "S3"], (2, Suit.HEART), (False, Suit.SPADE)),
+            ((["S4", "S4", "S3", "S3"], 2, Suit.HEART), (False, Suit.SPADE)),
             # # Non-trump non-consecutive pairs, separated by trump rank
-            (["S4", "S4", "S2", "S2"], (3, Suit.HEART), (False, Suit.SPADE)),
+            ((["S4", "S4", "S2", "S2"], 3, Suit.HEART), (False, Suit.SPADE)),
         ]
 
-        for raw_cards, trump, expected in cases:
-            with self.subTest(raw_cards=raw_cards, trump=trump, expected=expected):
-                (trump_rank, trump_suit) = trump
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (raw_cards, trump_rank, trump_suit) = setup
                 order = Order(trump_rank)
                 order.reset(trump_suit)
                 cards = initialize_cards(raw_cards)
@@ -158,9 +130,9 @@ class FormatCreateTests(unittest.TestCase):
             (["H1", "H13", "H3"], (False, Suit.HEART)),
         ]
 
-        for raw_cards, expected in cases:
-            with self.subTest(raw_cards=raw_cards, expected=expected):
-                cards = initialize_cards(raw_cards)
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                cards = initialize_cards(setup)
                 shuffle(cards)
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
@@ -182,23 +154,22 @@ class FormatCreateTests(unittest.TestCase):
     def test_format_create_toss_pairs(self) -> None:
         cases = [
             # Small Joker and non-trump suit trump rank pair
-            ([SJ, SJ, "H2", "H2"], (2, Suit.SPADE), (True, Suit.UNKNOWN)),
+            ([SJ, SJ, "H2", "H2"], (True, Suit.UNKNOWN)),
             # 2 non-trump suit trump rank pairs
-            (["C2", "C2", "H2", "H2"], (2, Suit.SPADE), (True, Suit.UNKNOWN)),
+            (["C2", "C2", "H2", "H2"], (True, Suit.UNKNOWN)),
             # Trump consecutive pair, with one of trump rank
-            (["S2", "S2", "S3", "S3"], (2, Suit.SPADE), (True, Suit.SPADE)),
+            (["S2", "S2", "S3", "S3"], (True, Suit.SPADE)),
             # Trump non-consecutive pair
-            (["S2", "S2", "S4", "S4"], (2, Suit.SPADE), (True, Suit.SPADE)),
+            (["S2", "S2", "S4", "S4"], (True, Suit.SPADE)),
             # Non-trump non-consecutive pair
-            (["H2", "H2", "H4", "H4"], (2, Suit.SPADE), (False, Suit.HEART)),
+            (["H5", "H5", "H3", "H3"], (False, Suit.HEART)),
         ]
 
-        for raw_cards, trump, expected in cases:
-            with self.subTest(raw_cards=raw_cards, trump=trump, expected=expected):
-                (trump_rank, trump_suit) = trump
-                order = Order(trump_rank)
-                order.reset(trump_suit)
-                cards = initialize_cards(raw_cards)
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                order = Order(2)
+                order.reset(Suit.SPADE)
+                cards = initialize_cards(setup)
                 shuffle(cards)
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
@@ -240,22 +211,26 @@ class FormatCreateTests(unittest.TestCase):
                     "S7",
                     "S7",
                 ],
-                (True, Suit.UNKNOWN, 3, 0, 0),
-                [
-                    (6, Card(0, Suit.HEART, 2)),
-                    (4, Card(0, Suit.JOKER, 2)),
-                    (4, Card(0, Suit.SPADE, 8)),
-                ],
-                [],
-                [],
+                (
+                    (True, Suit.UNKNOWN, 3, 0, 0),
+                    [
+                        (6, Card(0, Suit.HEART, 2)),
+                        (4, Card(0, Suit.JOKER, 2)),
+                        (4, Card(0, Suit.SPADE, 8)),
+                    ],
+                    [],
+                    [],
+                ),
             ),
             # Trump suit trump rank pair, and 2 non-trump suit trump rank pairs, trump suit ace pair
             (
                 ["S2", "S2", "H2", "H2", "C2", "C2", "S1", "S1"],
-                (True, Suit.UNKNOWN, 1, 1, 0),
-                [(6, Card(0, Suit.SPADE, 2))],
-                [Card(0, Suit.HEART, 2)],
-                [],
+                (
+                    (True, Suit.UNKNOWN, 1, 1, 0),
+                    [(6, Card(0, Suit.SPADE, 2))],
+                    [Card(0, Suit.HEART, 2)],
+                    [],
+                ),
             ),
             # Combination of tractors, pairs and singles
             (
@@ -275,34 +250,32 @@ class FormatCreateTests(unittest.TestCase):
                     "S7",
                     "S7",
                 ],
-                (True, Suit.UNKNOWN, 2, 2, 2),
-                [
-                    (4, Card(0, Suit.SPADE, 11)),
-                    (4, Card(0, Suit.SPADE, 8)),
-                ],
-                [Card(0, Suit.HEART, 2), Card(0, Suit.SPADE, 13)],
-                [Card(0, Suit.JOKER, 1), Card(0, Suit.SPADE, 1)],
+                (
+                    (True, Suit.UNKNOWN, 2, 2, 2),
+                    [
+                        (4, Card(0, Suit.SPADE, 11)),
+                        (4, Card(0, Suit.SPADE, 8)),
+                    ],
+                    [Card(0, Suit.HEART, 2), Card(0, Suit.SPADE, 13)],
+                    [Card(0, Suit.JOKER, 1), Card(0, Suit.SPADE, 1)],
+                ),
             ),
         ]
 
-        for (
-            raw_cards,
-            expected,
-            expected_tractors,
-            expected_pairs,
-            expected_singles,
-        ) in cases:
-            with self.subTest(
-                raw_cards=raw_cards,
-                expected=expected,
-                expected_tractors=expected_tractors,
-                expected_pairs=expected_pairs,
-                expected_singles=expected_singles,
-            ):
-                cards = initialize_cards(raw_cards)
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                cards = initialize_cards(setup)
                 shuffle(cards)
                 format = Format(order, cards)
-                (all_trumps, suit, len_tractors, len_pairs, len_singles) = expected
+                (
+                    expected_format,
+                    expected_tractors,
+                    expected_pairs,
+                    expected_singles,
+                ) = expected
+                (all_trumps, suit, len_tractors, len_pairs, len_singles) = (
+                    expected_format
+                )
 
                 self.assertTrue(format.is_toss)
                 self.assertEqual(all_trumps, format.all_trumps)

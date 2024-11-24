@@ -1,7 +1,7 @@
 import random
 from typing import List, Sequence
 from abstractions.enums import GamePhase, Suit, TrumpType
-from abstractions.types import Card, Player
+from abstractions.types import Card
 from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, TrumpRequest
 from abstractions.responses import (
     DrawResponse,
@@ -15,6 +15,7 @@ from abstractions.responses import (
 )
 from core.order import Order
 from core.trick import Trick
+from core.player import Player
 
 
 class Game:
@@ -211,7 +212,7 @@ class Game:
             self.__match_id, request.player_id, self.__phase, request.cards, True, True
         )
 
-    def play(self, request: PlayRequest) -> SocketResponse:
+    def play(self, request: PlayRequest) -> SocketResponse | None:
         # Only play during the play phase
         if self.__phase != GamePhase.PLAY:
             return []
@@ -225,11 +226,14 @@ class Game:
             self.__tricks.append(Trick(len(self.__players), self.__order))
 
         player = self.__players[request.player_id]
+        other_players = [
+            player for player in self.__players if player.id != request.player_id
+        ]
         trick = self.__tricks[-1]
 
         # Try processing play request
-        if not trick.try_play(player, request.cards):
-            return []
+        if not trick.try_play(other_players, player, request.cards):
+            return None
 
         # Play cards from player's hands
         player.play(request.cards)

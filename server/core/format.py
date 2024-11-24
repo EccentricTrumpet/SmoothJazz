@@ -16,11 +16,15 @@ class Single:
         self.cards: Sequence[Card] = [card]
         self.highest_card = card
         self.matched = False
-        self.matched_format: TSingle | None = None
+        self.complement: TSingle | None = None
 
     @property
     def length(self) -> int:
         return len(self.cards)
+
+    def reset(self) -> None:
+        self.matched = False
+        self.complement = None
 
 
 class Pair:
@@ -28,11 +32,15 @@ class Pair:
         self.cards: Sequence[Card] = cards
         self.highest_card = cards[0]
         self.matched = False
-        self.matched_format: TPair | None = None
+        self.complement: TPair | None = None
 
     @property
     def length(self) -> int:
         return len(self.cards)
+
+    def reset(self) -> None:
+        self.matched = False
+        self.complement = None
 
 
 class Tractor:
@@ -42,11 +50,15 @@ class Tractor:
         # Assume cards are sorted in increasing order
         self.highest_card = self.cards[0]
         self.matched = False
-        self.matched_format: TTractor | None = None
+        self.complement: TTractor | None = None
 
     @property
     def length(self) -> int:
         return len(self.cards)
+
+    def reset(self) -> None:
+        self.matched = False
+        self.complement = None
 
 
 # Container class for format of set of cards in a play
@@ -61,20 +73,24 @@ class Format:
         self.__cards = cards
 
         self.all_trumps = True
+        all_non_trumps = True
         suits: Set[Suit] = set()
 
         for card in cards:
             suits.add(card.suit)
-            self.all_trumps = self.all_trumps and order.is_trump(card)
+            is_trump = order.is_trump(card)
+            self.all_trumps = self.all_trumps and is_trump
+            all_non_trumps = all_non_trumps and not is_trump
 
-        self.suit = Suit.UNKNOWN if len(suits) > 1 else next(iter(suits))
-
-        (self.singles, self.pairs, self.tractors) = (
-            self.__create(cards)
-            if self.suit != Suit.UNKNOWN or self.all_trumps
-            else ([], [], [])
+        self.suit = (
+            Suit.UNKNOWN
+            if len(suits) > 1 or self.all_trumps == all_non_trumps
+            else next(iter(suits))
         )
-
+        self.suited = self.all_trumps or (all_non_trumps and self.suit != Suit.UNKNOWN)
+        (self.singles, self.pairs, self.tractors) = (
+            self.__create(cards) if self.suited else ([], [], [])
+        )
         self.is_toss = len(self.tractors) + len(self.pairs) + len(self.singles) != 1
 
     def __create(
@@ -103,15 +119,15 @@ class Format:
         i = 0
         orphan_pairs: Sequence[Pair] = []
         deduped_pairs: Sequence[Pair] = []
-        orders = set()
+        last_card_order = -1
 
         # Separate duplicate non-trump pairs when resolving tractors
         for pair in pairs:
             pair_order = self.__order.for_card(pair.highest_card)
-            if pair_order in orders:
+            if pair_order == last_card_order:
                 orphan_pairs.append(pair)
             else:
-                orders.add(pair_order)
+                last_card_order = pair_order
                 deduped_pairs.append(pair)
 
         # Resolve tractors using deduped pairs
@@ -143,26 +159,27 @@ class Format:
     def length(self) -> int:
         return len(self.__cards)
 
-    # Obsolete
-    def matches(self, format: TFormat) -> bool:
-        if len(self.tractors) != len(format.tractors):
-            logging.info("Number of tractors do not match")
-            return False
+    def reset(self) -> None:
+        for tractor in self.tractors:
+            tractor.reset()
+        for pair in self.pairs:
+            pair.reset()
+        for single in self.singles:
+            single.reset()
 
-        self.tractors.sort(key=lambda t: t.length)
-        format.tractors.sort(key=lambda t: t.length)
+    def reform_with(self, format: TFormat):
+        self.tractors = [tractor.complement for tractor in format.tractors]
+        self.pairs = [pair.complement for pair in format.pairs]
+        self.singles = [single.complement for single in format.singles]
 
-        for tractor, other_tractor in zip(self.tractors, format.tractors):
-            if tractor.cards.length != other_tractor.cards.length:
-                logging.info("Tractors lengths do not match")
-                return False
-
-        if len(self.pairs) != len(format.pairs):
-            logging.info("Number of pairs do not match")
-            return False
-
-        if len(self.singles) != len(format.singles):
-            logging.info("Number of singles do not match")
-            return False
-
-        return True
+    def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Sequence[Card]:
+        return [
+            card
+            for card in self.__cards
+            if (include_trumps and self.__order.is_trump(card))
+            or (
+                not include_trumps
+                and not self.__order.is_trump(card)
+                and card.suit == suit
+            )
+        ]

@@ -1,7 +1,7 @@
 from itertools import count
 from typing import Iterator, List, Sequence
 from abstractions.enums import MatchPhase, Suit
-from abstractions.types import Card, Player
+from abstractions.types import Card
 from abstractions.requests import (
     DrawRequest,
     JoinRequest,
@@ -17,7 +17,8 @@ from abstractions.responses import (
     SocketResponse,
     TrumpResponse,
 )
-from .game import Game
+from core.game import Game
+from core.player import Player
 
 
 class Match:

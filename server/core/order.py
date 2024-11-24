@@ -14,6 +14,7 @@ class Order:
         # Rank order 1, 13, ..., 2, except trump rank
         self.__all_ranks = [1, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]
         self.__all_ranks.remove(self.__trump_rank)
+        self.reset(Suit.JOKER)
 
     def reset(self, trump_suit: Suit):
         self.__trump_suit = trump_suit

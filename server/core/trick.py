@@ -1,7 +1,8 @@
 from typing import Sequence
 from core.format import Format
 from core.order import Order
-from abstractions.types import Card, Player
+from abstractions.types import Card
+from core.player import Player
 
 
 # Logic for managing tricks comprising of a play from each player
@@ -14,42 +15,87 @@ class Trick:
         self.lead_id = -1
         self.winner_id = -1
 
-    def __is_legal(self, player: Player, cards: Sequence[Card]) -> bool:
+    def __match_format(
+        self, lead: Format, play: Format, player_cards: Sequence[Card]
+    ) -> bool:
+        return True
+
+    def __resolve_format(
+        self, other_players: Sequence[Player], player: Player, cards: Sequence[Card]
+    ) -> Format | None:
         # Must contain at least one card
         if len(cards) == 0:
-            return False
+            print("Unable to resolve format: empty play")
+            return None
 
         # Player must possess the cards
         if not player.has_cards(cards):
-            return False
+            print("Unable to resolve format: player does not possess played cards")
+            return None
 
         # Enforce leading play rules
         if self.lead_id == -1:
-            # Enforce toss rules if needed
-            return True
+            format = Format(self.__order, cards)
 
-        # Enforce follow rules - suit
+            # Format must be suited
+            if not format.suited:
+                print("Unable to resolve format: leading play not suited")
+                return None
 
-        # Enforce follow rules - trick format
+            # Enforce toss rules
 
-        return True
+            return format
+
+        lead = self.__plays[self.lead_id]
+
+        # Enforce follow length
+        if len(cards) != lead.length:
+            print("Unable to resolve format: following play with incorrect length")
+            return None
+
+        # Enforce follow suit
+        player_cards = player.cards_in_suit(self.__order, lead.suit, lead.all_trumps)
+        required_suit_cards = min(len(player_cards), lead.length)
+        format = Format(self.__order, cards)
+
+        if len(format.cards_in_suit(lead.suit, lead.all_trumps)) < required_suit_cards:
+            print(
+                "Unable to resolve format: following play without required suit cards"
+            )
+            return None
+
+        # Partial or mismatched non-trump follow, format need not to be matched
+        if not format.all_trumps and format.suit != lead.suit:
+            return format
+
+        # Enforce follow trick format
+        if self.__match_format(lead, format, player_cards):
+            # format.reform_with(lead)
+            lead.reset()
+            return format
+
+        lead.reset()
+        return None
 
     # Checks legality and update trick states
-    def try_play(self, player: Player, cards: Sequence[Card]) -> bool:
-        if not self.__is_legal(player, cards):
+    def try_play(
+        self, other_players: Sequence[Player], player: Player, cards: Sequence[Card]
+    ) -> bool:
+        play_format = self.__resolve_format(other_players, player, cards)
+        if play_format == None:
             return False
 
         # Record played cards
-        self.__plays[player.id] = Format(self.__order, cards)
+        self.__plays[player.id] = play_format
 
         # Update lead player id, if needed
         if self.lead_id == -1:
             self.lead_id = player.id
-
-        # Update states - mock logic
-        if self.winner_id == -1:
+            # Mock logic
             self.winner_id = (self.lead_id + 1) % self.__num_players
-            self.score = 5
+
+        # Update states
+        self.score += sum([c.points() for c in cards])
 
         return True
 

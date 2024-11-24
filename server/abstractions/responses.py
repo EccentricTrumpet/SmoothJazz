@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
-from abstractions.types import Card, Player
+from abstractions.types import Card
 from abstractions.enums import GamePhase
+from core.player import Player
 
 
 # HTTP responses
