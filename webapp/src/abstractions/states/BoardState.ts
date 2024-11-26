@@ -6,6 +6,6 @@ export class BoardState {
         public deck: Card[] = [],
         public kitty: Card[] = [],
         public discard: Card[] = [],
-        public points: number = 0,
+        public score: number = 0,
     ) {}
 }

@@ -1,5 +1,6 @@
+from bisect import bisect_left, bisect_right
 import random
-from typing import List, Sequence
+from typing import List, Sequence, Set
 from abstractions.enums import GamePhase, Suit, TrumpType
 from abstractions.types import Card
 from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, TrumpRequest
@@ -17,23 +18,27 @@ from core.order import Order
 from core.trick import Trick
 from core.player import Player
 
+BOSS_LEVELS = [2, 5, 10, 13, 14, 15]  # Level 14 is Aces, Level 15 is the end
+CARDS_PER_DECK = 54
+CARDS_PER_SUIT = 13
+THRESHOLD_PER_DECK = 20
+
 
 class Game:
     def __init__(
         self,
         game_id,
         match_id: int,
-        num_cards: int,
-        game_rank: int,
+        num_decks: int,
         lead_player_id: int,
         players: Sequence[Player],
     ) -> None:
         # Inputs
         self.__game_id = game_id
         self.__match_id = match_id
-        self.__players = players
+        self.__num_decks = num_decks
         self.__lead_player_id = lead_player_id
-        self.__game_rank = game_rank
+        self.__players = players
 
         # Private
         self.__phase = GamePhase.DRAW
@@ -45,20 +50,32 @@ class Game:
         self.__trump_type = TrumpType.NONE
         self.__kitty_player_id = lead_player_id
         self.__active_player_id = lead_player_id
+        self.__game_rank = self.__players[lead_player_id].level
         self.__order = Order(self.__game_rank)
-        self.__defenders = set()
-        self.__attackers = set()
-        self.__tricks: List[Trick] = []
+        self.__defenders: Set[int] = set()
+        self.__attackers: Set[int] = set()
+        self.__ready_acks: Set[int] = set()
+
+        # Protected for testing
+        self._tricks: List[Trick] = []
+
+        # Public
+        self.next_lead = -1
+
+        # Fix game rank for Aces game
+        if self.__game_rank > CARDS_PER_SUIT:
+            self.__game_rank -= CARDS_PER_SUIT
 
         # 1 deck for every 2 players, rounded down
+        num_cards = self.__num_decks * CARDS_PER_DECK
         indices = list(range(num_cards))
         random.shuffle(indices)  # Pre-shuffle indices it won't match card order
         suits = list(Suit)
 
         for i in range(num_cards):
-            card_index = i % 54
-            suit_index = card_index // 13
-            rank_index = card_index % 13 + 1
+            card_index = i % CARDS_PER_DECK
+            suit_index = card_index // CARDS_PER_SUIT
+            rank_index = card_index % CARDS_PER_SUIT + 1
             self.__deck.append(Card(indices[i], suits[suit_index], rank_index))
 
         random.shuffle(self.__deck)
@@ -212,6 +229,47 @@ class Game:
             self.__match_id, request.player_id, self.__phase, request.cards, True, True
         )
 
+    def _end(self) -> None:
+        self.__phase = GamePhase.END
+        trick = self._tricks[-1]
+
+        # Add kitty score
+        if trick.winner_id in self.__attackers:
+            multiple = 2
+            winner = trick.winning_play()
+            if len(winner.tractors) > 0:
+                multiple = 2 ** (1 + max([len(t.pairs) for t in winner.tractors]))
+            elif len(winner.pairs) > 0:
+                multiple = 4
+            self.__score += multiple * sum([c.points for c in self.__kitty])
+
+        # Update level up players and resolve next lead player
+        threshold = THRESHOLD_PER_DECK * self.__num_decks
+        win_threshold = 2 * threshold
+        if self.__score >= win_threshold:
+            # Attackers win
+            levels = (self.__score - win_threshold) // threshold
+            self.next_lead = (self.__lead_player_id + 1) % len(self.__players)
+            for attacker in self.__attackers:
+                player = self.__players[attacker]
+                # Bisect left: lowest level >= player's level
+                max_level = BOSS_LEVELS[bisect_left(BOSS_LEVELS, player.level)]
+                player.level = min(max_level, player.level + levels)
+        else:
+            # Defenders win
+            score = self.__score
+            levels = (
+                3 + (0 - score) // threshold
+                if score <= 0
+                else 2 if score < threshold else 1
+            )
+            self.next_lead = (self.__lead_player_id + 2) % len(self.__players)
+            for defender in self.__defenders:
+                player = self.__players[defender]
+                # Bisect right: lowest level > player's level
+                max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
+                player.level = min(max_level, player.level + levels)
+
     def play(self, request: PlayRequest) -> SocketResponse | None:
         # Only play during the play phase
         if self.__phase != GamePhase.PLAY:
@@ -222,14 +280,14 @@ class Game:
             return []
 
         # Create new trick if needed
-        if len(self.__tricks) == 0 or self.__tricks[-1].is_done():
-            self.__tricks.append(Trick(len(self.__players), self.__order))
+        if len(self._tricks) == 0 or self._tricks[-1].is_done():
+            self._tricks.append(Trick(len(self.__players), self.__order))
 
         player = self.__players[request.player_id]
         other_players = [
             player for player in self.__players if player.id != request.player_id
         ]
-        trick = self.__tricks[-1]
+        trick = self._tricks[-1]
 
         # Try processing play request
         if not trick.try_play(other_players, player, request.cards):
@@ -259,10 +317,15 @@ class Game:
 
             # Update game states on end
             if player.is_empty_handed():
-                self.__phase = GamePhase.END
+                self._end()
 
-                # Update states
-
-                response = GameResponse(self.__match_id, response)
+                response = GameResponse(
+                    self.__match_id,
+                    response,
+                    self.__phase,
+                    self.__kitty,
+                    self.next_lead,
+                    self.__score,
+                )
 
         return response

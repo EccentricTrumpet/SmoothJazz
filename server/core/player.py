@@ -15,6 +15,7 @@ class Player:
         self.id = id
         self.name = name
         self.socket_id = socket_id
+        self.level = 2
         self.__hand = hand
 
     def draw(self, cards: Sequence[Card]) -> None:

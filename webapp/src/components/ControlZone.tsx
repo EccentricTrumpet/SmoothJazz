@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Constants } from "../Constants";
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
@@ -13,6 +14,8 @@ interface ControlZoneInputs {
 }
 
 export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState, playerId, controller, debug}) => {
+
+  const [nextClicked, setNextClicked] = useState(false)
 
   const zone = new Zone(
     new Position(
@@ -52,6 +55,7 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
       buttonText = "Next Game";
       buttonAction = () => {
         controller.onNext(debug ? gameState.activePlayerId : playerId)
+        setNextClicked(true);
       };
       break;
   }
@@ -70,7 +74,7 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
     }}>
       {buttonText && buttonText.length > 0 && (
         <button
-          className={buttonDisabled ? "disabled" : ""}
+          className={(buttonDisabled || nextClicked) ? "disabled" : ""}
           onClick={buttonAction}
           style={{
             display: "flex",

@@ -14,6 +14,7 @@ class Card:
     def is_equivalent_to(self, card: TCard) -> bool:
         return self.suit == card.suit and self.rank == card.rank
 
+    @property
     def points(self) -> int:
         if self.rank == 5:
             return 5

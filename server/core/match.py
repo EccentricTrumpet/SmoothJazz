@@ -38,7 +38,7 @@ class Match:
         # Private
         self.__phase = MatchPhase.CREATED
         # 1 deck for every 2 players, rounded down
-        self.__num_cards = 54 * (self.__num_players // 2)
+        self.__num_decks = self.__num_players // 2
         self.__games: List[Game] = []
         self.__players: List[Player] = []
 
@@ -77,7 +77,7 @@ class Match:
         # Start the game if all players have joined
         if len(self.__players) == self.__num_players:
             new_game = Game(
-                len(self.__games), self.__id, self.__num_cards, 2, 0, self.__players
+                len(self.__games), self.__id, self.__num_decks, 0, self.__players
             )
             self.__games.append(new_game)
             responses.append(new_game.start())

@@ -18,6 +18,7 @@ class Trick:
     def __match_format(
         self, lead: Format, play: Format, player_cards: Sequence[Card]
     ) -> bool:
+        # TODO: Implement format enforcement and matching
         return True
 
     def __resolve_format(
@@ -42,7 +43,7 @@ class Trick:
                 print("Unable to resolve: leading play not suited")
                 return None
 
-            # Enforce toss rules
+            # TODO: Enforce toss rules
 
             return format
 
@@ -87,7 +88,7 @@ class Trick:
             return False
 
         # Update states
-        self.score += sum([c.points() for c in cards])
+        self.score += sum([c.points for c in cards])
         self.__plays[player.id] = play_format
 
         # Update lead player id, if needed
@@ -124,3 +125,6 @@ class Trick:
 
     def is_done(self) -> bool:
         return len(self.__plays) == self.__num_players
+
+    def winning_play(self) -> Format:
+        return self.__plays[self.winner_id]

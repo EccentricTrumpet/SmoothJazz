@@ -30,7 +30,6 @@ import {
 import { CenterZone, ControlZone, PlayerZone } from "../components";
 import { GamePhase, Suit } from "../abstractions/enums";
 import { Constants } from "../Constants";
-import { waitFor } from "@testing-library/react";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
   return array.reduce(([pass, fail], elem) => {
@@ -169,7 +168,7 @@ export default function MatchPage() {
             prevBoardState.deck.slice(0, -drawResponse.cards.length),
             prevBoardState.kitty,
             prevBoardState.discard,
-            prevBoardState.points
+            prevBoardState.score
           )
         });
 
@@ -272,7 +271,7 @@ export default function MatchPage() {
           prevBoardState.deck,
           kitty,
           prevBoardState.discard,
-          prevBoardState.points
+          prevBoardState.score
         ));
 
         // Set new game state
@@ -351,7 +350,7 @@ export default function MatchPage() {
             prevBoardState.deck,
             prevBoardState.kitty,
             [...prevBoardState.discard, ...discardedCards],
-            trickResponse.points
+            trickResponse.score
           ));
 
           return newPlayers;

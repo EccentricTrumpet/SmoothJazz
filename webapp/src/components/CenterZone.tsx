@@ -107,7 +107,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
         height: 3*Constants.margin,
         backgroundColor: Constants.backgroundColor,
       }}>
-        <h4 style={{ margin: 0 }}>Points:</h4>
+        <h4 style={{ margin: 0 }}>Score:</h4>
       </div>
       <div className="container" style={{
         position: "fixed",
@@ -120,7 +120,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
         height: 3*Constants.margin,
         backgroundColor: Constants.backgroundColor,
       }}>
-        <h4 style={{ margin: 0 }}>{board.points}</h4>
+        <h4 style={{ margin: 0 }}>{board.score}</h4>
       </div>
       {/* Deck */}
       <div className="container" style={{
