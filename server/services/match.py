@@ -5,6 +5,7 @@ from abstractions.requests import (
     DrawRequest,
     JoinRequest,
     KittyRequest,
+    NextRequest,
     PlayRequest,
     TrumpRequest,
 )
@@ -42,3 +43,7 @@ class MatchService:
     def play(self, request: PlayRequest) -> SocketResponse | None:
         # TODO: Handle match not found
         return self.__matches[request.match_id].play(request)
+
+    def next(self, request: NextRequest) -> SocketResponse | None:
+        # TODO: Handle match not found
+        return self.__matches[request.match_id].next(request)

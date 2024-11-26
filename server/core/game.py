@@ -6,7 +6,7 @@ from abstractions.types import Card
 from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, TrumpRequest
 from abstractions.responses import (
     DrawResponse,
-    GameResponse,
+    EndResponse,
     PlayResponse,
     SocketResponse,
     StartResponse,
@@ -54,7 +54,7 @@ class Game:
         self.__order = Order(self.__game_rank)
         self.__defenders: Set[int] = set()
         self.__attackers: Set[int] = set()
-        self.__ready_acks: Set[int] = set()
+        self.__ready_players: Set[int] = set()
 
         # Protected for testing
         self._tricks: List[Trick] = []
@@ -249,7 +249,7 @@ class Game:
         if self.__score >= win_threshold:
             # Attackers win
             levels = (self.__score - win_threshold) // threshold
-            self.next_lead = (self.__lead_player_id + 1) % len(self.__players)
+            self.next_lead = (self.__kitty_player_id + 1) % len(self.__players)
             for attacker in self.__attackers:
                 player = self.__players[attacker]
                 # Bisect left: lowest level >= player's level
@@ -263,7 +263,7 @@ class Game:
                 if score <= 0
                 else 2 if score < threshold else 1
             )
-            self.next_lead = (self.__lead_player_id + 2) % len(self.__players)
+            self.next_lead = (self.__kitty_player_id + 2) % len(self.__players)
             for defender in self.__defenders:
                 player = self.__players[defender]
                 # Bisect right: lowest level > player's level
@@ -319,13 +319,18 @@ class Game:
             if player.is_empty_handed():
                 self._end()
 
-                response = GameResponse(
+                response = EndResponse(
                     self.__match_id,
                     response,
                     self.__phase,
+                    self.__kitty_player_id,
                     self.__kitty,
                     self.next_lead,
                     self.__score,
                 )
 
         return response
+
+    def ready(self, player_id: int) -> bool:
+        self.__ready_players.add(player_id)
+        return len(self.__ready_players) == len(self.__players)

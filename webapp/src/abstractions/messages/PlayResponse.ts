@@ -1,4 +1,4 @@
-import { GamePhase, Suit } from "../enums";
+import { Suit } from "../enums";
 import { CardInfo } from ".";
 
 export class PlayResponse {

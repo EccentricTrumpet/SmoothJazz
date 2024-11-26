@@ -135,3 +135,16 @@ class Match:
 
     def play(self, request: PlayRequest) -> SocketResponse | None:
         return self.__games[-1].play(request)
+
+    def next(self, request: PlayRequest) -> SocketResponse | None:
+        current_game = self.__games[-1]
+        if self.__debug or current_game.ready(request.player_id):
+            new_game = Game(
+                len(self.__games),
+                self.__id,
+                self.__num_decks,
+                current_game.next_lead,
+                self.__players,
+            )
+            self.__games.append(new_game)
+            return new_game.start()

@@ -244,22 +244,24 @@ class TrickResponse(SocketResponse):
         }
 
 
-class GameResponse(SocketResponse):
+class EndResponse(SocketResponse):
     def __init__(
         self,
         recipient: str,
         trick: TrickResponse,
         phase: GamePhase,
+        kitty_id: int,
         kitty: Sequence[Card],
         lead_id: int,
         score: int,
     ):
-        self.event = "game"
+        self.event = "end"
         self.recipient = recipient
         self.broadcast = True
         self.include_self = True
         self.trick = trick
         self.phase = phase
+        self.kitty_id = kitty_id
         self.kitty = kitty
         self.lead_id = lead_id
         self.score = score
@@ -268,10 +270,11 @@ class GameResponse(SocketResponse):
         return {
             "trick": self.trick.json(),
             "phase": self.phase,
+            "kittyId": self.kitty_id,
             "kitty": [
                 {"id": card.id, "suit": card.suit, "rank": card.rank}
                 for card in self.kitty
             ],
-            "lead_id": self.lead_id,
+            "leadId": self.lead_id,
             "score": self.score,
         }

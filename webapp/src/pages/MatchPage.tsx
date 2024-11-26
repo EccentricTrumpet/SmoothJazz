@@ -26,7 +26,9 @@ import {
   KittyResponse,
   PlayRequest,
   PlayResponse,
-  TrickResponse } from "../abstractions/messages";
+  TrickResponse,
+  EndResponse,
+  NextRequest} from "../abstractions/messages";
 import { CenterZone, ControlZone, PlayerZone } from "../components";
 import { GamePhase, Suit } from "../abstractions/enums";
 import { Constants } from "../Constants";
@@ -155,6 +157,7 @@ export default function MatchPage() {
             ))
           )
         ));
+        setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.seat)));
       });
 
       socket.on("draw", (response) => {
@@ -320,7 +323,6 @@ export default function MatchPage() {
 
             return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
           }
-
           else {
             return player;
           }
@@ -345,7 +347,7 @@ export default function MatchPage() {
           // Some state update mechanism is requiring this to be inside of setPlayers
           // Otherwise the discarded cards aren't appended correctly
 
-          // Add discarded cards to pile and update points
+          // Add discarded cards to pile and update score
           setBoardState(prevBoardState => new BoardState(
             prevBoardState.deck,
             prevBoardState.kitty,
@@ -360,12 +362,96 @@ export default function MatchPage() {
         setGameState(prevGameState => new GameState(trickResponse.activePlayerId, prevGameState.phase));
       });
 
-      socket.on("game", async (response) => {
-        console.log(`raw game response: ${JSON.stringify(response)}`);
-      });
+      socket.on("end", async (response) => {
+        console.log(`raw end response: ${JSON.stringify(response)}`);
+        const endResponse = new EndResponse(response);
 
-      socket.on("next", async (response) => {
-        console.log(`raw next response: ${JSON.stringify(response)}`);
+        setPlayers(prevPlayers => prevPlayers.map((player) => {
+          if (player.id === endResponse.trick.play.playerId) {
+            const [newPlaying, newHand] = partition(player.hand, (card) => {
+              return endResponse.trick.play.cards.some((playedCard) => playedCard.id === card.id);
+            });
+
+            for (const card of newPlaying) {
+              card.state.selected = false;
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
+          }
+          else {
+            return player;
+          }
+        }));
+
+        await new Promise(f => setTimeout(f, 1000));
+
+        const discardedCards: Card[] = [];
+
+        // Remove played cards from players
+        setPlayers(prevPlayers => {
+          const newPlayers = prevPlayers.map((player) => {
+            for (const card of player.playing) {
+              const discardedCard = card.clone();
+              discardedCard.state.rotate = 0;
+              discardedCards.push(discardedCard);
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, player.hand);
+          });
+
+          // Some state update mechanism is requiring this to be inside of setPlayers
+          // Otherwise the discarded cards aren't appended correctly
+
+          // Add discarded cards to pile and update score
+          setBoardState(prevBoardState => new BoardState(
+            prevBoardState.deck,
+            prevBoardState.kitty,
+            [...prevBoardState.discard, ...discardedCards],
+            endResponse.trick.score
+          ));
+
+          return newPlayers;
+        });
+
+        // Set new game state
+        setGameState(_ => new GameState(endResponse.trick.activePlayerId, endResponse.phase));
+
+        await new Promise(f => setTimeout(f, 1000));
+
+        // Display kitty
+        setPlayers(prevPlayers => {
+          const kitty: Card[] = [];
+          const newPlayers = prevPlayers.map((player) => {
+            if (player.id === endResponse.kittyId) {
+
+              // Add discarded cards to pile and update score
+              setBoardState(prevBoardState => {
+                for (const card of prevBoardState.kitty) {
+                  const kittyCard = card.clone();
+                  kittyCard.state.facedown = false;
+                  kitty.push(kittyCard);
+                }
+                return new BoardState(
+                  prevBoardState.deck,
+                  [],
+                  prevBoardState.discard,
+                  endResponse.score
+                );
+              });
+
+              return new PlayerState(player.id, player.name, player.seat, player.hand, kitty);
+            }
+
+            return player;
+          });
+
+          // Some state update mechanism is requiring this to be inside of setPlayers
+          // Otherwise the discarded cards aren't appended correctly
+
+          return newPlayers;
+        });
+
+        setGameState(_ => new GameState(endResponse.leadId, endResponse.phase));
       });
 
       // Join match
@@ -374,10 +460,9 @@ export default function MatchPage() {
       return () => {
         // Teardown
         socket.emit("leave", name, matchId);
-        socket.off("next")
-        socket.off("game")
-        socket.off("trick")
-        socket.off("play")
+        socket.off("end");
+        socket.off("trick");
+        socket.off("play");
         socket.off("kitty");
         socket.off("trump");
         socket.off("draw");
@@ -460,7 +545,10 @@ export default function MatchPage() {
       socket?.emit("play", new PlayRequest(matchId, playerId, cards));
     };
 
-    onNext = (playerId: number) => {};
+    onNext = (playerId: number) => {
+      setGameState(prevGameState => new GameState(prevGameState.activePlayerId, GamePhase.Waiting));
+      socket?.emit("next", new NextRequest(matchId, playerId));
+    };
   }
 
   const gameController = new Controller();

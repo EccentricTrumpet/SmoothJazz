@@ -5,6 +5,7 @@ from abstractions.requests import (
     DrawRequest,
     JoinRequest,
     KittyRequest,
+    NextRequest,
     PlayRequest,
     TrumpRequest,
 )
@@ -81,7 +82,7 @@ class MatchNamespace(Namespace):
             )
 
     def on_trump(self, payload):
-        """event listener when client draws a card"""
+        """event listener when client declare trumps"""
         response = self.__match_service.trump(TrumpRequest(payload))
 
         if response != None:
@@ -94,7 +95,7 @@ class MatchNamespace(Namespace):
             )
 
     def on_kitty(self, payload):
-        """event listener when client draws a card"""
+        """event listener when client hides kitty"""
         responses = self.__match_service.kitty(KittyRequest(payload))
 
         for response in responses:
@@ -107,8 +108,21 @@ class MatchNamespace(Namespace):
             )
 
     def on_play(self, payload):
-        """event listener when client draws a card"""
+        """event listener when client plays a card"""
         response = self.__match_service.play(PlayRequest(payload))
+
+        if response != None:
+            emit(
+                response.event,
+                response.json(),
+                to=response.recipient,
+                broadcast=response.broadcast,
+                include_self=response.include_self,
+            )
+
+    def on_next(self, payload):
+        """event listener when client is ready for the next game"""
+        response = self.__match_service.next(NextRequest(payload))
 
         if response != None:
             emit(

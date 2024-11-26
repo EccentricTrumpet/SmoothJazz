@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Constants } from "../Constants";
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
@@ -14,16 +13,13 @@ interface ControlZoneInputs {
 }
 
 export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState, playerId, controller, debug}) => {
-
-  const [nextClicked, setNextClicked] = useState(false)
-
   const zone = new Zone(
     new Position(
       parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,
       parentZone.top() + parentZone.size.height - Constants.margin - Constants.cardHeight,
     ),
     new Size(Constants.cardHeight, Constants.cardHeight)
-  )
+  );
 
   let buttonText = "";
   let buttonAction = () => {};
@@ -55,8 +51,11 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
       buttonText = "Next Game";
       buttonAction = () => {
         controller.onNext(debug ? gameState.activePlayerId : playerId)
-        setNextClicked(true);
       };
+      break;
+    case GamePhase.Waiting:
+      buttonText = "Waiting...";
+      buttonDisabled = true;
       break;
   }
 
@@ -74,12 +73,13 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
     }}>
       {buttonText && buttonText.length > 0 && (
         <button
-          className={(buttonDisabled || nextClicked) ? "disabled" : ""}
+          className={(buttonDisabled) ? "disabled" : ""}
           onClick={buttonAction}
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            opacity: (buttonDisabled) ? "0.4" : "1.0"
           }}>
           {buttonText}
         </button>
