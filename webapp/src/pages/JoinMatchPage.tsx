@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CookiesProvider, useCookies } from 'react-cookie'
 import { useNavigate } from 'react-router-dom';
 import { CookieState } from '../abstractions/states';
+import { MatchResponse } from '../abstractions/messages';
 
 export default function JoinMatchPage() {
   const [cookie, setCookie] = useCookies(['shengji'])
@@ -27,10 +28,13 @@ export default function JoinMatchPage() {
     setMatch(parseInt(event.target.value));
   }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCookie('shengji', cookieState, { path: '/'})
-    navigate(`/${match}`, { state: { name: cookieState.name } });
+    const name = cookieState.name
+    const response = await fetch(`http://localhost:5001/match/${match}`);
+    const matchResponse = new MatchResponse(await response.text());
+    navigate(`/${matchResponse.matchId}`, { state: { name: name, matchResponse: matchResponse } });
   }
 
   return (

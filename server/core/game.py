@@ -226,7 +226,11 @@ class Game:
             self.__attackers.add((self.__kitty_player_id + offset) % num_players)
 
         return KittyResponse(
-            self.__match_id, request.player_id, self.__phase, request.cards, True, True
+            kitty_player.socket_id,
+            request.player_id,
+            self.__phase,
+            request.cards,
+            include_self=True,
         )
 
     def _end(self) -> None:

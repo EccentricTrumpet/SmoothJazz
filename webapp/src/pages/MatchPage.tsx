@@ -115,6 +115,7 @@ export default function MatchPage() {
   // Configure messages
   useEffect(() => {
     if (socket) {
+      let currentPlayerId = -1;
       // Receive messages
       socket.on("data", (data) => {
         console.log(`raw join response: ${JSON.stringify(data)}`);
@@ -129,6 +130,7 @@ export default function MatchPage() {
         const joinResponse = new JoinResponse(response);
 
         if (joinResponse.name === name) {
+          currentPlayerId = joinResponse.id;
           setPlayerId(joinResponse.id);
         }
 
@@ -182,9 +184,14 @@ export default function MatchPage() {
             for (let i = 0; i < drawnCards.length; i++) {
               drawnCards[i].prepareState();
               drawnCards[i].id = drawResponse.cards[i].id;
-              drawnCards[i].suit = drawResponse.cards[i].suit;
-              drawnCards[i].rank = drawResponse.cards[i].rank;
-              drawnCards[i].state.facedown = false;
+              if (drawResponse.cards[i].suit === Suit.Unknown) {
+                drawnCards[i].state.facedown = true;
+              }
+              else {
+                drawnCards[i].state.facedown = false;
+                drawnCards[i].suit = drawResponse.cards[i].suit;
+                drawnCards[i].rank = drawResponse.cards[i].rank;
+              }
             }
 
             newPlayerState = new PlayerState(player.id, player.name, player.seat, [...player.hand, ...drawnCards], player.playing);
@@ -195,8 +202,10 @@ export default function MatchPage() {
 
           // Withdraw any declared trumps in preparation for game start
           if (drawResponse.phase === GamePhase.Kitty && newPlayerState.playing.length > 0) {
+            console.log(`Returning card to player: ${newPlayerState.id} - current player: ${currentPlayerId}`);
             for (const card of newPlayerState.playing) {
               card.prepareState();
+              card.state.facedown = player.id !== currentPlayerId;
             }
             newPlayerState.hand = [...newPlayerState.hand, ...newPlayerState.playing];
             newPlayerState.playing = [];
@@ -212,23 +221,32 @@ export default function MatchPage() {
       socket.on("trump", (response) => {
         console.log(`raw trump response: ${JSON.stringify(response)}`);
         const trumpResponse = new TrumpResponse(response);
+        const trumpCards = new Map<number, CardInfo>();
+        for (const card of trumpResponse.trumps) {
+          trumpCards.set(card.id, card);
+        }
 
         // Move declared trump cards to the play zone and let previous declarer pick up their cards
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.id === trumpResponse.playerId) {
-            const [newPlaying, newHand] = partition(player.hand, (card) => {
-              return trumpResponse.trumps.some((trump) => trump.id === card.id);
-            });
+            const [newPlaying, newHand] = partition(player.hand, card => trumpCards.has(card.id));
 
             for (const card of newPlaying) {
+              const trumpInfo = trumpCards.get(card.id);
+              card.prepareState();
               card.state.selected = false;
+              card.state.facedown = false;
+              card.suit = trumpInfo!.suit;
+              card.rank = trumpInfo!.rank;
             }
 
             return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
           }
           else if (player.playing.length > 0) {
+            console.log(`Returning card to player: ${player.id} - current player: ${currentPlayerId}`);
             for (const card of player.playing) {
               card.prepareState();
+              card.state.facedown = player.id !== currentPlayerId;
             }
             return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...player.playing]);
           }
@@ -284,15 +302,22 @@ export default function MatchPage() {
       socket.on("play", (response) => {
         console.log(`raw play response: ${JSON.stringify(response)}`);
         const playResponse = new PlayResponse(response);
+        const playCards = new Map<number, CardInfo>();
+        for (const card of playResponse.cards) {
+          playCards.set(card.id, card);
+        }
 
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.id === playResponse.playerId) {
-            const [newPlaying, newHand] = partition(player.hand, (card) => {
-              return playResponse.cards.some((playedCard) => playedCard.id === card.id);
-            });
+            const [newPlaying, newHand] = partition(player.hand, card => playCards.has(card.id));
 
             for (const card of newPlaying) {
+              const cardInfo = playCards.get(card.id);
+              card.prepareState();
               card.state.selected = false;
+              card.state.facedown = false;
+              card.suit = cardInfo!.suit;
+              card.rank = cardInfo!.rank;
             }
 
             return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
@@ -310,15 +335,22 @@ export default function MatchPage() {
       socket.on("trick", async (response) => {
         console.log(`raw trick response: ${JSON.stringify(response)}`);
         const trickResponse = new TrickResponse(response);
+        const playCards = new Map<number, CardInfo>();
+        for (const card of trickResponse.play.cards) {
+          playCards.set(card.id, card);
+        }
 
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.id === trickResponse.play.playerId) {
-            const [newPlaying, newHand] = partition(player.hand, (card) => {
-              return trickResponse.play.cards.some((playedCard) => playedCard.id === card.id);
-            });
+            const [newPlaying, newHand] = partition(player.hand, card => playCards.has(card.id));
 
             for (const card of newPlaying) {
+              const cardInfo = playCards.get(card.id);
+              card.prepareState();
               card.state.selected = false;
+              card.state.facedown = false;
+              card.suit = cardInfo!.suit;
+              card.rank = cardInfo!.rank;
             }
 
             return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
@@ -365,15 +397,22 @@ export default function MatchPage() {
       socket.on("end", async (response) => {
         console.log(`raw end response: ${JSON.stringify(response)}`);
         const endResponse = new EndResponse(response);
+        const playCards = new Map<number, CardInfo>();
+        for (const card of endResponse.trick.play.cards) {
+          playCards.set(card.id, card);
+        }
 
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.id === endResponse.trick.play.playerId) {
-            const [newPlaying, newHand] = partition(player.hand, (card) => {
-              return endResponse.trick.play.cards.some((playedCard) => playedCard.id === card.id);
-            });
+            const [newPlaying, newHand] = partition(player.hand, card => playCards.has(card.id));
 
             for (const card of newPlaying) {
+              const cardInfo = playCards.get(card.id);
+              card.prepareState();
               card.state.selected = false;
+              card.state.facedown = false;
+              card.suit = cardInfo!.suit;
+              card.rank = cardInfo!.rank;
             }
 
             return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
@@ -421,15 +460,22 @@ export default function MatchPage() {
         // Display kitty
         setPlayers(prevPlayers => {
           const kitty: Card[] = [];
+          const kittyCards = new Map<number, CardInfo>();
+          for (const card of endResponse.kitty) {
+            kittyCards.set(card.id, card);
+          }
+
           const newPlayers = prevPlayers.map((player) => {
             if (player.id === endResponse.kittyId) {
-
               // Add discarded cards to pile and update score
               setBoardState(prevBoardState => {
                 for (const card of prevBoardState.kitty) {
-                  const kittyCard = card.clone();
-                  kittyCard.state.facedown = false;
-                  kitty.push(kittyCard);
+                  const kittyInfo = kittyCards.get(card.id);
+                  card.prepareState();
+                  card.state.facedown = false;
+                  card.suit = kittyInfo!.suit;
+                  card.rank = kittyInfo!.rank;
+                  kitty.push(card);
                 }
                 return new BoardState(
                   prevBoardState.deck,

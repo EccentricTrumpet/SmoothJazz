@@ -100,7 +100,7 @@ class Match:
                 response,
                 DrawResponse(
                     self.__id,
-                    response.player_id,
+                    response.id,
                     response.phase,
                     response.activePlayerId,
                     [Card(card.id, Suit.UNKNOWN, 0) for card in response.cards],
@@ -120,7 +120,7 @@ class Match:
         if self.__debug:
             return [response]
         else:
-            # Send a full response to the player who drew the card and broadcast
+            # Send a full response to the player who hid the kitty and broadcast
             # a response without card suit and rank to everyone else
             return [
                 response,

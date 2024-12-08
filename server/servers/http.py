@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, render_template, request
+from flask import Flask, abort, render_template, request
 from flask.views import MethodView
 from flask_cors import CORS
 from services.match import MatchService
@@ -20,11 +20,11 @@ class HomeAPI(MethodView):
         return render_template("index.html")
 
 
-class MatchAPI(MethodView):
+class MatchPostAPI(MethodView):
     init_every_request = False
 
     def __init__(self, match_service: MatchService):
-        self.__match_service: MatchService = match_service
+        self.__match_service = match_service
 
     def post(self):
         debug = bool(request.json["debug"])
@@ -32,6 +32,22 @@ class MatchAPI(MethodView):
         logging.info(f"Creating new match - debug: {debug}")
 
         return self.__match_service.create(debug).json()
+
+
+class MatchGetAPI(MethodView):
+    init_every_request = False
+
+    def __init__(self, match_service: MatchService):
+        self.__match_service = match_service
+
+    def get(self, id: int):
+        logging.info(f"Joining new match {id}")
+
+        response = self.__match_service.get(id)
+        if response != None:
+            return response.json()
+        else:
+            abort(404)
 
 
 class HttpServer:
@@ -45,7 +61,10 @@ class HttpServer:
         CORS(self.app, resources={r"/*": {"origins": "*"}})
 
         self.app.add_url_rule("/", view_func=HomeAPI.as_view("home-api"))
-        self.app.add_url_rule("/hello", view_func=HelloAPI.as_view("hello-api"))
         self.app.add_url_rule(
-            "/match", view_func=MatchAPI.as_view("match-api", match_service)
+            "/match", view_func=MatchPostAPI.as_view("match-post-api", match_service)
+        )
+        self.app.add_url_rule(
+            "/match/<int:id>",
+            view_func=MatchGetAPI.as_view("match-get-api", match_service),
         )
