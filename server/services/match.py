@@ -7,7 +7,7 @@ from abstractions.requests import (
     KittyRequest,
     NextRequest,
     PlayRequest,
-    TrumpRequest,
+    BidRequest,
 )
 from core.match import Match
 
@@ -29,25 +29,25 @@ class MatchService:
             return self.__matches[match_id].response()
 
     def join(self, request: JoinRequest) -> Sequence[SocketResponse]:
-        # TODO: Handle match not found
-        return self.__matches[request.match_id].join(request)
+        if request.match_id in self.__matches:
+            return self.__matches[request.match_id].join(request)
 
     def draw(self, request: DrawRequest) -> Sequence[SocketResponse]:
-        # TODO: Handle match not found
-        return self.__matches[request.match_id].draw(request)
+        if request.match_id in self.__matches:
+            return self.__matches[request.match_id].draw(request)
 
-    def trump(self, request: TrumpRequest) -> SocketResponse | None:
-        # TODO: Handle match not found
-        return self.__matches[request.match_id].trump(request)
+    def bid(self, request: BidRequest) -> SocketResponse | None:
+        if request.match_id in self.__matches:
+            return self.__matches[request.match_id].bid(request)
 
     def kitty(self, request: KittyRequest) -> Sequence[SocketResponse]:
-        # TODO: Handle match not found
-        return self.__matches[request.match_id].kitty(request)
+        if request.match_id in self.__matches:
+            return self.__matches[request.match_id].kitty(request)
 
     def play(self, request: PlayRequest) -> SocketResponse | None:
-        # TODO: Handle match not found
-        return self.__matches[request.match_id].play(request)
+        if request.match_id in self.__matches:
+            return self.__matches[request.match_id].play(request)
 
     def next(self, request: NextRequest) -> SocketResponse | None:
-        # TODO: Handle match not found
-        return self.__matches[request.match_id].next(request)
+        if request.match_id in self.__matches:
+            return self.__matches[request.match_id].next(request)

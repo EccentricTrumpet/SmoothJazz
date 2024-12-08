@@ -1,6 +1,12 @@
 from typing import List
-from abstractions.enums import Suit
-from abstractions.types import Card
+from abstractions import Card, Suit
+
+
+# Jokers
+# Red (Big)
+JR = "J2"
+# Black (Small)
+JB = "J1"
 
 
 # Utility to generate a list of cards

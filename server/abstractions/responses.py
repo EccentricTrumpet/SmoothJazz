@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
-from abstractions.types import Card
-from abstractions.enums import GamePhase
+from abstractions import Card, GamePhase
 from core.player import Player
 
 
@@ -34,46 +33,52 @@ class MatchResponse(HttpResponse):
 
 # Socket responses
 class SocketResponse(ABC):
+    def __init__(self, event: str, recipient: str, broadcast: bool, include_self: bool):
+        self.event = event
+        self.recipient = recipient
+        self.broadcast = broadcast
+        self.include_self = include_self
+
     @abstractmethod
     def json(self) -> dict:
         pass
 
-    def get_event(self):
+    @property
+    def event(self):
         return self._event
 
-    def set_event(self, event: str):
+    @event.setter
+    def event(self, event: str):
         self._event = event
 
-    def get_recipient(self):
+    @property
+    def recipient(self):
         return self._recipient
 
-    def set_recipient(self, recipient: str):
+    @recipient.setter
+    def recipient(self, recipient: str):
         self._recipient = recipient
 
-    def get_broadcast(self):
+    @property
+    def broadcast(self):
         return self._broadcast
 
-    def set_broadcast(self, broadcast: bool):
+    @broadcast.setter
+    def broadcast(self, broadcast: bool):
         self._broadcast = broadcast
 
-    def get_include_self(self):
+    @property
+    def include_self(self):
         return self._include_self
 
-    def set_include_self(self, include_self: bool):
+    @include_self.setter
+    def include_self(self, include_self: bool):
         self._include_self = include_self
-
-    event = property(get_event, set_event)
-    recipient = property(get_recipient, set_recipient)
-    broadcast = property(get_broadcast, set_broadcast)
-    include_self = property(get_include_self, set_include_self)
 
 
 class JoinResponse(SocketResponse):
     def __init__(self, recipient: str, id: int, name: str):
-        self.event = "join"
-        self.recipient = recipient
-        self.broadcast = True
-        self.include_self = True
+        super().__init__("join", recipient, broadcast=True, include_self=True)
         self.__id = id
         self.__name = name
 
@@ -90,10 +95,7 @@ class StartResponse(SocketResponse):
         game_rank: int,
         phase: GamePhase,
     ):
-        self.event = "start"
-        self.recipient = recipient
-        self.broadcast = True
-        self.include_self = True
+        super().__init__("start", recipient, broadcast=True, include_self=True)
         self.__active_player_id = active_player_id
         self.__deck_size = deck_size
         self.__game_rank = game_rank
@@ -119,10 +121,7 @@ class DrawResponse(SocketResponse):
         broadcast: bool = False,
         include_self: bool = False,
     ):
-        self.event = "draw"
-        self.recipient = recipient
-        self.broadcast = broadcast
-        self.include_self = include_self
+        super().__init__("draw", recipient, broadcast, include_self)
         self.id = id
         self.phase = phase
         self.activePlayerId = activePlayerId
@@ -140,17 +139,14 @@ class DrawResponse(SocketResponse):
         }
 
 
-class TrumpResponse(SocketResponse):
+class BidResponse(SocketResponse):
     def __init__(
         self,
         recipient: str,
         player_id: int,
         trumps: Sequence[Card],
     ):
-        self.event = "trump"
-        self.recipient = recipient
-        self.broadcast = True
-        self.include_self = True
+        super().__init__("bid", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.trumps = trumps
 
@@ -174,13 +170,10 @@ class KittyResponse(SocketResponse):
         broadcast: bool = False,
         include_self: bool = False,
     ):
-        self.event = "kitty"
-        self.recipient = recipient
+        super().__init__("kitty", recipient, broadcast, include_self)
         self.player_id = player_id
         self.phase = phase
         self.cards = cards
-        self.broadcast = broadcast
-        self.include_self = include_self
 
     def json(self) -> dict:
         return {
@@ -201,13 +194,10 @@ class PlayResponse(SocketResponse):
         active_player_id: int,
         cards: Sequence[Card],
     ):
-        self.event = "play"
-        self.recipient = recipient
+        super().__init__("play", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.active_player_id = active_player_id
         self.cards = cards
-        self.broadcast = True
-        self.include_self = True
 
     def json(self) -> dict:
         return {
@@ -228,13 +218,10 @@ class TrickResponse(SocketResponse):
         active_player_id: int,
         play: PlayResponse,
     ):
-        self.event = "trick"
-        self.recipient = recipient
+        super().__init__("trick", recipient, broadcast=True, include_self=True)
         self.score = score
         self.active_player_id = active_player_id
         self.play = play
-        self.broadcast = True
-        self.include_self = True
 
     def json(self) -> dict:
         return {
@@ -255,10 +242,7 @@ class EndResponse(SocketResponse):
         lead_id: int,
         score: int,
     ):
-        self.event = "end"
-        self.recipient = recipient
-        self.broadcast = True
-        self.include_self = True
+        super().__init__("end", recipient, broadcast=True, include_self=True)
         self.trick = trick
         self.phase = phase
         self.kitty_id = kitty_id

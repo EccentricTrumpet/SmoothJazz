@@ -1,6 +1,5 @@
-from typing import Tuple
-from abstractions.enums import Suit
-from abstractions.types import Card
+from typing import Sequence, Tuple
+from abstractions import Card, Suit
 
 
 class Order:
@@ -8,7 +7,10 @@ class Order:
         self,
         trump_rank: int,
     ) -> None:
+        # Inputs
         self.__trump_rank = trump_rank
+
+        # Private
         self.__trump_suit = Suit.JOKER
         self.__order: dict[Tuple[Suit, int], int] = {}
         # Rank order 1, 13, ..., 2, except trump rank
@@ -64,3 +66,11 @@ class Order:
             or card.suit == self.__trump_suit
             or card.rank == self.__trump_rank
         )
+
+    def cards_in_suit(self, cards: Sequence[Card], suit: Suit, trump_suit: bool):
+        return [
+            card
+            for card in cards
+            if (trump_suit and self.is_trump(card))
+            or (not trump_suit and not self.is_trump(card) and card.suit == suit)
+        ]

@@ -1,19 +1,34 @@
 from typing import Sequence
+from abstractions import Card
 from core.format import Format
 from core.order import Order
-from abstractions.types import Card
 from core.player import Player
 
 
 # Logic for managing tricks comprising of a play from each player
 class Trick:
     def __init__(self, num_players: int, order: Order) -> None:
+        # Inputs
         self.__num_players = num_players
         self.__order = order
-        self.__plays: dict[int, Format] = {}
+
+        # Private
+        self.__lead_id = -1
+
+        # Protected for testing
+        self._plays: dict[int, Format] = {}
+
+        # Public
         self.score = 0
-        self.lead_id = -1
         self.winner_id = -1
+
+    @property
+    def ended(self) -> bool:
+        return len(self._plays) == self.__num_players
+
+    @property
+    def winning_play(self) -> Format:
+        return self._plays[self.winner_id]
 
     def __match_format(
         self, lead: Format, play: Format, player_cards: Sequence[Card]
@@ -35,7 +50,7 @@ class Trick:
             return None
 
         # Enforce leading play rules
-        if self.lead_id == -1:
+        if self.__lead_id == -1:
             format = Format(self.__order, cards)
 
             # Format must be suited
@@ -47,7 +62,7 @@ class Trick:
 
             return format
 
-        lead = self.__plays[self.lead_id]
+        lead = self._plays[self.__lead_id]
 
         # Enforce follow length
         if len(cards) != lead.length:
@@ -84,16 +99,16 @@ class Trick:
         self, other_players: Sequence[Player], player: Player, cards: Sequence[Card]
     ) -> bool:
         play_format = self.__resolve_format(other_players, player, cards)
-        if play_format == None:
+        if play_format is None:
             return False
 
         # Update states
         self.score += sum([c.points for c in cards])
-        self.__plays[player.id] = play_format
+        self._plays[player.id] = play_format
 
         # Update lead player id, if needed
-        if self.lead_id == -1:
-            self.lead_id = player.id
+        if self.__lead_id == -1:
+            self.__lead_id = player.id
             self.winner_id = player.id
             print("Leading play")
             return True
@@ -103,7 +118,7 @@ class Trick:
             print("Losing play: mixed suits")
             return True
 
-        winning = self.__plays[self.winner_id]
+        winning = self._plays[self.winner_id]
         if winning.all_trumps and not play_format.all_trumps:
             print("Losing play: did not follow trumps")
             return True
@@ -122,9 +137,3 @@ class Trick:
             self.winner_id = player.id
 
         return True
-
-    def is_done(self) -> bool:
-        return len(self.__plays) == self.__num_players
-
-    def winning_play(self) -> Format:
-        return self.__plays[self.winner_id]

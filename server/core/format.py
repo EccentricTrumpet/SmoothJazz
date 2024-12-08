@@ -1,7 +1,5 @@
-import logging
 from typing import List, Sequence, Set, Tuple, TypeVar
-from abstractions.enums import Suit
-from abstractions.types import Card
+from abstractions import Suit, Card
 from core.order import Order
 
 
@@ -106,7 +104,7 @@ class Format:
         # Resolve singles and pairs
         i = 0
         while i < len(sorted_cards):
-            if i < len(sorted_cards) - 1 and sorted_cards[i].is_equivalent_to(
+            if i < len(sorted_cards) - 1 and sorted_cards[i].matches(
                 sorted_cards[i + 1]
             ):
                 pairs.append(Pair([sorted_cards[i], sorted_cards[i + 1]]))
@@ -174,13 +172,7 @@ class Format:
         # self.singles = [single.complement for single in format.singles]
 
     def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Sequence[Card]:
-        order = self.__order
-        return [
-            card
-            for card in self.__cards
-            if (include_trumps and order.is_trump(card))
-            or (not include_trumps and not order.is_trump(card) and card.suit == suit)
-        ]
+        return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
     def sort(self):
         order = self.__order

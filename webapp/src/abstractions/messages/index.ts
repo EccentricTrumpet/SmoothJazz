@@ -1,6 +1,8 @@
 // This directory contains messages for sockets communication
 
 export * from './CardInfo'
+export * from './BidRequest';
+export * from './BidResponse';
 export * from './DrawRequest';
 export * from './DrawResponse';
 export * from './JoinRequest';
@@ -14,5 +16,3 @@ export * from './PlayRequest';
 export * from './PlayResponse';
 export * from './StartResponse';
 export * from './TrickResponse';
-export * from './TrumpRequest';
-export * from './TrumpResponse';

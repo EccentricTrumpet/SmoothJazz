@@ -1,9 +1,9 @@
 import { CardInfo } from "./CardInfo";
 
-export class TrumpRequest {
+export class BidRequest {
     constructor(
         public matchId: number,
         public playerId: number,
-        public trumps: CardInfo[],
+        public cards: CardInfo[],
     ) {}
 }

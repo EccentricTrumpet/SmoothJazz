@@ -1,7 +1,7 @@
 import { Suit } from "../enums";
 import { CardInfo } from ".";
 
-export class TrumpResponse {
+export class BidResponse {
     playerId: number;
     trumps: CardInfo[] = [];
 

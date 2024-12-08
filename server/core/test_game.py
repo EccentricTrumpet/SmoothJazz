@@ -4,9 +4,8 @@ from core.game import Game
 from core.order import Order
 from core.player import Player
 from core.trick import Trick
-from test.utils import initialize
-from test.jokers import JR, JB
-from test.spades import S2, S5
+from testing import initialize, JB, JR
+from testing.spades import S2, S5
 
 
 class GameTests(TestCase):
@@ -58,16 +57,16 @@ class GameTests(TestCase):
                 game = Game(0, 0, 2, 0, players)
                 game._tricks.append(Trick(4, Order(2)))
 
-                # Set private fields
-                game._Game__score = score
-                game._Game__defenders.add(0)
-                game._Game__attackers.add(1)
-                game._Game__defenders.add(2)
-                game._Game__attackers.add(3)
+                # Set protected fields
+                game._score = score
+                game._defenders.add(0)
+                game._attackers.add(1)
+                game._defenders.add(2)
+                game._attackers.add(3)
 
                 game._end()
 
-                self.assertEqual(next_lead, game.next_lead)
+                self.assertEqual(next_lead, game.next_lead_id)
                 for player, level in zip(players, next_levels):
                     self.assertEqual(level, player.level)
 
@@ -94,14 +93,14 @@ class GameTests(TestCase):
                 game = Game(0, 0, 2, 0, players)
                 trick = Trick(4, order)
                 trick.winner_id = player
-                trick._Trick__plays[player] = Format(order, play)
+                trick._plays[player] = Format(order, play)
                 game._tricks.append(trick)
 
-                # Set private fields
-                game._Game__kitty = kitty
-                game._Game__defenders.add(0)
-                game._Game__attackers.add(1)
+                # Set protected fields
+                game._kitty = kitty
+                game._defenders.add(0)
+                game._attackers.add(1)
 
                 game._end()
 
-                self.assertEqual(expected, game._Game__score)
+                self.assertEqual(expected, game._score)

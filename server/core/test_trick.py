@@ -1,12 +1,12 @@
 from unittest import TestCase
-from abstractions.enums import Suit
+from abstractions import Suit
 from core.trick import Trick
 from core.order import Order
 from core.player import Player
-from test.utils import initialize
-from test.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
-from test.hearts import H3, H4, H6
-from test.diamonds import D3, D4
+from testing import initialize
+from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
+from testing.hearts import H3, H4, H6
+from testing.diamonds import D3, D4
 
 
 class TrickPlayTests(TestCase):

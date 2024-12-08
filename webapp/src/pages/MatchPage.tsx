@@ -21,8 +21,8 @@ import {
   JoinResponse,
   KittyRequest,
   MatchResponse,
-  TrumpRequest,
-  TrumpResponse,
+  BidRequest,
+  BidResponse,
   KittyResponse,
   PlayRequest,
   PlayResponse,
@@ -200,12 +200,11 @@ export default function MatchPage() {
             newPlayerState = player;
           }
 
-          // Withdraw any declared trumps in preparation for game start
+          // Withdraw any bids in preparation for game start
           if (drawResponse.phase === GamePhase.Kitty && newPlayerState.playing.length > 0) {
-            console.log(`Returning card to player: ${newPlayerState.id} - current player: ${currentPlayerId}`);
             for (const card of newPlayerState.playing) {
               card.prepareState();
-              card.state.facedown = player.id !== currentPlayerId;
+              card.state.facedown = !matchResponse.debug && player.id !== currentPlayerId;
             }
             newPlayerState.hand = [...newPlayerState.hand, ...newPlayerState.playing];
             newPlayerState.playing = [];
@@ -218,17 +217,17 @@ export default function MatchPage() {
         setGameState(_ => new GameState(drawResponse.activePlayerId, drawResponse.phase));
       });
 
-      socket.on("trump", (response) => {
-        console.log(`raw trump response: ${JSON.stringify(response)}`);
-        const trumpResponse = new TrumpResponse(response);
+      socket.on("bid", (response) => {
+        console.log(`raw bid response: ${JSON.stringify(response)}`);
+        const bidResponse = new BidResponse(response);
         const trumpCards = new Map<number, CardInfo>();
-        for (const card of trumpResponse.trumps) {
+        for (const card of bidResponse.trumps) {
           trumpCards.set(card.id, card);
         }
 
-        // Move declared trump cards to the play zone and let previous declarer pick up their cards
+        // Move bid to the play zone and let previous bidder pick up their cards
         setPlayers(prevPlayers => prevPlayers.map((player) => {
-          if (player.id === trumpResponse.playerId) {
+          if (player.id === bidResponse.playerId) {
             const [newPlaying, newHand] = partition(player.hand, card => trumpCards.has(card.id));
 
             for (const card of newPlaying) {
@@ -243,10 +242,9 @@ export default function MatchPage() {
             return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
           }
           else if (player.playing.length > 0) {
-            console.log(`Returning card to player: ${player.id} - current player: ${currentPlayerId}`);
             for (const card of player.playing) {
               card.prepareState();
-              card.state.facedown = player.id !== currentPlayerId;
+              card.state.facedown = !matchResponse.debug && player.id !== currentPlayerId;
             }
             return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...player.playing]);
           }
@@ -258,7 +256,7 @@ export default function MatchPage() {
         setTrumpState(prevTrumpState => new TrumpState(
           prevTrumpState.numCards,
           prevTrumpState.trumpRank,
-          trumpResponse.trumps[0].suit));
+          bidResponse.trumps[0].suit));
       });
 
       socket.on("kitty", (response) => {
@@ -510,7 +508,7 @@ export default function MatchPage() {
         socket.off("trick");
         socket.off("play");
         socket.off("kitty");
-        socket.off("trump");
+        socket.off("bid");
         socket.off("draw");
         socket.off("start");
         socket.off("join");
@@ -523,17 +521,13 @@ export default function MatchPage() {
 
   class Controller implements ControllerInterface {
     onShow(playerId: number) {
-      const trumps: CardInfo[] = [];
+      const cards: CardInfo[] = [];
       for (const card of players[playerId].hand) {
         if (card.state.selected) {
-          trumps.push(new CardInfo(
-            card.id,
-            card.suit,
-            card.rank
-          ))
+          cards.push(new CardInfo(card.id, card.suit, card.rank))
         }
       }
-      socket?.emit("trump", new TrumpRequest(matchId, playerId, trumps));
+      socket?.emit("bid", new BidRequest(matchId, playerId, cards));
     }
 
     onDraw() {

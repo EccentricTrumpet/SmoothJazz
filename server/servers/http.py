@@ -1,16 +1,7 @@
-import logging
 from flask import Flask, abort, render_template, request
 from flask.views import MethodView
 from flask_cors import CORS
 from services.match import MatchService
-
-
-# Debugging only, to be deprecated
-class HelloAPI(MethodView):
-    init_every_request = False
-
-    def get(self):
-        return "Hello, World!"
 
 
 class HomeAPI(MethodView):
@@ -28,9 +19,6 @@ class MatchPostAPI(MethodView):
 
     def post(self):
         debug = bool(request.json["debug"])
-
-        logging.info(f"Creating new match - debug: {debug}")
-
         return self.__match_service.create(debug).json()
 
 
@@ -41,10 +29,8 @@ class MatchGetAPI(MethodView):
         self.__match_service = match_service
 
     def get(self, id: int):
-        logging.info(f"Joining new match {id}")
-
         response = self.__match_service.get(id)
-        if response != None:
+        if response is not None:
             return response.json()
         else:
             abort(404)

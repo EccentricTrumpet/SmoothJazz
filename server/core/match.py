@@ -1,13 +1,12 @@
 from itertools import count
 from typing import Iterator, List, Sequence
-from abstractions.enums import MatchPhase, Suit
-from abstractions.types import Card
+from abstractions import Card, MatchPhase, Suit
 from abstractions.requests import (
     DrawRequest,
     JoinRequest,
     KittyRequest,
     PlayRequest,
-    TrumpRequest,
+    BidRequest,
 )
 from abstractions.responses import (
     DrawResponse,
@@ -15,7 +14,7 @@ from abstractions.responses import (
     KittyResponse,
     MatchResponse,
     SocketResponse,
-    TrumpResponse,
+    BidResponse,
 )
 from core.game import Game
 from core.player import Player
@@ -28,6 +27,7 @@ class Match:
         debug: bool = False,
         num_players: int = 4,
     ) -> None:
+        # Inputs
         self.__id = id
         self.__debug = debug
         self.__num_players = num_players
@@ -37,10 +37,11 @@ class Match:
 
         # Private
         self.__phase = MatchPhase.CREATED
-        # 1 deck for every 2 players, rounded down
-        self.__num_decks = self.__num_players // 2
         self.__games: List[Game] = []
         self.__players: List[Player] = []
+
+        # 1 deck for every 2 players, rounded down
+        self.__num_decks = self.__num_players // 2
 
     def response(self) -> MatchResponse:
         return MatchResponse(
@@ -70,6 +71,7 @@ class Match:
 
         responses.append(self.__add_player(request.player_name, request.socket_id))
 
+        # Add mock players for debug mode
         if self.__debug and len(self.__players) == 1:
             for i in range(len(self.__players), self.__num_players):
                 responses.append(self.__add_player(f"Mock{i}", request.socket_id))
@@ -88,7 +90,7 @@ class Match:
     def draw(self, request: DrawRequest) -> Sequence[DrawResponse]:
         response = self.__games[-1].draw(request)
 
-        if response == None:
+        if response is None:
             return []
 
         if self.__debug:
@@ -108,13 +110,13 @@ class Match:
                 ),
             ]
 
-    def trump(self, request: TrumpRequest) -> TrumpResponse | None:
-        return self.__games[-1].trump(request)
+    def bid(self, request: BidRequest) -> BidResponse | None:
+        return self.__games[-1].bid(request)
 
     def kitty(self, request: KittyRequest) -> Sequence[KittyResponse]:
         response = self.__games[-1].kitty(request)
 
-        if response == None:
+        if response is None:
             return []
 
         if self.__debug:
@@ -143,7 +145,7 @@ class Match:
                 len(self.__games),
                 self.__id,
                 self.__num_decks,
-                current_game.next_lead,
+                current_game.next_lead_id,
                 self.__players,
             )
             self.__games.append(new_game)

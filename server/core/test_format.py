@@ -1,15 +1,14 @@
 from unittest import TestCase
 from itertools import batched
 from random import shuffle
-from abstractions.types import Card
-from abstractions.enums import Suit
+from typing import List
+from abstractions import Card, Suit
 from core.format import Format
 from core.order import Order
-from test.utils import initialize
-from test.jokers import JB, JR
-from test.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, ST
-from test.hearts import H2, H3, H4, H5, H6, H7, H8, HA, HK
-from test.diamonds import D2, D3, D4, D5, D6, D7, D8, D9
+from testing import initialize, JB, JR
+from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, ST
+from testing.hearts import H2, H3, H4, H5, H6, H7, H8, HA, HK
+from testing.diamonds import D2, D3, D4, D5, D6, D7, D8, D9
 
 
 class FormatCreateTests(TestCase):
@@ -39,8 +38,8 @@ class FormatCreateTests(TestCase):
                 self.assertEqual(0, len(format.pairs))
                 self.assertEqual(1, len(format.singles))
                 single = format.singles[0]
-                self.assertEqual(cards[0].__str__(), single.cards[0].__str__())
-                self.assertEqual(cards[0].__str__(), single.highest_card.__str__())
+                self.assertEqual(cards[0], single.cards[0])
+                self.assertEqual(cards[0], single.highest_card)
 
     def test_format_create_pair(self) -> None:
         order = Order(2)
@@ -68,10 +67,10 @@ class FormatCreateTests(TestCase):
                 self.assertEqual(0, len(format.singles))
                 pair = format.pairs[0]
                 self.assertEqual(2, pair.length)
-                self.assertTrue(cards[0].is_equivalent_to(cards[1]))
-                self.assertTrue(cards[0].is_equivalent_to(pair.highest_card))
-                self.assertTrue(cards[0].is_equivalent_to(pair.cards[0]))
-                self.assertTrue(cards[0].is_equivalent_to(pair.cards[1]))
+                self.assertTrue(cards[0].matches(cards[1]))
+                self.assertTrue(cards[0].matches(pair.highest_card))
+                self.assertTrue(cards[0].matches(pair.cards[0]))
+                self.assertTrue(cards[0].matches(pair.cards[1]))
 
     def test_format_create_tractor(self) -> None:
         order = Order(2)
@@ -116,12 +115,12 @@ class FormatCreateTests(TestCase):
                 cards.sort(key=lambda c: c.id)
                 tractor = format.tractors[0]
                 self.assertEqual(4, tractor.length)
-                self.assertTrue(cards[0].is_equivalent_to(tractor.highest_card))
-                self.assertTrue(cards[0].is_equivalent_to(tractor.cards[0]))
+                self.assertTrue(cards[0].matches(tractor.highest_card))
+                self.assertTrue(cards[0].matches(tractor.cards[0]))
                 for pair_cards, pair in zip(batched(cards, 2), tractor.pairs):
-                    self.assertTrue(pair_cards[0].is_equivalent_to(pair_cards[1]))
-                    self.assertTrue(pair_cards[0].is_equivalent_to(pair.cards[0]))
-                    self.assertTrue(pair_cards[0].is_equivalent_to(pair.cards[1]))
+                    self.assertTrue(pair_cards[0].matches(pair_cards[1]))
+                    self.assertTrue(pair_cards[0].matches(pair.cards[0]))
+                    self.assertTrue(pair_cards[0].matches(pair.cards[1]))
 
     def test_format_create_toss_singles(self) -> None:
         order = Order(2)
@@ -152,8 +151,8 @@ class FormatCreateTests(TestCase):
                 cards.sort(key=lambda c: c.id)
                 for card, single in zip(cards, format.singles):
                     self.assertEqual(1, single.length)
-                    self.assertEqual(card.__str__(), single.cards[0].__str__())
-                    self.assertEqual(card.__str__(), single.highest_card.__str__())
+                    self.assertEqual(card, single.cards[0])
+                    self.assertEqual(card, single.highest_card)
 
     def test_format_create_toss_pairs(self) -> None:
         cases = [
@@ -195,6 +194,7 @@ class FormatCreateTests(TestCase):
     def test_format_create_toss_combination(self) -> None:
         order = Order(2)
         order.reset(Suit.SPADE)
+        empty: List[Card] = []
 
         cases = [
             # Multiple tractors are sorted by length, then highest card
@@ -207,8 +207,8 @@ class FormatCreateTests(TestCase):
                         (4, Card(0, Suit.JOKER, 2)),
                         (4, Card(0, Suit.SPADE, 8)),
                     ],
-                    [],
-                    [],
+                    empty,
+                    empty,
                 ),
             ),
             # Trump suit trump rank pair, and 2 non-trump suit trump rank pairs, trump suit ace pair
@@ -218,7 +218,7 @@ class FormatCreateTests(TestCase):
                     (True, Suit.UNKNOWN, 1, 1, 0),
                     [(6, Card(0, Suit.SPADE, 2))],
                     [Card(0, Suit.HEART, 2)],
-                    [],
+                    empty,
                 ),
             ),
             # Combination of tractors, pairs and singles
@@ -264,15 +264,15 @@ class FormatCreateTests(TestCase):
                     expected_tractors, format.tractors
                 ):
                     self.assertEqual(length, tractor.length)
-                    self.assertTrue(highest_card.is_equivalent_to(tractor.highest_card))
+                    self.assertTrue(highest_card.matches(tractor.highest_card))
 
                 for highest_card, pair in zip(expected_pairs, format.pairs):
                     self.assertEqual(2, pair.length)
-                    self.assertTrue(highest_card.is_equivalent_to(pair.highest_card))
+                    self.assertTrue(highest_card.matches(pair.highest_card))
 
                 for highest_card, single in zip(expected_singles, format.singles):
                     self.assertEqual(1, single.length)
-                    self.assertTrue(highest_card.is_equivalent_to(single.highest_card))
+                    self.assertTrue(highest_card.matches(single.highest_card))
 
 
 class FormatBeatTests(TestCase):

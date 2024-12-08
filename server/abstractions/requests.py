@@ -1,6 +1,5 @@
 from typing import Sequence
-from abstractions.types import Card
-from abstractions.enums import Suit
+from abstractions import Card, Suit
 
 
 class JoinRequest:
@@ -16,15 +15,14 @@ class DrawRequest:
         self.player_id = int(payload["playerId"])
 
 
-# Consider combining Trump/Kitty/Play requests
-class TrumpRequest:
+class BidRequest:
     def __init__(self, payload: dict):
         self.match_id = int(payload["matchId"])
         self.player_id = int(payload["playerId"])
-        self.trumps: Sequence[Card] = []
-        for trump in payload["trumps"]:
-            self.trumps.append(
-                Card(int(trump["id"]), Suit(trump["suit"]), int(trump["rank"]))
+        self.cards: Sequence[Card] = []
+        for card in payload["cards"]:
+            self.cards.append(
+                Card(int(card["id"]), Suit(card["suit"]), int(card["rank"]))
             )
 
 

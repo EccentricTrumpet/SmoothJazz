@@ -27,7 +27,7 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
 
   switch(gameState.phase) {
     case GamePhase.Draw:
-      buttonText = "Declare";
+      buttonText = "Bid";
       buttonAction = () => {
         controller.onShow(debug ? gameState.activePlayerId : playerId)
       };
