@@ -165,6 +165,7 @@ class Format:
         for single in self.singles:
             single.reset()
 
+    # TODO: revisit this implementation once format matching is implemented
     def reform_with(self, format: TFormat):
         pass
         # self.tractors = [tractor.complement for tractor in format.tractors]

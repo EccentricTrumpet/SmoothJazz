@@ -63,7 +63,7 @@ export class TrumpState {
         }
     }
 
-    getSortOrder(card: Card): number {
+    getDisplayOrder(card: Card): number {
         const orderKey = `${card.suit}${card.rank}`;
         if (this.sortOrder.has(orderKey)) {
             return this.sortOrder.get(orderKey)! * this.numCards + card.id;

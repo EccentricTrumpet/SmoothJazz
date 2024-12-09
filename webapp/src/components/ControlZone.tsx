@@ -7,12 +7,10 @@ import { GameState } from "../abstractions/states";
 interface ControlZoneInputs {
   parentZone: Zone;
   gameState: GameState;
-  playerId: number;
   controller: ControllerInterface;
-  debug: boolean;
 }
 
-export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState, playerId, controller, debug}) => {
+export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState, controller}) => {
   const zone = new Zone(
     new Position(
       parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,
@@ -27,31 +25,21 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
 
   switch(gameState.phase) {
     case GamePhase.Draw:
-      buttonText = "Bid";
-      buttonAction = () => {
-        controller.onShow(debug ? gameState.activePlayerId : playerId)
-      };
-      break;
     case GamePhase.Reserve:
-      buttonDisabled = true;
+      buttonText = "Bid";
+      buttonAction = () => controller.onBid();
       break;
     case GamePhase.Kitty:
       buttonText = "Hide";
-      buttonAction = () => {
-        controller.onHide(debug ? gameState.activePlayerId : playerId)
-      };
+      buttonAction = () => controller.onHide();
       break;
     case GamePhase.Play:
       buttonText = "Play";
-      buttonAction = () => {
-        controller.onPlay(debug ? gameState.activePlayerId : playerId)
-      };
+      buttonAction = () => controller.onPlay();
       break;
     case GamePhase.End:
       buttonText = "Next Game";
-      buttonAction = () => {
-        controller.onNext(debug ? gameState.activePlayerId : playerId)
-      };
+      buttonAction = () => controller.onNext();
       break;
     case GamePhase.Waiting:
       buttonText = "Waiting...";

@@ -144,7 +144,13 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
 
   return (
     <>
-      <CardsZone cards={player.playing} seat={player.seat} trumpState={trumpState} zone={playingZone} options={options} controller={controller} />
+      <CardsZone
+        cards={player.playing}
+        seat={player.seat}
+        trumpState={trumpState}
+        zone={playingZone}
+        options={options}
+        controller={controller} />
       <div className="container" style={{
         position: "fixed",
         display: "flex",
@@ -160,7 +166,13 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
       }}>
         <h4 style={{ margin: 0 }}>{player.name}</h4>
       </div>
-      <CardsZone cards={player.hand} seat={player.seat} trumpState={trumpState} zone={handZone} options={options} controller={controller} />
+      <CardsZone
+        cards={player.hand}
+        seat={player.seat}
+        trumpState={trumpState}
+        zone={handZone}
+        options={options}
+        controller={controller} />
     </>
   );
 }

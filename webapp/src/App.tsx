@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import MatchChatPage from "./pages/MatchChatPage";
 import HomePage from "./pages/HomePage";
 import NewMatchPage from './pages/NewMatchPage';
 import MatchPage from './pages/MatchPage';
@@ -12,7 +11,6 @@ function App() {
       <Routes>
         <Route path="/">
           <Route index element={<HomePage />} />
-          <Route path="chat" element={<MatchChatPage />} />
           <Route path="/:id" element={<MatchPage />} />
           <Route path="newMatch" element={<NewMatchPage />} />
           <Route path="joinMatch" element={<JoinMatchPage />} />

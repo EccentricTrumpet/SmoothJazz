@@ -17,7 +17,7 @@ interface CardsZoneInputs {
 
 export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, options, controller}) => {
   // Sort cards for display
-  cards.sort((a, b) => trumpState.getSortOrder(a) - trumpState.getSortOrder(b));
+  cards.sort((a, b) => trumpState.getDisplayOrder(a) - trumpState.getDisplayOrder(b));
 
   let displayRange = 0;
   let displayStart = 0;
@@ -106,9 +106,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
       backgroundColor: Constants.backgroundColor,
     }}>
       { cards.map((card, idx) => {
-        return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => {
-          controller.onSelect(card);
-        }} />
+        return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => controller.onSelect(card)} />
       })}
     </div>
   );

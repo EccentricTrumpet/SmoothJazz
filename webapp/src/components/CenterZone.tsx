@@ -28,26 +28,25 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
     cardSize
   );
 
-  for (let card of board.kitty) {
+  board.kitty.forEach(card => {
     card.state.position.x = kittyZone.position.x;
     card.state.position.y = kittyZone.position.y;
     card.state.offset.x = 0;
     card.state.offset.y = 0;
-  }
+  });
 
-  for (let card of board.deck) {
+  board.deck.forEach((card, i) => {
     card.state.position.x = deckZone.position.x;
     card.state.position.y = deckZone.position.y;
-    if (card.prevState) {
-      card.prevState.position.x = deckZone.position.x;
-      card.prevState.position.y = deckZone.position.y;
-    }
-  }
+    card.state.offset.x = i / 3;
+  });
 
-  for (let card of board.discard) {
+  board.discard.forEach(card => {
     card.state.position.x = discardZone.position.x;
     card.state.position.y = discardZone.position.y;
-  }
+    card.state.offset.x = 0;
+    card.state.offset.y = 0;
+  });
 
   return (
     <>
@@ -132,9 +131,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
         backgroundColor: Constants.backgroundColor,
       }}>
         { board.deck.map((card, idx) => {
-          return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => {
-            controller.onDraw();
-          }}/>
+          return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => controller.onDraw()}/>
         })}
       </div>
       {/* Discard */}
