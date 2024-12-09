@@ -8,3 +8,23 @@ The new architecture will include the following components:
 
 - **webapp**: The frontend will be a web application that will serve as the main UI for the game. The frontend will be built using React.js.
 - **server**: The backend will be a Python server that will process the game logic and serve the webapp. The server will be built using Flask and Socket.IO.
+
+## To run the app
+
+### For development
+
+Run the server with the command:
+
+```cmd
+> ./server
+> pipenv shell
+> (server) python start.py
+```
+
+In another terminal, run the webapp with the commands:
+
+```cmd
+> npm start
+```
+
+### For deployment
