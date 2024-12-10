@@ -30,10 +30,10 @@ class MatchGetAPI(MethodView):
 
     def get(self, id: int):
         response = self.__match_service.get(id)
-        if response is not None:
-            return response.json()
-        else:
+        if response is None:
             abort(404)
+        else:
+            return response.json()
 
 
 class HttpServer:
