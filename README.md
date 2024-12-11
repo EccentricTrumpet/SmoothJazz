@@ -16,7 +16,7 @@ The new architecture will include the following components:
 Run the server with the command:
 
 ```cmd
-> ./server
+> cd ./server
 > pipenv shell
 > (server) python start.py
 ```
@@ -24,6 +24,7 @@ Run the server with the command:
 In another terminal, run the webapp with the commands:
 
 ```cmd
+> cd ./webapp
 > npm start
 ```
 
