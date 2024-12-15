@@ -4,10 +4,10 @@ on:
   push:
 
 jobs:
-  tests:
-    uses: ./.github/workflows/run-tests.yml
+  test:
+    uses: ./.github/workflows/test.yml
   docker:
-    needs: tests
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +16,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: './webapp/package-lock.json'
-      - run: REACT_APP_VERSION=ci-${{ github.run_number }} cd ./webapp && npm build
+      - run: REACT_APP_VERSION=ci-${{ github.run_number }} cd ./webapp && npm run build
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
