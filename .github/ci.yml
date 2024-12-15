@@ -1,0 +1,8 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  run-tests:
+    uses: ./.github/workflows/run-tests.yml
