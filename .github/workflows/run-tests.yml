@@ -8,21 +8,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cd ./server
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12.5'
           cache: 'pip'
-      - run: pip install -r requirements.txt
-      - run: python -m unittest
+          cache-dependency-path: './server/requirements.txt'
+      - run: pip install -r ./server/requirements.txt
+      - run: cd ./server && python -m unittest
   webapp:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cd ./webapp
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci
-      - run: CI=true npm test
+          cache-dependency-path: './webapp/package-lock.json'
+      - run: cd ./webapp && npm ci
+      - run: cd ./webapp && CI=true npm test
