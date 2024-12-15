@@ -1,8 +1,8 @@
 import argparse
 import logging
 import os.path as PATH
-from servers.http import HttpServer
-from servers.socket import initialize
+from servers.http import init_http
+from servers.socket import init_sockets
 from services.match import MatchService
 
 if __name__ == "__main__":
@@ -27,10 +27,11 @@ if __name__ == "__main__":
     match_service = MatchService()
 
     # Initialize servers
-    http = HttpServer(
+    http = init_http(
         match_service, PATH.join(PATH.dirname(PATH.abspath(__file__)), "build")
     )
-    socketio = initialize(http.app, match_service)
+
+    socketio = init_sockets(http, match_service)
 
     # Start servers
-    socketio.run(http.app, host="0.0.0.0", port=5001)
+    socketio.run(http, host="0.0.0.0", port=5001)

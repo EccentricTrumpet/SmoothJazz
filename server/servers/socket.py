@@ -83,7 +83,7 @@ class MatchNamespace(Namespace):
         self._emit_responses(self.__match_service.next(NextRequest(payload)))
 
 
-def initialize(app: Flask, match_service: MatchService) -> SocketIO:
+def init_sockets(app: Flask, match_service: MatchService) -> SocketIO:
     socketio = SocketIO(
         app, cors_allowed_origins="*", logger=True, engineio_logger=False
     )

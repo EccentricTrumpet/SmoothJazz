@@ -1,17 +1,10 @@
-from flask import Flask, abort, render_template, request
+from flask import Flask, abort, request
 from flask.views import MethodView
 from flask_cors import CORS
 from services.match import MatchService
 
 
-class HomeAPI(MethodView):
-    init_every_request = False
-
-    def get(self):
-        return render_template("index.html")
-
-
-class MatchPostAPI(MethodView):
+class MatchPost(MethodView):
     init_every_request = False
 
     def __init__(self, match_service: MatchService):
@@ -22,7 +15,7 @@ class MatchPostAPI(MethodView):
         return self.__match_service.create(debug).json()
 
 
-class MatchGetAPI(MethodView):
+class MatchGet(MethodView):
     init_every_request = False
 
     def __init__(self, match_service: MatchService):
@@ -36,21 +29,15 @@ class MatchGetAPI(MethodView):
             return response.json()
 
 
-class HttpServer:
-    def __init__(self, match_service: MatchService, static_path: str) -> None:
-        self.app = Flask(
-            __name__,
-            static_url_path="",
-            static_folder=static_path,
-            template_folder=static_path,
-        )
-        CORS(self.app, resources={r"/*": {"origins": "*"}})
+def init_http(service: MatchService, static_path: str) -> Flask:
+    app = Flask(__name__, static_url_path="", static_folder=static_path)
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
-        self.app.add_url_rule("/", view_func=HomeAPI.as_view("home-api"))
-        self.app.add_url_rule(
-            "/match", view_func=MatchPostAPI.as_view("match-post-api", match_service)
-        )
-        self.app.add_url_rule(
-            "/match/<int:id>",
-            view_func=MatchGetAPI.as_view("match-get-api", match_service),
-        )
+    # Match APIs
+    app.add_url_rule("/match", view_func=MatchPost.as_view("matchPost", service))
+    app.add_url_rule("/match/<int:id>", view_func=MatchGet.as_view("matchGet", service))
+
+    # Redirect all other routes to index.html (React app)
+    app.register_error_handler(404, lambda e: app.send_static_file("index.html"))
+
+    return app
