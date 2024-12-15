@@ -2,9 +2,12 @@
 # http://git-scm.com/docs/gitignore
 
 # Generated PB files
-server/build
+backend/shengji_pb2*.py
+frontend/proto-gen/*.js
+frontend/proto-gen/*.ts
 
 .vscode
+proxy/proxy
 
 *~
 *.sw[mnpcod]
@@ -12,6 +15,8 @@ server/build
 *.tmp
 *.tmp.*
 *.pyc
+*.sublime-project
+*.sublime-workspace
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate
@@ -32,4 +37,3 @@ npm-debug.log*
 */platforms
 */plugins
 */www
-*/.out
