@@ -2,14 +2,12 @@ name: CD
 
 on:
   push:
-    # branches:
-    #   - master
 
 jobs:
-  run-tests:
+  tests:
     uses: ./.github/workflows/run-tests.yml
   docker:
-    needs: run-tests
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
