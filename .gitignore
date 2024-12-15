@@ -3,7 +3,6 @@
 
 # Generated deployment files
 server/build
-server/requirements.txt
 
 .vscode
 *~
