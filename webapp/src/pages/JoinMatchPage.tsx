@@ -32,7 +32,7 @@ export default function JoinMatchPage() {
     event.preventDefault();
     setCookie('shengji', cookieState, { path: '/'})
     const name = cookieState.name
-    const response = await fetch(`http://localhost:5001/match/${match}`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/match/${match}`);
     const matchResponse = new MatchResponse(await response.text());
     navigate(`/${matchResponse.matchId}`, { state: { name: name, matchResponse: matchResponse } });
   }

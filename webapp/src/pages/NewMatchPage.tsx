@@ -27,7 +27,7 @@ export default function NewMatchPage() {
     event.preventDefault();
     setCookie('shengji', cookieState, { path: '/'});
     const name = cookieState.name
-    const response = await fetch('http://localhost:5001/match', {
+    const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/match`, {
       method: 'POST',
       headers:new Headers({
         'Content-type': 'application/json'
