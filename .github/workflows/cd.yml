@@ -33,5 +33,5 @@ jobs:
     needs: docker
     runs-on: ubuntu-latest
     steps:
-      - run: curl ${{ secrets.RENDER_DEPLOY_URL }}ci-${{ github.run_number }}
+      - run: curl "${{ secrets.RENDER_DEPLOY_URL }}ci-${{ github.run_number }}"
 
