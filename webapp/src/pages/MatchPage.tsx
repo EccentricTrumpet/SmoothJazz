@@ -78,7 +78,7 @@ export default function MatchPage() {
   // Establish socket connection
   useEffect(() => {
     console.log('establishing connection')
-    const matchSocket = new Manager("localhost:5001").socket("/match");
+    const matchSocket = new Manager(process.env.REACT_APP_API_URL || '').socket("/match");
 
     matchSocket.on("disconnect", () => {
       console.log('socket disconnected');

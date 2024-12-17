@@ -1,0 +1,10 @@
+# Ignore common Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Ignore tests and testing utilities
+testing/
+**/test*.py
