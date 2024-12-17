@@ -75,6 +75,13 @@ export default function MatchPage() {
     };
   }, []);
 
+  // Prompt before leaving page
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   // Establish socket connection
   useEffect(() => {
     console.log('establishing connection')
