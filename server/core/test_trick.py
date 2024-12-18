@@ -13,14 +13,14 @@ class TrickPlayTests(TestCase):
 
     def test_trick_play_enforce_non_empty(self) -> None:
         trick = Trick(4, Order(2))
-        self.assertFalse(trick.try_play([], Player(0, "", "", []), []))
+        self.assertIsNotNone(trick.try_play([], Player(0, "", "", []), []))
 
     def test_trick_play_enforce_possession(self) -> None:
         trick = Trick(4, Order(2))
         cards = initialize([S2, S3])
         hand = [cards[0]]
         play = [cards[1]]
-        self.assertFalse(trick.try_play([], Player(0, "", "", hand), play))
+        self.assertIsNotNone(trick.try_play([], Player(0, "", "", hand), play))
 
     def test_trick_play_enforce_lead_suited(self) -> None:
         cases = [
@@ -34,17 +34,19 @@ class TrickPlayTests(TestCase):
             with self.subTest(raw_cards=raw_cards):
                 trick = Trick(4, Order(2))
                 cards = initialize(raw_cards)
-                self.assertFalse(trick.try_play([], Player(0, "", "", cards), cards))
+                self.assertIsNotNone(
+                    trick.try_play([], Player(0, "", "", cards), cards)
+                )
 
     def test_trick_play_enforce_follow_length(self) -> None:
         trick = Trick(4, Order(2))
         cards = initialize([S3, S4, S5])
         player_0 = Player(0, "", "", cards)
         player_1 = Player(1, "", "", cards)
-        self.assertTrue(trick.try_play([], player_0, cards[0:2]))
-        self.assertFalse(trick.try_play([], player_1, cards[0:1]))
-        self.assertFalse(trick.try_play([], player_1, cards[0:3]))
-        self.assertTrue(trick.try_play([], player_1, cards[1:3]))
+        self.assertIsNone(trick.try_play([], player_0, cards[0:2]))
+        self.assertIsNotNone(trick.try_play([], player_1, cards[0:1]))
+        self.assertIsNotNone(trick.try_play([], player_1, cards[0:3]))
+        self.assertIsNone(trick.try_play([], player_1, cards[1:3]))
 
     def test_trick_play_enforce_follow_suit(self) -> None:
         cases = [
@@ -70,41 +72,46 @@ class TrickPlayTests(TestCase):
             with self.subTest(setup=setup, expected=expected):
                 (lead, player, play) = tuple(map(initialize, setup))
                 trick = Trick(4, Order(2))
-                self.assertTrue(trick.try_play([], Player(0, "", "", lead), lead))
-                self.assertEqual(
-                    expected, trick.try_play([], Player(1, "", "", player), play)
-                )
+                self.assertIsNone(trick.try_play([], Player(0, "", "", lead), lead))
+                if expected:
+                    self.assertIsNone(
+                        trick.try_play([], Player(1, "", "", player), play)
+                    )
+                else:
+                    self.assertIsNotNone(
+                        trick.try_play([], Player(1, "", "", player), play)
+                    )
 
     def test_trick_winner_resolution(self) -> None:
         order = Order(2)
         order.reset(Suit.SPADE)
         cases = [
             # Losing - follow with mixed suits
-            [([S2, S3], True, 0), ([S2, H3], True, 0)],
-            [([H3, H6], True, 0), ([H3, S5], True, 0)],
+            [([S2, S3], 0), ([S2, H3], 0)],
+            [([H3, H6], 0), ([H3, S5], 0)],
             # Losing - follow trump with non-trumps
-            [([S3], True, 0), ([H4], True, 0)],
+            [([S3], 0), ([H4], 0)],
             # Losing - follow non-trump with mismatching non-trumps
-            [([H3], True, 0), ([D4], True, 0)],
+            [([H3], 0), ([D4], 0)],
             # Winning - suited
-            [([S3], True, 0), ([S2], True, 1)],
-            [([H3], True, 0), ([H4], True, 1)],
+            [([S3], 0), ([S2], 1)],
+            [([H3], 0), ([H4], 1)],
             # Winning - trumped
-            [([H4], True, 0), ([S4], True, 1)],
+            [([H4], 0), ([S4], 1)],
             # Test two pairs => tractor => two pairs plays to ensure third player can win
         ]
         for steps in cases:
             with self.subTest(steps=steps):
                 trick = Trick(4, order)
-                for player, (raw_play, legal, winner) in enumerate(steps):
+                for player, (raw_play, winner) in enumerate(steps):
                     play = initialize(raw_play)
-                    self.assertEqual(
-                        legal, trick.try_play([], Player(player, "", "", play), play)
+                    self.assertIsNone(
+                        trick.try_play([], Player(player, "", "", play), play)
                     )
                     self.assertEqual(winner, trick.winner_id)
 
     def test_trick_play_accumulates_score(self) -> None:
         trick = Trick(4, Order(2))
         cards = initialize([SA, S3, S4, S5, S6, S7, S8, S9, ST, SJ, SQ, SK])
-        self.assertTrue(trick.try_play([], Player(0, "", "", cards), cards))
+        self.assertIsNone(trick.try_play([], Player(0, "", "", cards), cards))
         self.assertEqual(25, trick.score)

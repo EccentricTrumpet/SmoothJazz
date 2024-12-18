@@ -4,6 +4,7 @@ export class CardState {
     constructor(
         public facedown: boolean = true,
         public selected: boolean = false,
+        public highlighted: boolean = false,
         public rotate: number = 0,
         public position: Position = new Position(0, 0),
         public offset: Position = new Position(0, 0),
@@ -21,6 +22,7 @@ export class CardState {
         return new CardState(
             this.facedown,
             this.selected,
+            this.highlighted,
             this.rotate,
             this.position.clone(),
             this.offset.clone()

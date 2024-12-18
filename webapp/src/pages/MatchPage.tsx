@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
@@ -22,9 +22,10 @@ import {
   PlayResponse,
   TrickResponse,
   EndResponse,
-  NextRequest } from "../abstractions/messages";
-  import { BoardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { CenterZone, ControlZone, PlayerZone } from "../components";
+  NextRequest,
+  AlertResponse} from "../abstractions/messages";
+  import { AlertState, BoardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
+import { AlertComponent, CenterZone, ControlZone, PlayerZone } from "../components";
 import { Constants } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
@@ -53,6 +54,7 @@ export default function MatchPage() {
     ),
     new Size(Constants.cardWidth, Constants.cardHeight)
   );
+  const [alert, setAlert] = useState(new AlertState());
 
   // Game states
   const [playerId, setPlayerId] = useState(-1);
@@ -164,6 +166,25 @@ export default function MatchPage() {
       }
 
       // Messages
+      socket.on("alert", (response) => {
+        console.log(`raw alert response: ${JSON.stringify(response)}`);
+        const alertResponse = new AlertResponse(response);
+
+        setAlert(new AlertState(true, alertResponse.title, alertResponse.message));
+        if (alertResponse.hintCards.length > 0) {
+          const hintCards = createCardDict(alertResponse.hintCards);
+          setPlayers(prevPlayers => prevPlayers.map((player) => {
+            for (const card of player.hand) {
+              if (hintCards.has(card.id)) {
+                card.state.highlighted = true;
+              }
+            }
+
+            return new PlayerState(player.id, player.name, player.seat, [...player.hand], player.playing);
+          }));
+        }
+      });
+
       socket.on("leave", (player_name) => {
         console.log(`${player_name} has left the match`);
       });
@@ -336,6 +357,7 @@ export default function MatchPage() {
         socket.off("start");
         socket.off("join");
         socket.off("leave");
+        socket.off("alert");
       };
     }
   // Must not depend on any mutable states
@@ -367,7 +389,15 @@ export default function MatchPage() {
     onDraw() { socket?.emit("draw", new DrawRequest(matchId, this.activeId())); }
     onBid() { socket?.emit("bid", new BidRequest(matchId, this.activeId(), this.selection())); }
     onHide() { socket?.emit("kitty", new KittyRequest(matchId, this.activeId(), this.selection())); }
-    onPlay() { socket?.emit("play", new PlayRequest(matchId, this.activeId(), this.selection())); }
+    onPlay() {
+      // Reset highlights
+      setPlayers(prevPlayers => prevPlayers.map((player) => {
+        player.hand.forEach(card => card.state.highlighted = false);
+        return new PlayerState(player.id, player.name, player.seat, [...player.hand], player.playing);
+      }));
+
+      socket?.emit("play", new PlayRequest(matchId, this.activeId(), this.selection()));
+    }
   }
   const controller = new Controller();
 
@@ -388,6 +418,13 @@ export default function MatchPage() {
             options={options}
             controller={controller} />
         })}
+        <AnimatePresence
+          initial={false}
+          mode="wait"
+          onExitComplete={() => null}
+        >
+          {alert.show && <AlertComponent alertState={alert} onClose={() => setAlert(new AlertState())}/>}
+        </AnimatePresence>
       </motion.div>
     ));
 }
