@@ -26,6 +26,7 @@ export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options
         height: Constants.cardHeight,
         borderRadius: Constants.cardRadius,
         borderStyle: "solid",
+        boxShadow: card.state.highlighted ? "0 0 5px 5px var(--ins-color)" : ""
       }}
       src={require(`../assets/${imgSource}`)}
       alt={altText}

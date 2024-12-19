@@ -9,12 +9,12 @@ from abstractions.requests import (
     BidRequest,
 )
 from abstractions.responses import (
+    AlertResponse,
     DrawResponse,
     JoinResponse,
     KittyResponse,
     MatchResponse,
     SocketResponse,
-    BidResponse,
 )
 from core.game import Game
 from core.player import Player
@@ -87,14 +87,11 @@ class Match:
 
         return responses
 
-    def draw(self, request: DrawRequest) -> Sequence[DrawResponse]:
+    def draw(self, request: DrawRequest) -> Sequence[SocketResponse] | SocketResponse:
         response = self.__games[-1].draw(request)
 
-        if response is None:
-            return []
-
-        if self.__debug:
-            return [response]
+        if self.__debug or isinstance(response, AlertResponse):
+            return response
         else:
             # Send a full response to the player who drew the card and broadcast
             # a response without card suit and rank to everyone else
@@ -110,17 +107,14 @@ class Match:
                 ),
             ]
 
-    def bid(self, request: BidRequest) -> BidResponse | None:
+    def bid(self, request: BidRequest) -> SocketResponse:
         return self.__games[-1].bid(request)
 
-    def kitty(self, request: KittyRequest) -> Sequence[KittyResponse]:
+    def kitty(self, request: KittyRequest) -> SocketResponse:
         response = self.__games[-1].kitty(request)
 
-        if response is None:
-            return []
-
-        if self.__debug:
-            return [response]
+        if self.__debug or isinstance(response, AlertResponse):
+            return response
         else:
             # Send a full response to the player who hid the kitty and broadcast
             # a response without card suit and rank to everyone else
@@ -135,7 +129,7 @@ class Match:
                 ),
             ]
 
-    def play(self, request: PlayRequest) -> SocketResponse | None:
+    def play(self, request: PlayRequest) -> SocketResponse:
         return self.__games[-1].play(request)
 
     def next(self, request: PlayRequest) -> SocketResponse | None:

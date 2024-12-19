@@ -1,9 +1,10 @@
-from bisect import bisect_left, bisect_right
 import random
+from bisect import bisect_left, bisect_right
 from typing import List, Sequence, Set
 from abstractions import Card, GamePhase, Suit, TrumpType
 from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, BidRequest
 from abstractions.responses import (
+    AlertResponse,
     DrawResponse,
     EndResponse,
     PlayResponse,
@@ -88,15 +89,17 @@ class Game:
             self.__phase,
         )
 
-    def draw(self, request: DrawRequest) -> DrawResponse | None:
+    def draw(self, request: DrawRequest) -> SocketResponse:
+        player = self.__players[request.player_id]
+        socket_id = player.socket_id
+
         # Only active player can draw
         if request.player_id != self.__active_player_id:
-            return None
+            return AlertResponse(socket_id, "You can't draw", "It's not your turn.")
 
         if self.__phase == GamePhase.DRAW:
             # Draw card
             card = self.__deck.pop()
-            player = self.__players[request.player_id]
             player.draw([card])
 
             # Update states
@@ -109,7 +112,7 @@ class Game:
                 )
 
             return DrawResponse(
-                player.socket_id,
+                socket_id,
                 player.id,
                 self.__phase,
                 self.__active_player_id,
@@ -120,7 +123,6 @@ class Game:
         elif self.__phase == GamePhase.RESERVE:
             # Draw cards
             cards = self.__deck
-            player = self.__players[request.player_id]
             player.draw(cards)
 
             # Update states
@@ -128,13 +130,15 @@ class Game:
             self.__phase = GamePhase.KITTY
 
             return DrawResponse(
-                player.socket_id,
+                socket_id,
                 self.__kitty_player_id,
                 self.__phase,
                 self.__kitty_player_id,
                 cards,
                 include_self=True,
             )
+
+        return AlertResponse(socket_id, "You can't draw", "Not time to draw cards.")
 
     def __resolve_trump_type(self, cards: Sequence[Card]) -> TrumpType:
         if len(cards) == 0:
@@ -154,21 +158,34 @@ class Game:
                     return TrumpType.PAIR
         return TrumpType.NONE
 
-    def bid(self, request: BidRequest) -> BidResponse | None:
+    def bid(self, request: BidRequest) -> SocketResponse:
+        player = self.__players[request.player_id]
+        socket_id = player.socket_id
+
         # Can only bid during draw or reserve (抓底牌) phases
         if self.__phase != GamePhase.DRAW and self.__phase != GamePhase.RESERVE:
-            return None
+            return AlertResponse(socket_id, "Invalid bid", "Not time to bid.")
 
         # Player must possess the cards
-        if not self.__players[request.player_id].has_cards(request.cards):
-            return None
+        if not player.has_cards(request.cards):
+            return AlertResponse(
+                socket_id, "Invalid bid", "You don't have those cards."
+            )
 
         trump_type = self.__resolve_trump_type(request.cards)
 
-        if self.__bidder_id != request.player_id:
+        # Player must possess the cards
+        if trump_type == TrumpType.NONE:
+            return AlertResponse(
+                socket_id, "Invalid bid", "You must bid with trump ranks or jokers."
+            )
+
+        if self.__bidder_id != player.id:
             # If bidder is different from current bidder, trumps must be of a higher priority
             if trump_type <= self.__trump_type:
-                return None
+                return AlertResponse(
+                    socket_id, "Invalid bid", "Your bid wasn't high enough."
+                )
         else:
             # If bidder is same as current bidder, only allow fortify
             if (
@@ -176,41 +193,46 @@ class Game:
                 or trump_type != TrumpType.SINGLE
                 or self.__trump_suit != request.cards[0].suit
             ):
-                return None
+                return AlertResponse(
+                    socket_id, "Invalid bid", "You can only fortify your current bid."
+                )
             trump_type = TrumpType.PAIR
 
         # Update states
         self.__trump_suit = request.cards[0].suit
         self.__trump_type = trump_type
-        self.__bidder_id = request.player_id
+        self.__bidder_id = player.id
 
         # In the first game, the bidder is the kitty player
         if self.__game_id == 0:
             self.__kitty_player_id = self.__bidder_id
 
-        return BidResponse(self.__match_id, request.player_id, request.cards)
+        return BidResponse(self.__match_id, player.id, request.cards)
 
-    def kitty(self, request: KittyRequest) -> KittyResponse | None:
+    def kitty(self, request: KittyRequest) -> SocketResponse:
+        player = self.__players[request.player_id]
+        socket_id = player.socket_id
+
         # Only hide kitty during the kitty phase
         if self.__phase != GamePhase.KITTY:
-            return None
+            return AlertResponse(socket_id, "Invalid kitty", "Not time to hide kitty.")
 
         # Only kitty player can hide kitty
         if request.player_id != self.__kitty_player_id:
-            return None
+            return AlertResponse(socket_id, "Invalid kitty", "It's not your turn.")
 
         # Number of cards must be correct
         if len(request.cards) != 8:
-            return None
-
-        kitty_player = self.__players[request.player_id]
+            return AlertResponse(socket_id, "Invalid kitty", "Wrong number of cards.")
 
         # Player must possess the cards
-        if not kitty_player.has_cards(request.cards):
-            return None
+        if not player.has_cards(request.cards):
+            return AlertResponse(
+                socket_id, "Invalid kitty", "You don't have those cards."
+            )
 
         # Hide kitty
-        kitty_player.play(request.cards)
+        player.play(request.cards)
         self._kitty = request.cards
 
         # Update states
@@ -225,7 +247,7 @@ class Game:
             self._attackers.add((self.__kitty_player_id + offset) % num_players)
 
         return KittyResponse(
-            kitty_player.socket_id,
+            socket_id,
             request.player_id,
             self.__phase,
             request.cards,
@@ -273,14 +295,17 @@ class Game:
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
 
-    def play(self, request: PlayRequest) -> SocketResponse | None:
+    def play(self, request: PlayRequest) -> SocketResponse:
+        player = self.__players[request.player_id]
+        socket_id = player.socket_id
+
         # Only play during the play phase
         if self.__phase != GamePhase.PLAY:
-            return []
+            return AlertResponse(socket_id, "Invalid play", "Not time to play cards.")
 
         # Only active player can play
         if request.player_id != self.__active_player_id:
-            return []
+            return AlertResponse(socket_id, "Invalid play", "It's not your turn.")
 
         # Create new trick if needed
         if len(self._tricks) == 0 or self._tricks[-1].ended:
@@ -293,8 +318,9 @@ class Game:
         trick = self._tricks[-1]
 
         # Try processing play request
-        if not trick.try_play(other_players, player, request.cards):
-            return None
+        alert = trick.try_play(other_players, player, request.cards)
+        if alert is not None:
+            return alert
 
         # Play cards from player's hands
         player.play(request.cards)

@@ -32,7 +32,7 @@ class MatchService:
         if request.match_id in self.__matches:
             return self.__matches[request.match_id].join(request)
 
-    def draw(self, request: DrawRequest) -> Sequence[SocketResponse]:
+    def draw(self, request: DrawRequest) -> Sequence[SocketResponse] | SocketResponse:
         if request.match_id in self.__matches:
             return self.__matches[request.match_id].draw(request)
 

@@ -76,6 +76,26 @@ class SocketResponse(ABC):
         self._include_self = include_self
 
 
+class AlertResponse(SocketResponse):
+    def __init__(
+        self, recipient: str, title: str, message: str, hint_cards: Sequence[Card] = []
+    ):
+        super().__init__("alert", recipient, broadcast=True, include_self=True)
+        self.__title = title
+        self.__message = message
+        self.__hint_cards = hint_cards
+
+    def json(self) -> dict:
+        return {
+            "title": self.__title,
+            "message": self.__message,
+            "hintCards": [
+                {"id": card.id, "suit": card.suit, "rank": card.rank}
+                for card in self.__hint_cards
+            ],
+        }
+
+
 class JoinResponse(SocketResponse):
     def __init__(self, recipient: str, id: int, name: str):
         super().__init__("join", recipient, broadcast=True, include_self=True)
