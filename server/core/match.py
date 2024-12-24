@@ -16,8 +16,8 @@ from abstractions.responses import (
     MatchResponse,
     SocketResponse,
 )
+from core import Player
 from core.game import Game
-from core.player import Player
 
 
 class Match:
@@ -58,7 +58,7 @@ class Match:
         return JoinResponse(self.__id, new_player.id, new_player.name)
 
     def join(self, request: JoinRequest) -> Sequence[JoinResponse]:
-        responses: List[SocketResponse] = []
+        responses: Sequence[SocketResponse] = []
 
         # Do not process join request if match if full or ended
         if self.__phase == MatchPhase.STARTED or self.__phase == MatchPhase.ENDED:

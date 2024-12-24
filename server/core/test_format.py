@@ -1,11 +1,12 @@
 from unittest import TestCase
 from itertools import batched, combinations
 from random import shuffle
-from typing import List, Sequence, Tuple
+from typing import Sequence
 from abstractions import Card, Suit
 from abstractions.responses import AlertResponse
-from core.format import Format, FormatUnit, Single, Pair, Tractor
-from core.order import Order
+from core import Order
+from core.unit import Single, Pair, Tractor
+from core.format import Format
 from testing import initialize, JB, JR
 from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, ST
 from testing.hearts import H2, H3, H4, H5, H6, H7, H8, HA, HK
@@ -32,7 +33,7 @@ class FormatCreateTests(TestCase):
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
                 self.assertFalse(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(1, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -60,7 +61,7 @@ class FormatCreateTests(TestCase):
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
                 self.assertFalse(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(2, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -106,7 +107,7 @@ class FormatCreateTests(TestCase):
 
                 (all_trumps, suit) = expected
                 self.assertFalse(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(4, format.length)
                 self.assertEqual(1, len(format.tractors))
@@ -142,7 +143,7 @@ class FormatCreateTests(TestCase):
                 (all_trumps, suit) = expected
 
                 self.assertTrue(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(3, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -179,7 +180,7 @@ class FormatCreateTests(TestCase):
                 (all_trumps, suit) = expected
 
                 self.assertTrue(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(4, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -188,14 +189,12 @@ class FormatCreateTests(TestCase):
 
                 cards.sort(key=lambda c: c.id)
                 for pair_cards, pair in zip(batched(cards, 2), format.pairs):
-                    self.assertEqual(
-                        order.for_card(pair_cards[0]), order.for_card(pair.highest)
-                    )
+                    self.assertEqual(order.of(pair_cards[0]), order.of(pair.highest))
 
     def test_format_create_toss_combination(self) -> None:
         order = Order(2)
         order.reset(Suit.SPADE)
-        empty: List[Card] = []
+        empty: Sequence[Card] = []
 
         cases = [
             # Multiple tractors are sorted by length, then highest card
@@ -253,7 +252,7 @@ class FormatCreateTests(TestCase):
                 )
 
                 self.assertTrue(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(len(cards), format.length)
 
@@ -458,131 +457,6 @@ class FormatBeatTests(TestCase):
                 self.assertEqual(expected, format2.beats(format1))
 
 
-class FormatUnitTests(TestCase):
-    def test_format_unit_single_decompose_into(self) -> None:
-        [S3Card, S4Card, S5Card] = initialize([S3, S4, S5])
-        unit = Single(S3Card)
-
-        cases: Sequence[Tuple[FormatUnit, Sequence[FormatUnit]]] = [
-            # Single
-            (Single(S4Card), [Single(S3Card)]),
-            # Pair
-            (Pair([Single(S4Card), Single(S4Card)]), []),
-            # Tractor
-            (
-                Tractor(
-                    [
-                        Pair([Single(S4Card), Single(S4Card)]),
-                        Pair([Single(S5Card), Single(S5Card)]),
-                    ]
-                ),
-                [],
-            ),
-        ]
-
-        for setup, expected in cases:
-            with self.subTest(setup=setup, expected=expected):
-                actual = unit.decompose_into(setup)
-                self.assertEqual(len(expected), len(actual))
-                for expected_unit, actual_unit in zip(expected, actual):
-                    self.assertEqual(expected_unit.highest, actual_unit.highest)
-
-    def test_format_unit_pair_decompose_into(self) -> None:
-        [S3Card, S4Card, S5Card] = initialize([S3, S4, S5])
-        unit = Pair([Single(S3Card), Single(S3Card)])
-
-        cases: Sequence[Tuple[FormatUnit, Sequence[FormatUnit]]] = [
-            # Single
-            (Single(S4Card), [Single(S3Card), Single(S3Card)]),
-            # Pair
-            (
-                Pair([Single(S4Card), Single(S4Card)]),
-                [Pair([Single(S3Card), Single(S3Card)])],
-            ),
-            # Tractor
-            (
-                Tractor(
-                    [
-                        Pair([Single(S4Card), Single(S4Card)]),
-                        Pair([Single(S5Card), Single(S5Card)]),
-                    ]
-                ),
-                [],
-            ),
-        ]
-
-        for setup, expected in cases:
-            with self.subTest(setup=setup, expected=expected):
-                actual = unit.decompose_into(setup)
-                self.assertEqual(len(expected), len(actual))
-                for expected_unit, actual_unit in zip(expected, actual):
-                    self.assertEqual(expected_unit.highest, actual_unit.highest)
-
-    def test_format_unit_tractor_decompose_into(self) -> None:
-        [S3Card, S4Card, S5Card, S6Card, S7Card] = initialize([S3, S4, S5, S6, S7])
-        unit = Tractor(
-            [
-                Pair([Single(S5Card), Single(S5Card)]),
-                Pair([Single(S6Card), Single(S6Card)]),
-                Pair([Single(S7Card), Single(S7Card)]),
-            ]
-        )
-
-        cases: Sequence[Tuple[FormatUnit, Sequence[FormatUnit]]] = [
-            # Single
-            (
-                Single(S4Card),
-                [
-                    Single(S5Card),
-                    Single(S5Card),
-                    Single(S6Card),
-                    Single(S6Card),
-                    Single(S7Card),
-                    Single(S7Card),
-                ],
-            ),
-            # Pair
-            (
-                Pair([Single(S4Card), Single(S4Card)]),
-                [
-                    Pair([Single(S5Card), Single(S5Card)]),
-                    Pair([Single(S6Card), Single(S6Card)]),
-                    Pair([Single(S7Card), Single(S7Card)]),
-                ],
-            ),
-            # Tractor
-            (
-                Tractor(
-                    [
-                        Pair([Single(S3Card), Single(S3Card)]),
-                        Pair([Single(S4Card), Single(S4Card)]),
-                    ]
-                ),
-                [
-                    Tractor(
-                        [
-                            Pair([Single(S5Card), Single(S5Card)]),
-                            Pair([Single(S6Card), Single(S6Card)]),
-                        ]
-                    ),
-                    Tractor(
-                        [
-                            Pair([Single(S6Card), Single(S6Card)]),
-                            Pair([Single(S7Card), Single(S7Card)]),
-                        ]
-                    ),
-                ],
-            ),
-        ]
-
-        for setup, expected in cases:
-            with self.subTest(setup=setup, expected=expected):
-                actual = unit.decompose_into(setup)
-                self.assertEqual(len(expected), len(actual))
-                for expected_unit, actual_unit in zip(expected, actual):
-                    self.assertEqual(expected_unit.highest, actual_unit.highest)
-
-
 class FormatResolvePlayTests(TestCase):
     def test_format_try_play_single_with_complement(self) -> None:
         order = Order(2)
@@ -637,11 +511,7 @@ class FormatResolvePlayTests(TestCase):
         lead = Format(order, initialize([S3, S3]))
         hand = initialize([S8, S8, S7, S7, S5, S5, S4])
 
-        cases = [
-            [1, 2],
-            [3, 4],
-            [5, 6],
-        ]
+        cases = [[1, 2], [3, 4], [5, 6]]
 
         for setup in cases:
             with self.subTest(setup=setup):

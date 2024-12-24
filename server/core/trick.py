@@ -1,9 +1,8 @@
 from typing import Sequence
 from abstractions.responses import AlertResponse
 from abstractions import Card, Suit
+from core import Order, Player
 from core.format import Format
-from core.order import Order
-from core.player import Player
 
 
 # Logic for managing tricks comprising of a play from each player
@@ -69,11 +68,11 @@ class Trick:
             return AlertResponse(socket_id, "Invalid play", "Wrong number of cards.")
 
         # Enforce follow suit
-        hand_cards = player.cards_in_suit(self.__order, lead.suit, lead.all_trumps)
+        hand_cards = player.cards_in_suit(self.__order, lead.suit, lead.trumps)
         required_suit_cards = min(len(hand_cards), lead.length)
         format = Format(self.__order, cards)
 
-        if len(format.cards_in_suit(lead.suit, lead.all_trumps)) < required_suit_cards:
+        if len(format.cards_in_suit(lead.suit, lead.trumps)) < required_suit_cards:
             return AlertResponse(
                 socket_id, "Invalid play", "Must follow suit.", hand_cards
             )
@@ -81,14 +80,14 @@ class Trick:
         # Partial or mismatched non-trump follow, format need not to be matched
         if not (
             # Need to check if format is all trumps
-            format.all_trumps
+            format.trumps
             # Need to check if format matches lead suit and suit is not Suit.UNKNOWN
             or (format.suit == lead.suit and format.suit != Suit.UNKNOWN)
         ):
             return format
 
         # Enforce follow trick format
-        played_suit = player.cards_in_suit(self.__order, lead.suit, format.all_trumps)
+        played_suit = player.cards_in_suit(self.__order, lead.suit, format.trumps)
         alert = lead.resolve_play(cards, played_suit)
         if alert is not None:
             lead.reset()
@@ -125,15 +124,11 @@ class Trick:
             return
 
         winning = self._plays[self.winner_id]
-        if winning.all_trumps and not format.all_trumps:
+        if winning.trumps and not format.trumps:
             print("Losing play: did not follow trumps")
             return
 
-        if (
-            not winning.all_trumps
-            and not format.all_trumps
-            and winning.suit != format.suit
-        ):
+        if not winning.trumps and not format.trumps and winning.suit != format.suit:
             print("Losing play: did not follow non trump suit")
             return
 

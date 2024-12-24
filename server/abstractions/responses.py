@@ -25,7 +25,7 @@ class MatchResponse(HttpResponse):
             "debug": self.__debug,
             "numPlayers": self.__num_players,
             "players": [
-                {"id": player.id, "name": player.name} for player in self.__players
+                {"id": player[0], "name": player[1]} for player in self.__players
             ],
         }
 

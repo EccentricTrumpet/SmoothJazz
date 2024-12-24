@@ -1,8 +1,7 @@
 from unittest import TestCase
 from abstractions import Suit
 from core.trick import Trick
-from core.order import Order
-from core.player import Player
+from core import Order, Player
 from testing import initialize, JB
 from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
 from testing.hearts import H3, H4, H6

@@ -1,8 +1,7 @@
 from unittest import TestCase
 from core.format import Format
 from core.game import Game
-from core.order import Order
-from core.player import Player
+from core import Order, Player
 from core.trick import Trick
 from testing import initialize, JB, JR
 from testing.spades import S2, S5
