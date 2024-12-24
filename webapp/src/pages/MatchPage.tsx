@@ -406,8 +406,6 @@ export default function MatchPage() {
       <p>Loading ...</p>
     ) : (
       <motion.div style={{ display: "grid", placeContent: "center", width: "100vw", height: "100vh" }}>
-        <ControlZone parentZone={zone} gameState={gameState} controller={controller} />
-        <CenterZone board={boardState} deckZone={deckZone} options={options} controller={controller} />
         { players.map((player) => {
           return <PlayerZone
             key={player.id}
@@ -418,6 +416,8 @@ export default function MatchPage() {
             options={options}
             controller={controller} />
         })}
+        <ControlZone parentZone={zone} gameState={gameState} controller={controller} />
+        <CenterZone board={boardState} deckZone={deckZone} options={options} controller={controller} />
         <AnimatePresence
           initial={false}
           mode="wait"

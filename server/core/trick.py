@@ -1,9 +1,8 @@
 from typing import Sequence
 from abstractions.responses import AlertResponse
-from abstractions import Card
+from abstractions import Card, Suit
+from core import Order, Player
 from core.format import Format
-from core.order import Order
-from core.player import Player
 
 
 # Logic for managing tricks comprising of a play from each player
@@ -30,12 +29,6 @@ class Trick:
     @property
     def winning_play(self) -> Format:
         return self._plays[self.winner_id]
-
-    def __match_format(
-        self, lead: Format, play: Format, player_cards: Sequence[Card]
-    ) -> AlertResponse | None:
-        # TODO: Implement format enforcement and matching
-        return None
 
     def __resolve_format(
         self, other_players: Sequence[Player], player: Player, cards: Sequence[Card]
@@ -75,27 +68,34 @@ class Trick:
             return AlertResponse(socket_id, "Invalid play", "Wrong number of cards.")
 
         # Enforce follow suit
-        player_cards = player.cards_in_suit(self.__order, lead.suit, lead.all_trumps)
-        required_suit_cards = min(len(player_cards), lead.length)
+        hand_cards = player.cards_in_suit(self.__order, lead.suit, lead.trumps)
+        required_suit_cards = min(len(hand_cards), lead.length)
         format = Format(self.__order, cards)
 
-        if len(format.cards_in_suit(lead.suit, lead.all_trumps)) < required_suit_cards:
+        if len(format.cards_in_suit(lead.suit, lead.trumps)) < required_suit_cards:
             return AlertResponse(
-                socket_id, "Invalid play", "Must follow suit.", player_cards
+                socket_id, "Invalid play", "Must follow suit.", hand_cards
             )
 
         # Partial or mismatched non-trump follow, format need not to be matched
-        if not format.all_trumps and format.suit != lead.suit:
+        if not (
+            # Need to check if format is all trumps
+            format.trumps
+            # Need to check if format matches lead suit and suit is not Suit.UNKNOWN
+            or (format.suit == lead.suit and format.suit != Suit.UNKNOWN)
+        ):
             return format
 
         # Enforce follow trick format
-        alert = self.__match_format(lead, format, player_cards)
+        played_suit = player.cards_in_suit(self.__order, lead.suit, format.trumps)
+        alert = lead.resolve_play(cards, played_suit)
         if alert is not None:
             lead.reset()
+            alert.recipient = socket_id
             return alert
 
         # Resolution successful
-        format.reform_with(lead)
+        format.try_reform(lead)
         lead.reset()
         return format
 
@@ -124,19 +124,14 @@ class Trick:
             return
 
         winning = self._plays[self.winner_id]
-        if winning.all_trumps and not format.all_trumps:
+        if winning.trumps and not format.trumps:
             print("Losing play: did not follow trumps")
             return
 
-        if (
-            not winning.all_trumps
-            and not format.all_trumps
-            and winning.suit != format.suit
-        ):
+        if not winning.trumps and not format.trumps and winning.suit != format.suit:
             print("Losing play: did not follow non trump suit")
             return
 
-        format.sort()  # This sort is likely redundant
         if format.beats(winning):
             print("Winning play")
             self.winner_id = player.id

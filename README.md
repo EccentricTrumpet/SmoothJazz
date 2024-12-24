@@ -29,3 +29,23 @@ In another terminal, run the webapp with the commands:
 ```
 
 ### For deployment
+
+Build the React webapp:
+
+```cmd
+> cd ./webapp
+> npm run build
+```
+
+Build the Docker image
+
+```cmd
+> cd ./server
+> docker build .
+```
+
+Run the docker image
+
+```cmd
+> docker run -it <image>
+```

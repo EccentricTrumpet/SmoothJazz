@@ -1,10 +1,12 @@
 from unittest import TestCase
-from itertools import batched
+from itertools import batched, combinations
 from random import shuffle
-from typing import List
+from typing import Sequence
 from abstractions import Card, Suit
+from abstractions.responses import AlertResponse
+from core import Order
+from core.unit import Single, Pair, Tractor
 from core.format import Format
-from core.order import Order
 from testing import initialize, JB, JR
 from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, ST
 from testing.hearts import H2, H3, H4, H5, H6, H7, H8, HA, HK
@@ -31,7 +33,7 @@ class FormatCreateTests(TestCase):
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
                 self.assertFalse(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(1, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -39,7 +41,7 @@ class FormatCreateTests(TestCase):
                 self.assertEqual(1, len(format.singles))
                 single = format.singles[0]
                 self.assertEqual(cards[0], single.cards[0])
-                self.assertEqual(cards[0], single.highest_card)
+                self.assertEqual(cards[0], single.highest)
 
     def test_format_create_pair(self) -> None:
         order = Order(2)
@@ -59,7 +61,7 @@ class FormatCreateTests(TestCase):
                 format = Format(order, cards)
                 (all_trumps, suit) = expected
                 self.assertFalse(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(2, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -68,7 +70,7 @@ class FormatCreateTests(TestCase):
                 pair = format.pairs[0]
                 self.assertEqual(2, pair.length)
                 self.assertTrue(cards[0].matches(cards[1]))
-                self.assertTrue(cards[0].matches(pair.highest_card))
+                self.assertTrue(cards[0].matches(pair.highest))
                 self.assertTrue(cards[0].matches(pair.cards[0]))
                 self.assertTrue(cards[0].matches(pair.cards[1]))
 
@@ -105,7 +107,7 @@ class FormatCreateTests(TestCase):
 
                 (all_trumps, suit) = expected
                 self.assertFalse(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(4, format.length)
                 self.assertEqual(1, len(format.tractors))
@@ -115,7 +117,7 @@ class FormatCreateTests(TestCase):
                 cards.sort(key=lambda c: c.id)
                 tractor = format.tractors[0]
                 self.assertEqual(4, tractor.length)
-                self.assertTrue(cards[0].matches(tractor.highest_card))
+                self.assertTrue(cards[0].matches(tractor.highest))
                 self.assertTrue(cards[0].matches(tractor.cards[0]))
                 for pair_cards, pair in zip(batched(cards, 2), tractor.pairs):
                     self.assertTrue(pair_cards[0].matches(pair_cards[1]))
@@ -141,7 +143,7 @@ class FormatCreateTests(TestCase):
                 (all_trumps, suit) = expected
 
                 self.assertTrue(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(3, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -152,7 +154,7 @@ class FormatCreateTests(TestCase):
                 for card, single in zip(cards, format.singles):
                     self.assertEqual(1, single.length)
                     self.assertEqual(card, single.cards[0])
-                    self.assertEqual(card, single.highest_card)
+                    self.assertEqual(card, single.highest)
 
     def test_format_create_toss_pairs(self) -> None:
         cases = [
@@ -178,7 +180,7 @@ class FormatCreateTests(TestCase):
                 (all_trumps, suit) = expected
 
                 self.assertTrue(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(4, format.length)
                 self.assertEqual(0, len(format.tractors))
@@ -187,14 +189,12 @@ class FormatCreateTests(TestCase):
 
                 cards.sort(key=lambda c: c.id)
                 for pair_cards, pair in zip(batched(cards, 2), format.pairs):
-                    self.assertEqual(
-                        order.for_card(pair_cards[0]), order.for_card(pair.highest_card)
-                    )
+                    self.assertEqual(order.of(pair_cards[0]), order.of(pair.highest))
 
     def test_format_create_toss_combination(self) -> None:
         order = Order(2)
         order.reset(Suit.SPADE)
-        empty: List[Card] = []
+        empty: Sequence[Card] = []
 
         cases = [
             # Multiple tractors are sorted by length, then highest card
@@ -252,7 +252,7 @@ class FormatCreateTests(TestCase):
                 )
 
                 self.assertTrue(format.is_toss)
-                self.assertEqual(all_trumps, format.all_trumps)
+                self.assertEqual(all_trumps, format.trumps)
                 self.assertEqual(suit, format.suit)
                 self.assertEqual(len(cards), format.length)
 
@@ -260,23 +260,22 @@ class FormatCreateTests(TestCase):
                 self.assertEqual(len_pairs, len(format.pairs))
                 self.assertEqual(len_singles, len(format.singles))
 
-                for (length, highest_card), tractor in zip(
+                for (length, highest), tractor in zip(
                     expected_tractors, format.tractors
                 ):
                     self.assertEqual(length, tractor.length)
-                    self.assertTrue(highest_card.matches(tractor.highest_card))
+                    self.assertTrue(highest.matches(tractor.highest))
 
-                for highest_card, pair in zip(expected_pairs, format.pairs):
+                for highest, pair in zip(expected_pairs, format.pairs):
                     self.assertEqual(2, pair.length)
-                    self.assertTrue(highest_card.matches(pair.highest_card))
+                    self.assertTrue(highest.matches(pair.highest))
 
-                for highest_card, single in zip(expected_singles, format.singles):
+                for highest, single in zip(expected_singles, format.singles):
                     self.assertEqual(1, single.length)
-                    self.assertTrue(highest_card.matches(single.highest_card))
+                    self.assertTrue(highest.matches(single.highest))
 
 
 class FormatBeatTests(TestCase):
-
     def test_format_beat_length_mismatch(self) -> None:
         order = Order(2)
         order.reset(Suit.SPADE)
@@ -458,6 +457,169 @@ class FormatBeatTests(TestCase):
                 self.assertEqual(expected, format2.beats(format1))
 
 
-class FormatMatchTests(TestCase):
-    # Test that multiple trump suit trump rank and non-trump suit trump rank tractors are all legal plays against a tractor
-    pass
+class FormatResolvePlayTests(TestCase):
+    def test_format_try_play_single_with_complement(self) -> None:
+        order = Order(2)
+        lead = Format(order, initialize([S3]))
+        hand = initialize([S4, S5, S5, S7, S7, S8, S8])
+
+        # Any of the cards in hand can be played
+        for card in hand:
+            self.assertIsNone(lead.resolve_play([card], hand))
+            self.assertEqual(1, len(lead.units))
+            single = lead.units[0]
+            self.assertIsInstance(single.complement, Single)
+            self.assertListEqual([card], single.complement.cards)
+
+    def test_format_try_play_pair_with_complement(self) -> None:
+        order = Order(2)
+        lead = Format(order, initialize([S3, S3]))
+        hand = initialize([S8, S8, S7, S7, S5, S5, S4])
+
+        # Only pairs and tractor pairs can be played
+        cases = [
+            # Tractor Pair
+            [0, 1],
+            [2, 3],
+            # Pair
+            [4, 5],
+        ]
+
+        for setup in cases:
+            with self.subTest(setup=setup):
+                play = [hand[i] for i in setup]
+
+                self.assertIsNone(lead.resolve_play(play, hand))
+                self.assertEqual(1, len(lead.units))
+                pair = lead.units[0]
+                self.assertIsInstance(pair.complement, Pair)
+                self.assertListEqual(play, pair.complement.cards)
+
+    def test_format_try_play_pair_no_complement(self) -> None:
+        order = Order(2)
+        lead = Format(order, initialize([S3, S3]))
+        hand = initialize([S8, S7, S5, S4])
+
+        for play in combinations(hand, 2):
+            self.assertIsNone(lead.resolve_play(play, hand))
+            self.assertEqual(1, len(lead.units))
+            pair = lead.units[0]
+            self.assertIsNone(pair.complement)
+
+    def test_format_try_play_pair_invalid(self) -> None:
+        order = Order(2)
+        lead = Format(order, initialize([S3, S3]))
+        hand = initialize([S8, S8, S7, S7, S5, S5, S4])
+
+        cases = [[1, 2], [3, 4], [5, 6]]
+
+        for setup in cases:
+            with self.subTest(setup=setup):
+                play = [hand[i] for i in setup]
+
+                alert = lead.resolve_play(play, hand)
+                self.assertIsInstance(alert, AlertResponse)
+                self.assertEqual("Illegal format for pair", alert._title)
+                self.assertEqual("There are available pairs to play.", alert._message)
+                self.assertListEqual(hand[0:-1], alert._hint_cards)
+
+    def test_format_try_play_tractor_with_complement(self) -> None:
+        order = Order(2)
+        order.reset(Suit.SPADE)
+        lead = Format(order, initialize([S3, S3, S4, S4]))
+        hand = initialize(
+            [S2, S2, H2, H2, D2, D2, SJ, SJ, ST, ST, S8, S8, S7, S7, S6, S6]
+        )
+
+        # Only tractor can be played
+        cases = [
+            # Matching Tractor
+            [6, 7, 8, 9],
+            # Equivalent Tractor
+            [0, 1, 2, 3],
+            [0, 1, 4, 5],
+            # Decomposed Tractor
+            [10, 11, 12, 13],
+            [12, 13, 14, 15],
+        ]
+
+        for setup in cases:
+            with self.subTest(setup=setup):
+                play = [hand[i] for i in setup]
+
+                self.assertIsNone(lead.resolve_play(play, hand))
+                self.assertEqual(1, len(lead.units))
+                tractor = lead.units[0]
+                self.assertIsInstance(tractor.complement, Tractor)
+                self.assertEqual(play[0], tractor.complement.highest)
+                self.assertListEqual(play, tractor.complement.cards)
+
+    def test_format_try_play_tractor_no_complement(self) -> None:
+        order = Order(2)
+        lead = Format(order, initialize([S3, S3, S4, S4]))
+
+        cases = [
+            ([S7, S7, S6, S5, S5, S4], [0, 1, 3, 4]),
+            ([S8, S7, S7, S6, S5, S4], [0, 1, 2, 3]),
+            ([S8, S7, S7, S6, S5, S4], [1, 2, 3, 4]),
+        ]
+
+        for setup in cases:
+            with self.subTest(setup=setup):
+                (hand, play) = setup
+                hand = initialize(hand)
+                play = [hand[i] for i in play]
+
+                self.assertIsNone(lead.resolve_play(play, hand))
+                self.assertEqual(1, len(lead.units))
+                tractor = lead.units[0]
+                self.assertIsNone(tractor.complement)
+
+    def test_format_try_play_tractor_invalid(self) -> None:
+        order = Order(2)
+        cases = [
+            (
+                (
+                    [S3, S3, S4, S4, S5, S5],
+                    [ST, ST, S8, S8, S7, S7, S4, S4],
+                    [0, 1, 2, 3, 6, 7],
+                ),
+                ("There are available tractors to play.", [2, 3, 4, 5]),
+            ),
+            (
+                ([S3, S3, S4, S4], [S8, S8, S7, S7, S5, S5, S4], [2, 3, 4, 5]),
+                ("There are available tractors to play.", [0, 1, 2, 3]),
+            ),
+            (
+                ([S3, S3, S4, S4], [S7, S7, S6, S5, S5, S4], [2, 3, 4, 5]),
+                ("There are available pairs to play.", [0, 1]),
+            ),
+            (
+                ([S3, S3, S4, S4], [S7, S7, S6, S5, S5, S4], [0, 1, 2, 3]),
+                ("There are available pairs to play.", [3, 4]),
+            ),
+            (
+                ([S3, S3, S4, S4], [S7, S7, S6, S5, S5, S4], [0, 2, 3, 5]),
+                ("There are available pairs to play.", [0, 1, 3, 4]),
+            ),
+            (
+                ([S3, S3, S4, S4], [S8, S7, S7, S6, S5, S4], [2, 3, 4, 5]),
+                ("There are available pairs to play.", [1, 2]),
+            ),
+        ]
+
+        for case in cases:
+            (setup, expected) = case
+            with self.subTest(setup=setup, expected=expected):
+                (lead, hand, play) = setup
+                lead = Format(order, initialize(lead))
+                hand = initialize(hand)
+                play = [hand[i] for i in play]
+                (message, hint) = expected
+                hint = [hand[i] for i in hint]
+
+                alert = lead.resolve_play(play, hand)
+                self.assertIsInstance(alert, AlertResponse)
+                self.assertEqual("Illegal format for tractor", alert._title)
+                self.assertEqual(message, alert._message)
+                self.assertListEqual(hint, alert._hint_cards)

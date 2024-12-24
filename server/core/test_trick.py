@@ -1,9 +1,8 @@
 from unittest import TestCase
 from abstractions import Suit
 from core.trick import Trick
-from core.order import Order
-from core.player import Player
-from testing import initialize
+from core import Order, Player
+from testing import initialize, JB
 from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
 from testing.hearts import H3, H4, H6
 from testing.diamonds import D3, D4
@@ -93,12 +92,17 @@ class TrickPlayTests(TestCase):
             [([S3], 0), ([H4], 0)],
             # Losing - follow non-trump with mismatching non-trumps
             [([H3], 0), ([D4], 0)],
+            [([JB, SA], 0), ([H3, D3], 0)],
+            # Losing - follow with legal but mismatching format
+            [([S3, S3, S4], 0), ([S3, S4, S5], 0)],
             # Winning - suited
             [([S3], 0), ([S2], 1)],
             [([H3], 0), ([H4], 1)],
             # Winning - trumped
             [([H4], 0), ([S4], 1)],
-            # Test two pairs => tractor => two pairs plays to ensure third player can win
+            # Winning - lead format maintained:
+            # Two pairs => tractor => two pairs
+            [([S3, S3, S5, S5], 0), ([S6, S6, S7, S7], 1), ([S8, S8, ST, ST], 2)],
         ]
         for steps in cases:
             with self.subTest(steps=steps):

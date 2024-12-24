@@ -14,9 +14,8 @@ from abstractions.responses import (
     TrickResponse,
     BidResponse,
 )
-from core.order import Order
+from core import Order, Player
 from core.trick import Trick
-from core.player import Player
 
 END_LEVEL = 15
 BOSS_LEVELS = [2, 5, 10, 13, 14, END_LEVEL]  # Level 14 is Aces
