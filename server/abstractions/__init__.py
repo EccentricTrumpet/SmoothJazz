@@ -1,5 +1,5 @@
 from enum import IntEnum, StrEnum
-from typing import TypeVar
+from typing import Self
 
 
 class TrumpType(IntEnum):
@@ -34,9 +34,6 @@ class GamePhase(IntEnum):
     END = 4
 
 
-TCard = TypeVar("TCard", bound="Card")
-
-
 class Card:
     def __init__(self, id: int, suit: Suit, rank: int):
         self.id = id
@@ -51,7 +48,7 @@ class Card:
             and self.rank == other.rank
         )
 
-    def matches(self, card: TCard) -> bool:
+    def matches(self, card: Self) -> bool:
         return self.suit == card.suit and self.rank == card.rank
 
     @property

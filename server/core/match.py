@@ -48,7 +48,7 @@ class Match:
             self.__id,
             self.__debug,
             self.__num_players,
-            self.__players,
+            [(player.id, player.name) for player in self.__players],
         )
 
     def __add_player(self, name: str, socket_id: str) -> JoinResponse:

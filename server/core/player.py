@@ -3,7 +3,6 @@ from abstractions import Card, Suit
 from core.order import Order
 
 
-# TODO: Extract interface to put into abstractions
 class Player:
     def __init__(
         self,

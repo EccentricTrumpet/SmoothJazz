@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Sequence, Tuple
 from abstractions import Card, GamePhase
-from core.player import Player
 
 
 # HTTP responses
@@ -13,7 +12,7 @@ class HttpResponse(ABC):
 
 class MatchResponse(HttpResponse):
     def __init__(
-        self, id: int, debug: bool, num_players: int, players: Sequence[Player]
+        self, id: int, debug: bool, num_players: int, players: Sequence[Tuple[int, str]]
     ):
         self.__id = id
         self.__debug = debug
@@ -81,17 +80,17 @@ class AlertResponse(SocketResponse):
         self, recipient: str, title: str, message: str, hint_cards: Sequence[Card] = []
     ):
         super().__init__("alert", recipient, broadcast=True, include_self=True)
-        self.__title = title
-        self.__message = message
-        self.__hint_cards = hint_cards
+        self._title = title
+        self._message = message
+        self._hint_cards = hint_cards
 
     def json(self) -> dict:
         return {
-            "title": self.__title,
-            "message": self.__message,
+            "title": self._title,
+            "message": self._message,
             "hintCards": [
                 {"id": card.id, "suit": card.suit, "rank": card.rank}
-                for card in self.__hint_cards
+                for card in self._hint_cards
             ],
         }
 
