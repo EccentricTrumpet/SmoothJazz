@@ -8,7 +8,6 @@ interface CardComponentInputs {
   card: Card;
   options: OptionsState;
   onClick?: () => any;
-  animate?: boolean;
 }
 
 export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options, onClick = () => {}}) => {

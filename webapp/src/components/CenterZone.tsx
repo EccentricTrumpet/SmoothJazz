@@ -13,13 +13,6 @@ interface CenterZoneInputs {
 
 export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options, controller}) => {
   const cardSize = new Size(Constants.cardWidth, Constants.cardHeight);
-  const kittyZone = new Zone(
-    new Position(
-      deckZone.left() - Constants.margin - Constants.cardWidth,
-      deckZone.top()
-    ),
-    cardSize
-  );
   const discardZone = new Zone(
     new Position(
       deckZone.right() + Constants.margin,
@@ -27,13 +20,6 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
     ),
     cardSize
   );
-
-  board.kitty.forEach(card => {
-    card.state.position.x = kittyZone.position.x;
-    card.state.position.y = kittyZone.position.y;
-    card.state.offset.x = 0;
-    card.state.offset.y = 0;
-  });
 
   board.deck.forEach((card, i) => {
     card.state.position.x = deckZone.position.x;
@@ -58,7 +44,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            left: kittyZone.left(),
+            left: deckZone.left() - Constants.margin - Constants.cardWidth,
             top: deckZone.center().y - 3*Constants.margin,
             width: Constants.cardWidth,
             height: 3*Constants.margin,
@@ -71,7 +57,7 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            left: kittyZone.left(),
+            left: deckZone.left() - Constants.margin - Constants.cardWidth,
             top: deckZone.center().y,
             width: Constants.cardWidth,
             height: 3*Constants.margin,
@@ -81,19 +67,6 @@ export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options
           </div>
         </>
       )}
-      {/* Kitty */}
-      <div className="container" style={{
-        position: "fixed",
-        left: kittyZone.left(),
-        top: kittyZone.top(),
-        width: kittyZone.size.width,
-        height: kittyZone.size.height,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        { board.kitty.map((card, idx) => {
-          return <CardComponent key={card.id} idx={idx} card={card} options={options} />
-        })}
-      </div>
       {/* Score UI */}
       <div className="container" style={{
         position: "fixed",
