@@ -25,7 +25,7 @@ import {
   NextRequest,
   AlertResponse} from "../abstractions/messages";
   import { AlertState, BoardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { AlertComponent, CenterZone, ControlZone, PlayerZone } from "../components";
+import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone } from "../components";
 import { Constants } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
@@ -258,7 +258,7 @@ export default function MatchPage() {
         const kittyResponse = new KittyResponse(response);
         const kittyCards = createCardDict(kittyResponse.cards);
 
-        // Add new cards to player's hand
+        // Add kitty cards to board state
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.id === kittyResponse.playerId) {
             const [kitty, newHand] = partition(player.hand, card => kittyCards.has(card.id));
@@ -418,6 +418,7 @@ export default function MatchPage() {
         })}
         <ControlZone parentZone={zone} gameState={gameState} controller={controller} />
         <CenterZone board={boardState} deckZone={deckZone} options={options} controller={controller} />
+        <KittyZone board={boardState} deckZone={deckZone} trumpState={trumpState} options={options} />
         <AnimatePresence
           initial={false}
           mode="wait"

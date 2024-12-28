@@ -12,88 +12,38 @@ interface CardsZoneInputs {
   trumpState: TrumpState;
   zone: Zone;
   options: OptionsState;
-  controller: ControllerInterface;
+  controller?: ControllerInterface | undefined;
 }
 
-export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, options, controller}) => {
+export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, options, controller = undefined}) => {
   // Sort cards for display
   cards.sort((a, b) => trumpState.getDisplayOrder(a) - trumpState.getDisplayOrder(b));
 
-  let displayRange = 0;
-  let displayStart = 0;
-  let displayIncrement = 0;
+  let [xStart, yStart, dx, dy, xSelected, ySelected, rotate] = [0, 0, 0, 0, 0, 0, 0]
 
-  switch(seat) {
-    case Seat.North:
-      displayRange =
-        cards.length === 1
-          ? Constants.cardWidth
-          : Math.min(zone.size.width, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
-      displayIncrement =
-        cards.length === 1
-          ? 0
-          : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(cards.length-1));
-      displayStart = zone.center().x - displayRange/2;
-      for (let i = 0; i < cards.length; i++) {
-        cards[i].state.position = new Position(displayStart + i*displayIncrement, zone.top());
-        cards[i].state.offset = cards[i].state.selected
-          ? new Position(0, Constants.cardOverlap)
-          : new Position(0, 0);
-      }
-      break;
-    case Seat.South:
-      displayRange =
-        cards.length === 1
-          ? Constants.cardWidth
-          : Math.min(zone.size.width, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
-      displayIncrement =
-        cards.length === 1
-          ? 0
-          : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(cards.length-1));
-      displayStart = zone.center().x - displayRange/2;
-      for (let i = 0; i < cards.length; i++) {
-        cards[i].state.position = new Position(displayStart + i*displayIncrement, zone.top());
-        cards[i].state.offset = cards[i].state.selected
-          ? new Position(0, -Constants.cardOverlap)
-          : new Position(0, 0);
-      }
-      break;
-    case Seat.East:
-      displayRange =
-        cards.length === 1
-          ? Constants.cardWidth
-          : Math.min(zone.size.height, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
-      displayIncrement =
-        cards.length === 1
-          ? 0
-          : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(cards.length-1));
-      displayStart = zone.center().y + displayRange/2 - Constants.cardHeight + (Constants.cardHeight - Constants.cardWidth)/2;
-      for (let i = 0; i < cards.length; i++) {
-        cards[i].state.rotate = -90;
-        cards[i].state.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart - i*displayIncrement);
-        cards[i].state.offset = cards[i].state.selected
-          ? new Position(-Constants.cardOverlap, 0)
-          : new Position(0, 0);
-      }
-      break;
-    case Seat.West:
-      displayRange =
-        cards.length === 1
-          ? Constants.cardWidth
-          : Math.min(zone.size.height, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
-      displayIncrement =
-        cards.length === 1
-          ? 0
-          : Math.min(Constants.cardOverlap, (displayRange - Constants.cardWidth)/(cards.length-1));
-      displayStart = zone.center().y - displayRange/2- (Constants.cardHeight - Constants.cardWidth)/2;
-      for (let i = 0; i < cards.length; i++) {
-        cards[i].state.rotate = 90;
-        cards[i].state.position = new Position(zone.center().x - Constants.cardWidth/2, displayStart + i*displayIncrement);
-        cards[i].state.offset = cards[i].state.selected
-          ? new Position(Constants.cardOverlap, 0)
-          : new Position(0, 0);
-      }
-      break;
+  if (seat === Seat.East || seat === Seat.West) {
+    const range = cards.length === 1 ? Constants.cardWidth
+      : Math.min(zone.size.height, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
+    xStart = zone.center().x - Constants.cardWidth/2;
+    yStart = zone.center().y - range/2 - Constants.cardHeight/2 + Constants.cardWidth/2;
+    dy = cards.length === 1 ? 0
+      : Math.min(Constants.cardOverlap, (range - Constants.cardWidth)/(cards.length-1));
+    xSelected = seat === Seat.East ? Constants.cardOverlap : -Constants.cardOverlap;
+    rotate = seat === Seat.East ? 90 : -90;
+  } else {
+    const range = cards.length === 1 ? Constants.cardWidth
+      : Math.min(zone.size.width, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
+    xStart = zone.center().x - range/2;
+    yStart = zone.top();
+    dx = cards.length === 1 ? 0
+      : Math.min(Constants.cardOverlap, (range - Constants.cardWidth)/(cards.length-1));
+    ySelected = seat === Seat.North ? Constants.cardOverlap : -Constants.cardOverlap;
+  }
+
+  for (let i = 0; i < cards.length; i++) {
+    cards[i].state.rotate = rotate;
+    cards[i].state.position = new Position(xStart + i*dx, yStart + i*dy);
+    cards[i].state.offset = cards[i].state.selected ? new Position(xSelected, ySelected) : new Position(0, 0);
   }
 
   return (
@@ -106,7 +56,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
       backgroundColor: Constants.backgroundColor,
     }}>
       { cards.map((card, idx) => {
-        return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => controller.onSelect(card)} />
+        return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => controller?.onSelect(card)} />
       })}
     </div>
   );
