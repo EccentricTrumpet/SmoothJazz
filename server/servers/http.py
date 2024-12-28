@@ -26,7 +26,16 @@ class MatchGet(MethodView):
         if response is None:
             abort(404)
         else:
-            return response.json()
+            return (
+                response.json(),
+                200,
+                {
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                    "Cache-Control": "public, max-age=0",
+                },
+            )
 
 
 def init_http(service: MatchService, static_path: str) -> Flask:

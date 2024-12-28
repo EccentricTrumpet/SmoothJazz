@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";
@@ -38,11 +38,20 @@ export default function MatchPage() {
   // React states
   const { id } = useParams();
   const { state } = useLocation();
-  const options = new OptionsState("red.png");
+  const navigate = useNavigate();
   const matchId = Number(id);
-  const { name, matchResponse }: {name: string, matchResponse: MatchResponse} = state;
+  const [name] = useState<string>(state?.name);
+  const [matchResponse] = useState<MatchResponse>(state?.matchResponse);
+
+  // Redirect to join match if missing required match data
+  useEffect(() => {
+    if (!state || !name || !matchResponse) {
+      navigate(`/joinMatch?match_id=${matchId}`);
+    }
+  }, [name, matchResponse, navigate, matchId, state]);
 
   // UI states
+  const options = new OptionsState("red.png");
   const [zone, setZone] = useState(new Zone(
     new Position(0, 0),
     new Size(window.innerWidth, window.innerHeight)
@@ -61,7 +70,7 @@ export default function MatchPage() {
   const [gameState, setGameState] = useState(new GameState());
   const [boardState, setBoardState] = useState(new BoardState());
   const [trumpState, setTrumpState] = useState(new TrumpState(0, 0));
-  const [players, setPlayers] = useState(matchResponse.players);
+  const [players, setPlayers] = useState(matchResponse?.players);
   const [socket, setSocket] = useState<Socket>();
 
   // Establish window size

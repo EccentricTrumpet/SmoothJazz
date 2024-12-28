@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { CookiesProvider, useCookies } from 'react-cookie'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CookieState } from '../abstractions/states';
 import { MatchResponse } from '../abstractions/messages';
 
 export default function JoinMatchPage() {
+  const [searchParams] = useSearchParams()
   const [cookie, setCookie] = useCookies(['shengji'])
   const [cookieState, setCookieState] = useState(new CookieState());
-  const [match, setMatch] = useState(-1);
+  const [match, setMatch] = useState(parseInt(searchParams.get("match_id") ?? "-1"));
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function JoinMatchPage() {
             type="number"
             name="match"
             placeholder="Match"
+            value={match >= 0 ? match : undefined}
             onChange={handleMatchChange}
             required
           />
