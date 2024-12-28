@@ -12,8 +12,8 @@ function App() {
         <Route path="/">
           <Route index element={<HomePage />} />
           <Route path="/:id" element={<MatchPage />} />
-          <Route path="newMatch" element={<NewMatchPage />} />
-          <Route path="joinMatch" element={<JoinMatchPage />} />
+          <Route path="/newMatch" element={<NewMatchPage />} />
+          <Route path="/joinMatch" element={<JoinMatchPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
