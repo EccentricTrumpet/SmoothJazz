@@ -21,15 +21,24 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
 
   let [xStart, yStart, dx, dy, xSelected, ySelected, rotate] = [0, 0, 0, 0, 0, 0, 0]
 
-  if (seat === Seat.East || seat === Seat.West) {
+  if (seat === Seat.East) {
+    const range = cards.length === 1 ? Constants.cardWidth
+      : Math.min(zone.size.height, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
+    xStart = zone.center().x - Constants.cardWidth/2;
+    yStart = zone.center().y + range/2 - Constants.cardHeight/2 - Constants.cardWidth/2;
+    dy = cards.length === 1 ? 0
+      : -Math.min(Constants.cardOverlap, (range - Constants.cardWidth)/(cards.length-1));
+    xSelected = -Constants.cardOverlap;
+    rotate = -90;
+  } else if (seat === Seat.West) {
     const range = cards.length === 1 ? Constants.cardWidth
       : Math.min(zone.size.height, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
     xStart = zone.center().x - Constants.cardWidth/2;
     yStart = zone.center().y - range/2 - Constants.cardHeight/2 + Constants.cardWidth/2;
     dy = cards.length === 1 ? 0
       : Math.min(Constants.cardOverlap, (range - Constants.cardWidth)/(cards.length-1));
-    xSelected = seat === Seat.East ? Constants.cardOverlap : -Constants.cardOverlap;
-    rotate = seat === Seat.East ? 90 : -90;
+    xSelected = Constants.cardOverlap;
+    rotate = 90;
   } else {
     const range = cards.length === 1 ? Constants.cardWidth
       : Math.min(zone.size.width, Constants.cardOverlap*(cards.length - 1) + Constants.cardWidth);
@@ -52,6 +61,7 @@ export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, z
       left: zone.left(),
       top: zone.top(),
       width: zone.size.width,
+      maxWidth: "none",
       height: zone.size.height,
       backgroundColor: Constants.backgroundColor,
     }}>

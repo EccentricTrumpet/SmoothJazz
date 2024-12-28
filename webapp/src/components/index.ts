@@ -8,3 +8,4 @@ export * from './ControlZone';
 export * from './CardsZone';
 export * from './KittyZone';
 export * from './PlayerZone';
+export * from './TrumpZone';
