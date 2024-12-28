@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";

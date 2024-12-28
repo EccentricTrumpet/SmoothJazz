@@ -25,4 +25,5 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './webapp/package-lock.json'
       - run: cd ./webapp && npm ci
+      - run: cd ./webapp && npx eslint --max-warnings 0 ./src
       - run: cd ./webapp && CI=true npm test
