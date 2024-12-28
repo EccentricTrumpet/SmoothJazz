@@ -25,7 +25,7 @@ import {
   NextRequest,
   AlertResponse} from "../abstractions/messages";
   import { AlertState, BoardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone } from "../components";
+import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
 import { Constants } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
@@ -416,7 +416,8 @@ export default function MatchPage() {
             options={options}
             controller={controller} />
         })}
-        <ControlZone parentZone={zone} gameState={gameState} controller={controller} />
+        {trumpState.numCards > 0 && <TrumpZone parentZone={zone} trumpState={trumpState} />}
+        {trumpState.numCards > 0 && <ControlZone parentZone={zone} gameState={gameState} controller={controller} />}
         <CenterZone board={boardState} deckZone={deckZone} options={options} controller={controller} />
         <KittyZone board={boardState} deckZone={deckZone} trumpState={trumpState} options={options} />
         <AnimatePresence
