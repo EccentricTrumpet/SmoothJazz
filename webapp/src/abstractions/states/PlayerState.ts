@@ -11,8 +11,8 @@ export class PlayerState {
         public playing: Card[] = []
     ) {}
 
-    public static getSeat(playerId: number, seatOffset: number, numPlayers: number): Seat {
+    public static getSeat(playerIndex: number, seatOffset: number, numPlayers: number): Seat {
         const seatingArrangement = Constants.seatingArrangement[numPlayers];
-        return seatingArrangement[(playerId + numPlayers - seatOffset) % numPlayers];
+        return seatingArrangement[(playerIndex + numPlayers - seatOffset) % numPlayers];
     }
 }

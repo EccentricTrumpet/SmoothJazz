@@ -2,6 +2,13 @@ import random
 from bisect import bisect_left, bisect_right
 from typing import List, Sequence, Set
 from abstractions import Card, GamePhase, Suit, TrumpType
+from abstractions.constants import (
+    BOSS_LEVELS,
+    CARDS_PER_DECK,
+    CARDS_PER_SUIT,
+    END_LEVEL,
+    THRESHOLD_PER_DECK,
+)
 from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, BidRequest
 from abstractions.responses import (
     AlertResponse,
@@ -17,12 +24,6 @@ from abstractions.responses import (
 from core import Order, Player
 from core.trick import Trick
 
-END_LEVEL = 15
-BOSS_LEVELS = [2, 5, 10, 13, 14, END_LEVEL]  # Level 14 is Aces
-CARDS_PER_DECK = 54
-CARDS_PER_SUIT = 13
-THRESHOLD_PER_DECK = 20
-
 
 class Game:
     def __init__(
@@ -30,9 +31,12 @@ class Game:
         game_id,
         match_id: int,
         num_decks: int,
-        lead_player_id: int,
         players: Sequence[Player],
+        lead_player_id: int | None = None,
     ) -> None:
+        if lead_player_id is None:
+            lead_player_id = players[0].id
+
         # Inputs
         self.__game_id = game_id
         self.__match_id = match_id
@@ -40,14 +44,13 @@ class Game:
         self.__players = players
 
         # Private
-        self.__phase = GamePhase.DRAW
         self.__deck: List[Card] = []
         self.__bidder_id = -1
         self.__trump_suit = Suit.UNKNOWN
         self.__trump_type = TrumpType.NONE
         self.__kitty_player_id = lead_player_id
         self.__active_player_id = lead_player_id
-        self.__game_rank = self.__players[lead_player_id].level
+        self.__game_rank = self.__player_for_id(lead_player_id).level
         self.__order = Order(self.__game_rank)
         self.__ready_players: Set[int] = set()
 
@@ -59,6 +62,7 @@ class Game:
         self._defenders: Set[int] = set()
 
         # Public
+        self.phase = GamePhase.DRAW
         self.next_lead_id = -1
 
         # Fix game rank for Aces game
@@ -79,59 +83,73 @@ class Game:
 
         random.shuffle(self.__deck)
 
+    def __next_player_id(self, player_id: int) -> int:
+        player_index = -1
+        for index, player in enumerate(self.__players):
+            if player.id == player_id:
+                player_index = index
+
+        next_index = (player_index + 1) % len(self.__players)
+        return self.__players[next_index].id
+
+    def __player_for_id(self, player_id: int) -> Player:
+        for player in self.__players:
+            if player.id == player_id:
+                return player
+        raise RuntimeError(f"Cannot find player with id {player_id}")
+
     def start(self) -> StartResponse:
         return StartResponse(
             self.__match_id,
             self.__active_player_id,
             len(self.__deck),
             self.__game_rank,
-            self.__phase,
+            self.phase,
         )
 
     def draw(self, request: DrawRequest) -> SocketResponse:
-        player = self.__players[request.player_id]
+        player = self.__player_for_id(request.player_id)
         socket_id = player.socket_id
 
         # Only active player can draw
         if request.player_id != self.__active_player_id:
             return AlertResponse(socket_id, "You can't draw", "It's not your turn.")
 
-        if self.__phase == GamePhase.DRAW:
+        if self.phase == GamePhase.DRAW:
             # Draw card
             card = self.__deck.pop()
             player.draw([card])
 
             # Update states
             if len(self.__deck) == 8:
-                self.__phase = GamePhase.RESERVE
+                self.phase = GamePhase.RESERVE
                 self.__active_player_id = self.__kitty_player_id
             else:
-                self.__active_player_id = (self.__active_player_id + 1) % len(
-                    self.__players
-                )
+                self.__active_player_id = self.__next_player_id(self.__active_player_id)
+                print(f"Next player: {self.__active_player_id}")
 
             return DrawResponse(
                 socket_id,
                 player.id,
-                self.__phase,
+                self.phase,
                 self.__active_player_id,
                 [card],
                 include_self=True,
             )
 
-        elif self.__phase == GamePhase.RESERVE:
+        elif self.phase == GamePhase.RESERVE:
             # Draw cards
             cards = self.__deck
             player.draw(cards)
 
             # Update states
             self.__deck = []
-            self.__phase = GamePhase.KITTY
+            self.phase = GamePhase.KITTY
 
             return DrawResponse(
                 socket_id,
                 self.__kitty_player_id,
-                self.__phase,
+                self.phase,
                 self.__kitty_player_id,
                 cards,
                 include_self=True,
@@ -158,11 +176,11 @@ class Game:
         return TrumpType.NONE
 
     def bid(self, request: BidRequest) -> SocketResponse:
-        player = self.__players[request.player_id]
+        player = self.__player_for_id(request.player_id)
         socket_id = player.socket_id
 
         # Can only bid during draw or reserve (抓底牌) phases
-        if self.__phase != GamePhase.DRAW and self.__phase != GamePhase.RESERVE:
+        if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
             return AlertResponse(socket_id, "Invalid bid", "Not time to bid.")
 
         # Player must possess the cards
@@ -209,11 +227,11 @@ class Game:
         return BidResponse(self.__match_id, player.id, request.cards)
 
     def kitty(self, request: KittyRequest) -> SocketResponse:
-        player = self.__players[request.player_id]
+        player = self.__player_for_id(request.player_id)
         socket_id = player.socket_id
 
         # Only hide kitty during the kitty phase
-        if self.__phase != GamePhase.KITTY:
+        if self.phase != GamePhase.KITTY:
             return AlertResponse(socket_id, "Invalid kitty", "Not time to hide kitty.")
 
         # Only kitty player can hide kitty
@@ -235,26 +253,28 @@ class Game:
         self._kitty = request.cards
 
         # Update states
-        self.__phase = GamePhase.PLAY
+        self.phase = GamePhase.PLAY
         self.__order.reset(self.__trump_suit)
 
         # Assign teams (fixed teams)
-        num_players = len(self.__players)
-        for offset in range(0, num_players, 2):
-            self._defenders.add((self.__kitty_player_id + offset) % num_players)
-        for offset in range(1, num_players, 2):
-            self._attackers.add((self.__kitty_player_id + offset) % num_players)
+        player_id = self.__kitty_player_id
+        for i in range(len(self.__players)):
+            if i % 2 == 0:
+                self._defenders.add(player_id)
+            else:
+                self._attackers.add(player_id)
+            player_id = self.__next_player_id(player_id)
 
         return KittyResponse(
             socket_id,
             request.player_id,
-            self.__phase,
+            self.phase,
             request.cards,
             include_self=True,
         )
 
     def _end(self) -> None:
-        self.__phase = GamePhase.END
+        self.phase = GamePhase.END
         trick = self._tricks[-1]
 
         # Add kitty score
@@ -273,9 +293,9 @@ class Game:
         if self._score >= win_threshold:
             # Attackers win
             levels = (self._score - win_threshold) // threshold
-            self.next_lead_id = (self.__kitty_player_id + 1) % len(self.__players)
+            self.next_lead_id = self.__next_player_id(self.__kitty_player_id)
             for attacker in self._attackers:
-                player = self.__players[attacker]
+                player = self.__player_for_id(attacker)
                 # Bisect left: lowest level >= player's level
                 max_level = BOSS_LEVELS[bisect_left(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
@@ -287,19 +307,21 @@ class Game:
                 if score <= 0
                 else 2 if score < threshold else 1
             )
-            self.next_lead_id = (self.__kitty_player_id + 2) % len(self.__players)
+            self.next_lead_id = self.__next_player_id(
+                self.__next_player_id(self.__kitty_player_id)
+            )
             for defender in self._defenders:
-                player = self.__players[defender]
+                player = self.__player_for_id(defender)
                 # Bisect right: lowest level > player's level
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
 
     def play(self, request: PlayRequest) -> SocketResponse:
-        player = self.__players[request.player_id]
+        player = self.__player_for_id(request.player_id)
         socket_id = player.socket_id
 
         # Only play during the play phase
-        if self.__phase != GamePhase.PLAY:
+        if self.phase != GamePhase.PLAY:
             return AlertResponse(socket_id, "Invalid play", "Not time to play cards.")
 
         # Only active player can play
@@ -310,7 +332,7 @@ class Game:
         if len(self._tricks) == 0 or self._tricks[-1].ended:
             self._tricks.append(Trick(len(self.__players), self.__order))
 
-        player = self.__players[request.player_id]
+        player = self.__player_for_id(request.player_id)
         other_players = [
             player for player in self.__players if player.id != request.player_id
         ]
@@ -325,7 +347,7 @@ class Game:
         player.play(request.cards)
 
         # Update play states
-        self.__active_player_id = (self.__active_player_id + 1) % len(self.__players)
+        self.__active_player_id = self.__next_player_id(self.__active_player_id)
         response = PlayResponse(
             self.__match_id,
             request.player_id,
@@ -350,7 +372,7 @@ class Game:
                 response = EndResponse(
                     self.__match_id,
                     response,
-                    self.__phase,
+                    self.phase,
                     self.__kitty_player_id,
                     self._kitty,
                     self.next_lead_id,
@@ -360,6 +382,6 @@ class Game:
         return response
 
     def ready(self, player_id: int) -> bool:
-        if self.__players[player_id].level < END_LEVEL:
+        if self.__player_for_id(player_id).level < END_LEVEL:
             self.__ready_players.add(player_id)
         return len(self.__ready_players) == len(self.__players)

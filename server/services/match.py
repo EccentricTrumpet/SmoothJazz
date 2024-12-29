@@ -5,6 +5,7 @@ from abstractions.requests import (
     DrawRequest,
     JoinRequest,
     KittyRequest,
+    LeaveRequest,
     NextRequest,
     PlayRequest,
     BidRequest,
@@ -32,6 +33,10 @@ class MatchService:
         if request.match_id in self.__matches:
             return self.__matches[request.match_id].join(request)
 
+    def leave(self, request: LeaveRequest, sid: str) -> SocketResponse | None:
+        if request.match_id in self.__matches:
+            return self.__matches[request.match_id].leave(request, sid)
+
     def draw(self, request: DrawRequest) -> Sequence[SocketResponse] | SocketResponse:
         if request.match_id in self.__matches:
             return self.__matches[request.match_id].draw(request)
@@ -44,7 +49,7 @@ class MatchService:
         if request.match_id in self.__matches:
             return self.__matches[request.match_id].kitty(request)
 
-    def play(self, request: PlayRequest) -> SocketResponse | None:
+    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
         if request.match_id in self.__matches:
             return self.__matches[request.match_id].play(request)
 

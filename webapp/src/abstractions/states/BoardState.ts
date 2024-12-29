@@ -1,6 +1,6 @@
 import { Card } from "../Card";
 
-// Similar to GameState but this contains visible states
+// Similar to StatusState but this contains visible states
 export class BoardState {
     constructor(
         public deck: Card[] = [],

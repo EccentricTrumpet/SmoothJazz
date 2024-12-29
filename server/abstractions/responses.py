@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Sequence, Tuple
-from abstractions import Card, GamePhase
+from abstractions import Card, GamePhase, MatchPhase
 
 
 # HTTP responses
@@ -12,11 +12,17 @@ class HttpResponse(ABC):
 
 class MatchResponse(HttpResponse):
     def __init__(
-        self, id: int, debug: bool, num_players: int, players: Sequence[Tuple[int, str]]
+        self,
+        id: int,
+        debug: bool,
+        num_players: int,
+        phase: MatchPhase,
+        players: Sequence[Tuple[int, str]],
     ):
         self.__id = id
         self.__debug = debug
         self.__num_players = num_players
+        self.__phase = phase
         self.__players = players
 
     def json(self) -> dict:
@@ -24,6 +30,7 @@ class MatchResponse(HttpResponse):
             "id": self.__id,
             "debug": self.__debug,
             "numPlayers": self.__num_players,
+            "phase": self.__phase,
             "players": [
                 {"id": player[0], "name": player[1]} for player in self.__players
             ],
@@ -105,6 +112,15 @@ class JoinResponse(SocketResponse):
         return {"id": self.__id, "name": self.__name}
 
 
+class LeaveResponse(SocketResponse):
+    def __init__(self, recipient: str, id: int):
+        super().__init__("leave", recipient, broadcast=True, include_self=True)
+        self.__id = id
+
+    def json(self) -> dict:
+        return {"id": self.__id}
+
+
 class StartResponse(SocketResponse):
     def __init__(
         self,
@@ -125,6 +141,21 @@ class StartResponse(SocketResponse):
             "activePlayerId": self.__active_player_id,
             "deckSize": self.__deck_size,
             "gameRank": self.__game_rank,
+            "phase": self.__phase,
+        }
+
+
+class MatchPhaseResponse(SocketResponse):
+    def __init__(
+        self,
+        recipient: str,
+        phase: MatchPhase,
+    ):
+        super().__init__("phase", recipient, broadcast=True, include_self=True)
+        self.__phase = phase
+
+    def json(self) -> dict:
+        return {
             "phase": self.__phase,
         }
 
