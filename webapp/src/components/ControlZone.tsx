@@ -1,16 +1,16 @@
 import { Constants } from "../Constants";
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { GamePhase } from "../abstractions/enums";
-import { GameState } from "../abstractions/states";
+import { GamePhase, MatchPhase } from "../abstractions/enums";
+import { StatusState } from "../abstractions/states";
 
 interface ControlZoneInputs {
   parentZone: Zone;
-  gameState: GameState;
+  statusState: StatusState;
   controller: ControllerInterface;
 }
 
-export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState, controller}) => {
+export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, statusState, controller}) => {
   const zone = new Zone(
     new Position(
       parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,
@@ -23,29 +23,39 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, gameState,
   let buttonAction = () => {};
   let buttonDisabled = false;
 
-  switch(gameState.phase) {
-    case GamePhase.Draw:
-    case GamePhase.Reserve:
-      buttonText = "Bid";
-      buttonAction = () => controller.onBid();
+  switch(statusState.matchPhase) {
+    case MatchPhase.CREATED:
+      buttonText = "Leave";
+      buttonAction = () => controller.onLeave();
       break;
-    case GamePhase.Kitty:
-      buttonText = "Hide";
-      buttonAction = () => controller.onHide();
-      break;
-    case GamePhase.Play:
-      buttonText = "Play";
-      buttonAction = () => controller.onPlay();
-      break;
-    case GamePhase.End:
-      buttonText = "Next Game";
-      buttonAction = () => controller.onNext();
-      break;
-    case GamePhase.Waiting:
-      buttonText = "Waiting...";
-      buttonDisabled = true;
+    case MatchPhase.STARTED:
+      switch(statusState.gamePhase) {
+        case GamePhase.Draw:
+        case GamePhase.Reserve:
+          buttonText = "Bid";
+          buttonAction = () => controller.onBid();
+          break;
+        case GamePhase.Kitty:
+          buttonText = "Hide";
+          buttonAction = () => controller.onHide();
+          break;
+        case GamePhase.Play:
+          buttonText = "Play";
+          buttonAction = () => controller.onPlay();
+          break;
+        case GamePhase.End:
+          buttonText = "Next Game";
+          buttonAction = () => controller.onNext();
+          break;
+        case GamePhase.Waiting:
+          buttonText = "Waiting...";
+          buttonDisabled = true;
+          break;
+      }
       break;
   }
+
+
 
   return (
     <div className="container" style={{

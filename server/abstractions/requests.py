@@ -9,10 +9,17 @@ class JoinRequest:
         self.socket_id: str = socket_id
 
 
+class LeaveRequest:
+    def __init__(self, payload: dict):
+        self.match_id = int(payload["matchId"])
+        self.player_id = int(payload["playerId"])
+
+
 class DrawRequest:
     def __init__(self, payload: dict):
         self.match_id = int(payload["matchId"])
         self.player_id = int(payload["playerId"])
+        print(f"Received draw request for player: {self.player_id}")
 
 
 class BidRequest:

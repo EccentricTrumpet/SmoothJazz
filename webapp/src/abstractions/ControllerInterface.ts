@@ -7,4 +7,5 @@ export interface ControllerInterface {
     onHide: () => any;
     onPlay: () => any;
     onNext: () => any;
+    onLeave: () => any;
 }

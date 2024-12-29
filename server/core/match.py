@@ -1,10 +1,12 @@
 from itertools import count
 from typing import Iterator, List, Sequence
-from abstractions import Card, MatchPhase, Suit
+from abstractions import Card, GamePhase, MatchPhase, Suit
+from abstractions.constants import END_LEVEL
 from abstractions.requests import (
     DrawRequest,
     JoinRequest,
     KittyRequest,
+    LeaveRequest,
     PlayRequest,
     BidRequest,
 )
@@ -13,6 +15,8 @@ from abstractions.responses import (
     DrawResponse,
     JoinResponse,
     KittyResponse,
+    LeaveResponse,
+    MatchPhaseResponse,
     MatchResponse,
     SocketResponse,
 )
@@ -48,6 +52,7 @@ class Match:
             self.__id,
             self.__debug,
             self.__num_players,
+            self.__phase,
             [(player.id, player.name) for player in self.__players],
         )
 
@@ -79,13 +84,27 @@ class Match:
         # Start the game if all players have joined
         if len(self.__players) == self.__num_players:
             new_game = Game(
-                len(self.__games), self.__id, self.__num_decks, 0, self.__players
+                len(self.__games), self.__id, self.__num_decks, self.__players
             )
             self.__games.append(new_game)
             responses.append(new_game.start())
             self.__phase = MatchPhase.STARTED
+            responses.append(MatchPhaseResponse(self.__id, self.__phase))
 
         return responses
+
+    def leave(self, request: LeaveRequest, sid: str) -> SocketResponse | None:
+        # Only allow players to leave a match that hasn't started
+        if self.__phase != MatchPhase.CREATED:
+            return
+
+        # Ensure the request came from the corresponding player
+        if self.__players[request.player_id].socket_id != sid:
+            return
+
+        self.__players = [p for p in self.__players if p.id != request.player_id]
+
+        return LeaveResponse(self.__id, request.player_id)
 
     def draw(self, request: DrawRequest) -> Sequence[SocketResponse] | SocketResponse:
         response = self.__games[-1].draw(request)
@@ -129,8 +148,16 @@ class Match:
                 ),
             ]
 
-    def play(self, request: PlayRequest) -> SocketResponse:
-        return self.__games[-1].play(request)
+    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
+        game = self.__games[-1]
+        responses = [game.play(request)]
+        if (
+            game.phase == GamePhase.END
+            and self.__players[game.next_lead_id].level == END_LEVEL
+        ):
+            self.__phase = MatchPhase.ENDED
+            responses.append(MatchPhaseResponse(self.__id, self.__phase))
+        return responses
 
     def next(self, request: PlayRequest) -> SocketResponse | None:
         current_game = self.__games[-1]
@@ -139,8 +166,8 @@ class Match:
                 len(self.__games),
                 self.__id,
                 self.__num_decks,
-                current_game.next_lead_id,
                 self.__players,
+                current_game.next_lead_id,
             )
             self.__games.append(new_game)
             return new_game.start()

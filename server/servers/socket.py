@@ -6,6 +6,7 @@ from abstractions.requests import (
     DrawRequest,
     JoinRequest,
     KittyRequest,
+    LeaveRequest,
     NextRequest,
     PlayRequest,
     BidRequest,
@@ -43,14 +44,6 @@ class MatchNamespace(Namespace):
         """event listener when client disconnects to the server"""
         logging.info(f"Client {request.sid} has disconnected")
 
-    def on_leave(self, player_name, match_id):
-        """event listener when client leaves a match"""
-        logging.info(
-            f"Player {player_name} [{request.sid}] leaving match: {str(match_id)}"
-        )
-        leave_room(match_id)
-        emit("leave", player_name, to=match_id, broadcast=True)
-
     def on_join(self, payload):
         """event listener when client joins a match"""
         join_request = JoinRequest(payload, request.sid)
@@ -61,6 +54,12 @@ class MatchNamespace(Namespace):
 
         join_room(join_request.match_id)
         self._emit_responses(self.__match_service.join(join_request))
+
+    def on_leave(self, payload):
+        """event listener when client leaves a match"""
+        self._emit_responses(
+            self.__match_service.leave(LeaveRequest(payload), request.sid)
+        )
 
     def on_draw(self, payload):
         """event listener when client draws a card"""

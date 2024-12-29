@@ -5,7 +5,7 @@ import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
 import { Card, ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { GamePhase } from "../abstractions/enums";
+import { GamePhase, MatchPhase } from "../abstractions/enums";
 import {
   CardInfo,
   DrawRequest,
@@ -23,8 +23,11 @@ import {
   TrickResponse,
   EndResponse,
   NextRequest,
-  AlertResponse} from "../abstractions/messages";
-  import { AlertState, BoardState, GameState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
+  AlertResponse,
+  MatchPhaseResponse,
+  LeaveRequest,
+  LeaveResponse} from "../abstractions/messages";
+  import { AlertState, BoardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
 import { Constants } from "../Constants";
 
@@ -67,7 +70,7 @@ export default function MatchPage() {
 
   // Game states
   const [playerId, setPlayerId] = useState(-1);
-  const [gameState, setGameState] = useState(new GameState());
+  const [statusState, setStatusState] = useState(new StatusState());
   const [boardState, setBoardState] = useState(new BoardState());
   const [trumpState, setTrumpState] = useState(new TrumpState(0, 0));
   const [players, setPlayers] = useState(matchResponse?.players);
@@ -194,8 +197,23 @@ export default function MatchPage() {
         }
       });
 
-      socket.on("leave", (player_name) => {
-        console.log(`${player_name} has left the match`);
+      socket.on("leave", (response) => {
+        console.log(`raw leave response: ${JSON.stringify(response)}`);
+        const leaveResponse = new LeaveResponse(response);
+
+        if (leaveResponse.id === thisPlayerId) {
+          navigate('/');
+        }
+        else {
+          setPlayers(prevPlayers => {
+            const newPlayers = prevPlayers.filter(player => player.id !== leaveResponse.id);
+            const seatOffset = newPlayers.findIndex(player => player.id === thisPlayerId);
+            for (let i = 0; i < newPlayers.length; i++) {
+              newPlayers[i].seat = PlayerState.getSeat(i, seatOffset, matchResponse.numPlayers);
+            }
+            return newPlayers;
+          });
+        }
       });
 
       socket.on("join", (response) => {
@@ -208,18 +226,30 @@ export default function MatchPage() {
         }
 
         // Need to use callback to ensure atomicity
-        const seat = PlayerState.getSeat(joinResponse.id, matchResponse.seatOffset, matchResponse.numPlayers);
-        setPlayers(prevPlayers => [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, seat)]);
+        setPlayers(prevPlayers => {
+          const seatOffset = joinResponse.id === thisPlayerId
+            ? matchResponse.seatOffset
+            : prevPlayers.findIndex(player => player.id === thisPlayerId);
+          const seat = PlayerState.getSeat(prevPlayers.length, seatOffset, matchResponse.numPlayers);
+          return [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, seat)];
+        });
       });
 
       socket.on("start", (response) => {
         console.log(`raw start response: ${JSON.stringify(response)}`);
         const startResponse = new StartResponse(response);
 
-        setGameState(new GameState(startResponse.activePlayerId, startResponse.phase));
+        setStatusState(pState => new StatusState(startResponse.activePlayerId, startResponse.phase, pState.matchPhase));
         setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
         setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new Card(-(1 + i)))));
         setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.seat)));
+      });
+
+      socket.on("phase", (response) => {
+        console.log(`raw phase response: ${JSON.stringify(response)}`);
+        const phaseResponse = new MatchPhaseResponse(response);
+
+        setStatusState(pState => new StatusState(pState.activePlayerId, pState.gamePhase, phaseResponse.matchPhase));
       });
 
       socket.on("draw", (response) => {
@@ -250,7 +280,7 @@ export default function MatchPage() {
         });
 
         // Set new game state
-        setGameState(_ => new GameState(drawResponse.activePlayerId, drawResponse.phase));
+        setStatusState(pState => new StatusState(drawResponse.activePlayerId, drawResponse.phase, pState.matchPhase));
       });
 
       socket.on("bid", (response) => {
@@ -285,7 +315,7 @@ export default function MatchPage() {
         }));
 
         // Set new game state
-        setGameState(pState => new GameState(pState.activePlayerId, kittyResponse.phase));
+        setStatusState(pState => new StatusState(pState.activePlayerId, kittyResponse.phase, pState.matchPhase));
       });
 
       socket.on("play", (response) => {
@@ -296,7 +326,7 @@ export default function MatchPage() {
         playCards(playResponse.cards, playResponse.playerId);
 
         // Set new game state
-        setGameState(pState => new GameState(playResponse.activePlayerId, pState.phase));
+        setStatusState(pState => new StatusState(playResponse.activePlayerId, pState.gamePhase, pState.matchPhase));
       });
 
       socket.on("trick", async (response) => {
@@ -310,7 +340,7 @@ export default function MatchPage() {
         await cleanupTrickAsync(trickResponse.score);
 
         // Set new game state
-        setGameState(pState => new GameState(trickResponse.activePlayerId, pState.phase));
+        setStatusState(pState => new StatusState(trickResponse.activePlayerId, pState.gamePhase, pState.matchPhase));
       });
 
       socket.on("end", async (response) => {
@@ -324,7 +354,7 @@ export default function MatchPage() {
         await cleanupTrickAsync(endResponse.trick.score);
 
         // Set new game state
-        setGameState(_ => new GameState(endResponse.trick.activePlayerId, endResponse.phase));
+        setStatusState(pState => new StatusState(endResponse.trick.activePlayerId, endResponse.phase, pState.matchPhase));
 
         await new Promise(f => setTimeout(f, 1000));
 
@@ -348,7 +378,7 @@ export default function MatchPage() {
           return new BoardState([], [], pState.discard, endResponse.score);
         });
 
-        setGameState(_ => new GameState(endResponse.leadId, endResponse.phase));
+        setStatusState(pState => new StatusState(endResponse.leadId, endResponse.phase, pState.matchPhase));
       });
 
       // Join match
@@ -356,13 +386,13 @@ export default function MatchPage() {
 
       return () => {
         // Teardown
-        socket.emit("leave", name, matchId);
         socket.off("end");
         socket.off("trick");
         socket.off("play");
         socket.off("kitty");
         socket.off("bid");
         socket.off("draw");
+        socket.off("phase");
         socket.off("start");
         socket.off("join");
         socket.off("leave");
@@ -370,11 +400,12 @@ export default function MatchPage() {
       };
     }
   // Must not depend on any mutable states
-  }, [socket, name, matchId, matchResponse]);
+  }, [socket, name, matchId, matchResponse, navigate]);
 
   class Controller implements ControllerInterface {
-    private activeId = () => matchResponse.debug ? gameState.activePlayerId : playerId;
-    private selection = () => players[this.activeId()].hand.filter(c => c.state.selected).map(c => c.toInfo());
+    private activeId = () => matchResponse.debug ? statusState.activePlayerId : playerId;
+    private selection = () => players.find(player => player.id === this.activeId())!.hand
+      .filter(c => c.state.selected).map(c => c.toInfo());
 
     onSelect(selectedCard: Card) {
       setPlayers(players.map((player) => {
@@ -391,10 +422,11 @@ export default function MatchPage() {
     }
 
     onNext() {
-      setGameState(pState => new GameState(pState.activePlayerId, GamePhase.Waiting));
+      setStatusState(pState => new StatusState(pState.activePlayerId, GamePhase.Waiting, pState.matchPhase));
       socket?.emit("next", new NextRequest(matchId, this.activeId()));
     };
 
+    onLeave() { socket?.emit("leave", new LeaveRequest(matchId, this.activeId())); };
     onDraw() { socket?.emit("draw", new DrawRequest(matchId, this.activeId())); }
     onBid() { socket?.emit("bid", new BidRequest(matchId, this.activeId(), this.selection())); }
     onHide() { socket?.emit("kitty", new KittyRequest(matchId, this.activeId(), this.selection())); }
@@ -419,14 +451,14 @@ export default function MatchPage() {
           return <PlayerZone
             key={player.id}
             player={player}
-            activePlayerId={gameState.activePlayerId}
+            activePlayerId={statusState.activePlayerId}
             trumpState={trumpState}
             parentZone={zone}
             options={options}
             controller={controller} />
         })}
-        {trumpState.numCards > 0 && <TrumpZone parentZone={zone} trumpState={trumpState} />}
-        {trumpState.numCards > 0 && <ControlZone parentZone={zone} gameState={gameState} controller={controller} />}
+        {statusState.matchPhase === MatchPhase.STARTED && <TrumpZone parentZone={zone} trumpState={trumpState} />}
+        <ControlZone parentZone={zone} statusState={statusState} controller={controller} />
         <CenterZone board={boardState} deckZone={deckZone} options={options} controller={controller} />
         <KittyZone board={boardState} deckZone={deckZone} trumpState={trumpState} options={options} />
         <AnimatePresence

@@ -8,17 +8,18 @@ export class MatchResponse {
     players: PlayerState[] = [];
 
     constructor(jsonText: string) {
+        console.log(`raw match response: ${jsonText}`);
         var jsonObj = JSON.parse(jsonText);
         this.matchId = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
         this.numPlayers = Number(jsonObj["numPlayers"]);
         this.seatOffset = jsonObj.players.length;
-        for (const player of jsonObj.players) {
-            const playerId = Number(player.id);
+        for (let i = 0; i < this.seatOffset; i++) {
+            const player = jsonObj.players[i];
             this.players.push(new PlayerState(
-                playerId,
+                player.id,
                 player.name,
-                PlayerState.getSeat(playerId, this.seatOffset, this.numPlayers)
+                PlayerState.getSeat(i, this.seatOffset, this.numPlayers)
             ));
         }
     }
