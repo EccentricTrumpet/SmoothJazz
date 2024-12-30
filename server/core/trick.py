@@ -87,7 +87,13 @@ class Trick:
             return format
 
         # Enforce follow trick format
-        played_suit = player.cards_in_suit(self.__order, lead.suit, format.trumps)
+        played_suit = (
+            # If following non-trump with trumps, there's no need to enforce format.
+            # To bypass the format check, pretend the cards played are the ones in hand.
+            cards
+            if not lead.trumps and format.trumps
+            else player.cards_in_suit(self.__order, lead.suit, format.trumps)
+        )
         alert = lead.resolve_play(cards, played_suit)
         if alert is not None:
             lead.reset()

@@ -4,7 +4,7 @@ from core.trick import Trick
 from core import Order, Player
 from testing import initialize, JB
 from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
-from testing.hearts import H3, H4, H6
+from testing.hearts import H3, H4, H5, H6, H7
 from testing.diamonds import D3, D4
 
 
@@ -71,6 +71,34 @@ class TrickPlayTests(TestCase):
             with self.subTest(setup=setup, expected=expected):
                 (lead, player, play) = tuple(map(initialize, setup))
                 trick = Trick(4, Order(2))
+                self.assertIsNone(trick.try_play([], Player(0, "", "", lead), lead))
+                if expected:
+                    self.assertIsNone(
+                        trick.try_play([], Player(1, "", "", player), play)
+                    )
+                else:
+                    self.assertIsNotNone(
+                        trick.try_play([], Player(1, "", "", player), play)
+                    )
+
+    def test_trick_play_enforce_format_for_matching_suits(self) -> None:
+        order = Order(2)
+        order.reset(Suit.SPADE)
+        cases = [
+            # Trump followed by trumps, format enforced
+            (([S3, S3, S4], [S5, S5, S6, S7], [1, 2, 3]), False),
+            # Non-trump followed by trumps, format not enforced
+            (([H3, H3, H4], [S5, S5, S6, S7], [1, 2, 3]), True),
+            # Non-trump followed by matching non-trumps, format enforced
+            (([H3, H3, H4], [H5, H5, H6, H7], [1, 2, 3]), False),
+        ]
+        for setup, expected in cases:
+            with self.subTest(setup=setup, expected=expected):
+                (lead, player, play) = setup
+                lead = initialize(lead)
+                player = initialize(player)
+                play = [player[i] for i in play]
+                trick = Trick(4, order)
                 self.assertIsNone(trick.try_play([], Player(0, "", "", lead), lead))
                 if expected:
                     self.assertIsNone(

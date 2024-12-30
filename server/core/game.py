@@ -83,13 +83,13 @@ class Game:
 
         random.shuffle(self.__deck)
 
-    def __next_player_id(self, player_id: int) -> int:
+    def __next_player_id(self, player_id: int, increment: int = 1) -> int:
         player_index = -1
         for index, player in enumerate(self.__players):
             if player.id == player_id:
                 player_index = index
 
-        next_index = (player_index + 1) % len(self.__players)
+        next_index = (player_index + increment) % len(self.__players)
         return self.__players[next_index].id
 
     def __player_for_id(self, player_id: int) -> Player:
@@ -307,9 +307,7 @@ class Game:
                 if score <= 0
                 else 2 if score < threshold else 1
             )
-            self.next_lead_id = self.__next_player_id(
-                self.__next_player_id(self.__kitty_player_id)
-            )
+            self.next_lead_id = self.__next_player_id(self.__kitty_player_id, 2)
             for defender in self._defenders:
                 player = self.__player_for_id(defender)
                 # Bisect right: lowest level > player's level
