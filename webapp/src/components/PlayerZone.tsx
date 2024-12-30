@@ -16,10 +16,9 @@ interface PlayerZoneArgument {
 
 export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId, trumpState, parentZone, options, controller}) => {
 
-  let handZone: Zone;
-  let nameZone: Zone;
-  let playingZone: Zone;
+  let handZone: Zone, nameZone: Zone, playingZone: Zone, trickStatusZone: Zone, playerStatusZone: Zone;
   let nameRotate: number = 0;
+  const nameHeight = 3*Constants.margin;
 
   switch(player.seat) {
     case Seat.North:
@@ -38,7 +37,21 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
           handZone.center().x - Constants.cardHeight/2,
           handZone.bottom() + Constants.margin,
         ),
-        new Size(Constants.cardHeight, 3*Constants.margin)
+        new Size(Constants.cardHeight, nameHeight)
+      );
+      trickStatusZone = new Zone(
+        new Position(
+          nameZone.left() - nameHeight - Constants.margin,
+          nameZone.top(),
+        ),
+        new Size(nameHeight, nameHeight)
+      );
+      playerStatusZone = new Zone(
+        new Position(
+          nameZone.right() + Constants.margin,
+          nameZone.top(),
+        ),
+        new Size(nameHeight, nameHeight)
       );
       playingZone = new Zone(
         new Position(
@@ -62,12 +75,26 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
           parentZone.size.height - 2*(2*Constants.margin + Constants.cardHeight)
         )
       );
+      trickStatusZone = new Zone(
+        new Position(
+          handZone.left() - nameHeight - Constants.margin,
+          handZone.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin,
+        ),
+        new Size(nameHeight, nameHeight)
+      );
+      playerStatusZone = new Zone(
+        new Position(
+          handZone.left() - nameHeight - Constants.margin,
+          handZone.center().y + Constants.cardHeight/2 + Constants.margin,
+        ),
+        new Size(nameHeight, nameHeight)
+      );
       nameZone = new Zone(
         new Position(
           handZone.left() - 2.5*Constants.margin - Constants.cardHeight/2,
           handZone.center().y - Constants.margin
         ),
-        new Size(Constants.cardHeight, 3*Constants.margin)
+        new Size(Constants.cardHeight, nameHeight)
       );
       playingZone = new Zone(
         new Position(
@@ -97,7 +124,21 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
           handZone.center().x - Constants.cardHeight/2,
           handZone.top() - 4*Constants.margin,
         ),
-        new Size(Constants.cardHeight, 3*Constants.margin)
+        new Size(Constants.cardHeight, nameHeight)
+      );
+      trickStatusZone = new Zone(
+        new Position(
+          nameZone.left() - nameHeight - Constants.margin,
+          nameZone.top(),
+        ),
+        new Size(nameHeight, nameHeight)
+      );
+      playerStatusZone = new Zone(
+        new Position(
+          nameZone.right() + Constants.margin,
+          nameZone.top(),
+        ),
+        new Size(nameHeight, nameHeight)
       );
       playingZone = new Zone(
         new Position(
@@ -121,12 +162,26 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
           parentZone.size.height - 2*(2*Constants.margin + Constants.cardHeight)
         )
       );
+      trickStatusZone = new Zone(
+        new Position(
+          handZone.right() + Constants.margin,
+          handZone.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin,
+        ),
+        new Size(nameHeight, nameHeight)
+      );
+      playerStatusZone = new Zone(
+        new Position(
+          handZone.right() + Constants.margin,
+          handZone.center().y + Constants.cardHeight/2 + Constants.margin,
+        ),
+        new Size(nameHeight, nameHeight)
+      );
       nameZone = new Zone(
         new Position(
           handZone.right() + 2.5*Constants.margin - (Constants.cardHeight)/2,
           handZone.center().y - Constants.margin
         ),
-        new Size(Constants.cardHeight, 3*Constants.margin)
+        new Size(Constants.cardHeight, nameHeight)
       );
       playingZone = new Zone(
         new Position(
@@ -165,6 +220,32 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
         borderRadius: Constants.margin
       }}>
         <h4 style={{ margin: 0 }}>{player.name}</h4>
+      </div>
+      <div className="container" style={{
+        position: "fixed",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        left: trickStatusZone.left(),
+        top: trickStatusZone.top(),
+        width: trickStatusZone.size.width,
+        height: trickStatusZone.size.height,
+        backgroundColor: Constants.backgroundColor,
+      }}>
+        <h4 style={{ margin: 0 }}>T</h4>
+      </div>
+      <div className="container" style={{
+        position: "fixed",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        left: playerStatusZone.left(),
+        top: playerStatusZone.top(),
+        width: playerStatusZone.size.width,
+        height: playerStatusZone.size.height,
+        backgroundColor: Constants.backgroundColor,
+      }}>
+        <h4 style={{ margin: 0 }}>P</h4>
       </div>
       <CardsZone
         cards={player.hand}
