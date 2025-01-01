@@ -98,14 +98,14 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, st
       trickStatusZone = new Zone(
         new Position(
           handZone.left() - nameHeight - Constants.margin,
-          handZone.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin,
+          handZone.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin/2,
         ),
         new Size(nameHeight, nameHeight)
       );
       playerStatusZone = new Zone(
         new Position(
           handZone.left() - nameHeight - Constants.margin,
-          handZone.center().y + Constants.cardHeight/2 + Constants.margin,
+          handZone.center().y + Constants.cardHeight/2 + 1.5*Constants.margin,
         ),
         new Size(nameHeight, nameHeight)
       );
@@ -185,14 +185,14 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, st
       trickStatusZone = new Zone(
         new Position(
           handZone.right() + Constants.margin,
-          handZone.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin,
+          handZone.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin/2,
         ),
         new Size(nameHeight, nameHeight)
       );
       playerStatusZone = new Zone(
         new Position(
           handZone.right() + Constants.margin,
-          handZone.center().y + Constants.cardHeight/2 + Constants.margin,
+          handZone.center().y + Constants.cardHeight/2 + 1.5*Constants.margin,
         ),
         new Size(nameHeight, nameHeight)
       );
