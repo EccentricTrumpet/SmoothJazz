@@ -137,7 +137,7 @@ export default function MatchPage() {
           if (player.id === playerId) {
             const [newPlaying, newHand] = partition(player.hand, card => playCards.has(card.id));
             newPlaying.forEach(card => card.updateInfo(playCards.get(card.id)!));
-            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
+            return new PlayerState(player.id, player.name, player.level, player.seat, newHand, [...player.playing, ...newPlaying]);
           }
           return player;
         }));
@@ -155,7 +155,7 @@ export default function MatchPage() {
               card.state.rotate = 0;
               discards.push(card);
             }
-            return new PlayerState(player.id, player.name, player.seat, player.hand);
+            return new PlayerState(player.id, player.name, player.level, player.seat, player.hand);
           });
 
           // Add discarded cards to pile and update score
@@ -171,7 +171,7 @@ export default function MatchPage() {
               card.resetState();
               card.state.facedown = !matchResponse.debug && player.id !== thisPlayerId;
             }
-            return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...player.playing]);
+            return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand, ...player.playing]);
           }
           return player;
         }));
@@ -192,7 +192,7 @@ export default function MatchPage() {
               }
             }
 
-            return new PlayerState(player.id, player.name, player.seat, [...player.hand], player.playing);
+            return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand], player.playing);
           }));
         }
       });
@@ -231,7 +231,7 @@ export default function MatchPage() {
             ? matchResponse.seatOffset
             : prevPlayers.findIndex(player => player.id === thisPlayerId);
           const seat = PlayerState.getSeat(prevPlayers.length, seatOffset, matchResponse.numPlayers);
-          return [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, seat)];
+          return [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, joinResponse.level, seat)];
         });
       });
 
@@ -245,7 +245,7 @@ export default function MatchPage() {
           .withTeamInfo(startResponse.kittyPlayerId, startResponse.attackers, startResponse.defenders));
         setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
         setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new Card(-(1 + i)))));
-        setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.seat)));
+        setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.level, player.seat)));
       });
 
       socket.on("phase", (response) => {
@@ -269,7 +269,7 @@ export default function MatchPage() {
                 drawnCards[i].updateInfo(drawResponse.cards[i]);
               }
 
-              return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...drawnCards], player.playing);
+              return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand, ...drawnCards], player.playing);
             }
             return player;
           }));
@@ -316,7 +316,7 @@ export default function MatchPage() {
 
             setBoardState(pState => new BoardState(pState.deck, kitty, pState.discard, pState.score));
 
-            return new PlayerState(player.id, player.name, player.seat, newHand, player.playing);
+            return new PlayerState(player.id, player.name, player.level, player.seat, newHand, player.playing);
           }
           return player;
         }));
@@ -386,13 +386,14 @@ export default function MatchPage() {
           }
 
           setPlayers(prevPlayers => {
-            return prevPlayers.map((player) => {
-              // Add discarded cards to playing zone
-              if (player.id === endResponse.kittyId) {
-                return new PlayerState(player.id, player.name, player.seat, player.hand, pState.kitty);
-              }
-              return player;
-            });
+            return prevPlayers.map(player => new PlayerState(
+              player.id,
+              player.name,
+              endResponse.players.get(player.id)!,
+              player.seat,
+              player.hand,
+              player.id === endResponse.kittyId ? pState.kitty : player.playing
+            ));
           });
 
           return new BoardState([], [], pState.discard, endResponse.score);
@@ -439,7 +440,7 @@ export default function MatchPage() {
           return card;
         });
 
-        return new PlayerState(player.id, player.name, player.seat, nextHand, player.playing);
+        return new PlayerState(player.id, player.name, player.level, player.seat, nextHand, player.playing);
       }));
     }
 
@@ -456,7 +457,7 @@ export default function MatchPage() {
       // Reset highlights
       setPlayers(prevPlayers => prevPlayers.map((player) => {
         player.hand.forEach(card => card.state.highlighted = false);
-        return new PlayerState(player.id, player.name, player.seat, [...player.hand], player.playing);
+        return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand], player.playing);
       }));
 
       socket?.emit("play", new PlayRequest(matchId, this.activeId(), this.selection()));

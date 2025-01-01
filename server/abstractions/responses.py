@@ -17,7 +17,7 @@ class MatchResponse(HttpResponse):
         debug: bool,
         num_players: int,
         phase: MatchPhase,
-        players: Sequence[Tuple[int, str]],
+        players: Sequence[Tuple[int, str, int]],
     ):
         self.__id = id
         self.__debug = debug
@@ -32,7 +32,8 @@ class MatchResponse(HttpResponse):
             "numPlayers": self.__num_players,
             "phase": self.__phase,
             "players": [
-                {"id": player[0], "name": player[1]} for player in self.__players
+                {"id": player[0], "name": player[1], "level": [2]}
+                for player in self.__players
             ],
         }
 
@@ -103,13 +104,14 @@ class AlertResponse(SocketResponse):
 
 
 class JoinResponse(SocketResponse):
-    def __init__(self, recipient: str, id: int, name: str):
+    def __init__(self, recipient: str, id: int, name: str, level: int):
         super().__init__("join", recipient, broadcast=True, include_self=True)
         self.__id = id
         self.__name = name
+        self.__level = level
 
     def json(self) -> dict:
-        return {"id": self.__id, "name": self.__name}
+        return {"id": self.__id, "name": self.__name, "level": self.__level}
 
 
 class LeaveResponse(SocketResponse):
@@ -312,6 +314,7 @@ class EndResponse(SocketResponse):
         kitty: Sequence[Card],
         lead_id: int,
         score: int,
+        players: Sequence[Tuple[int, int]],
     ):
         super().__init__("end", recipient, broadcast=True, include_self=True)
         self.trick = trick
@@ -320,6 +323,7 @@ class EndResponse(SocketResponse):
         self.kitty = kitty
         self.lead_id = lead_id
         self.score = score
+        self.players = players
 
     def json(self) -> dict:
         return {
@@ -332,4 +336,7 @@ class EndResponse(SocketResponse):
             ],
             "leadId": self.lead_id,
             "score": self.score,
+            "players": [
+                {"id": player[0], "level": player[1]} for player in self.players
+            ],
         }

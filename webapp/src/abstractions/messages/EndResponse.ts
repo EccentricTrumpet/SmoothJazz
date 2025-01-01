@@ -9,6 +9,7 @@ export class EndResponse {
     kitty: CardInfo[] = [];
     leadId: number;
     score: number;
+    players: Map<number, number>;
 
     constructor(jsonObj: any) {
         this.trick = new TrickResponse(jsonObj['trick']);
@@ -23,5 +24,9 @@ export class EndResponse {
         }
         this.leadId = Number(jsonObj['leadId']);
         this.score = Number(jsonObj['score']);
+        this.players = new Map<number, number>();
+        for (const player of jsonObj.players) {
+            this.players.set(player.id, player.level);
+        }
     }
 }

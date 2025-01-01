@@ -391,6 +391,7 @@ class Game:
                     self._kitty,
                     self.next_lead_id,
                     self._score,
+                    [(player.id, player.level) for player in self.__players],
                 )
 
         return response

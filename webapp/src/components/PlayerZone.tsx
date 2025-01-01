@@ -280,6 +280,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, st
         {player.id === statusState.kittyPlayerId && (createStatus('Kitty'))}
         {statusState.attackers.includes(player.id) && (createStatus('Attacker'))}
         {statusState.defenders.includes(player.id) && (createStatus('Defender'))}
+        {createStatus(`${player.level}`)}
       </div>
     </>
   );

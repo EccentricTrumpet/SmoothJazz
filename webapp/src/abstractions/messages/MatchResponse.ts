@@ -17,8 +17,9 @@ export class MatchResponse {
         for (let i = 0; i < this.seatOffset; i++) {
             const player = jsonObj.players[i];
             this.players.push(new PlayerState(
-                player.id,
+                Number(player.id),
                 player.name,
+                Number(player.level),
                 PlayerState.getSeat(i, this.seatOffset, this.numPlayers)
             ));
         }
