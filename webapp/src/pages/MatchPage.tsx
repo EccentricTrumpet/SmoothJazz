@@ -239,7 +239,9 @@ export default function MatchPage() {
         console.log(`raw start response: ${JSON.stringify(response)}`);
         const startResponse = new StartResponse(response);
 
-        setStatusState(pState => new StatusState(startResponse.activePlayerId, startResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(startResponse.activePlayerId)
+          .withGamePhase(startResponse.phase));
         setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
         setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new Card(-(1 + i)))));
         setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.seat)));
@@ -249,7 +251,7 @@ export default function MatchPage() {
         console.log(`raw phase response: ${JSON.stringify(response)}`);
         const phaseResponse = new MatchPhaseResponse(response);
 
-        setStatusState(pState => new StatusState(pState.activePlayerId, pState.gamePhase, phaseResponse.matchPhase));
+        setStatusState(pState => new StatusState(pState).withMatchPhase(phaseResponse.matchPhase));
       });
 
       socket.on("draw", (response) => {
@@ -280,7 +282,9 @@ export default function MatchPage() {
         });
 
         // Set new game state
-        setStatusState(pState => new StatusState(drawResponse.activePlayerId, drawResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(drawResponse.activePlayerId)
+          .withGamePhase(drawResponse.phase));
       });
 
       socket.on("bid", (response) => {
@@ -315,7 +319,7 @@ export default function MatchPage() {
         }));
 
         // Set new game state
-        setStatusState(pState => new StatusState(pState.activePlayerId, kittyResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState).withGamePhase(kittyResponse.phase));
       });
 
       socket.on("play", (response) => {
@@ -326,7 +330,9 @@ export default function MatchPage() {
         playCards(playResponse.cards, playResponse.playerId);
 
         // Set new game state
-        setStatusState(pState => new StatusState(playResponse.activePlayerId, pState.gamePhase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(playResponse.activePlayerId)
+          .withTrickWinner(playResponse.trickWinnerId));
       });
 
       socket.on("trick", async (response) => {
@@ -336,11 +342,16 @@ export default function MatchPage() {
         // Play cards
         playCards(trickResponse.play.cards, trickResponse.play.playerId);
 
+        // Set status state
+        setStatusState(pState => new StatusState(pState).withTrickWinner(trickResponse.activePlayerId));
+
         // Cleanup trick
         await cleanupTrickAsync(trickResponse.score);
 
-        // Set new game state
-        setStatusState(pState => new StatusState(trickResponse.activePlayerId, pState.gamePhase, pState.matchPhase));
+        // Set status state
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(trickResponse.activePlayerId)
+          .withTrickWinner(-1));
       });
 
       socket.on("end", async (response) => {
@@ -350,11 +361,17 @@ export default function MatchPage() {
         // Play cards
         playCards(endResponse.trick.play.cards, endResponse.trick.play.playerId);
 
+        // Set status state
+        setStatusState(pState => new StatusState(pState)
+          .withTrickWinner(endResponse.trick.activePlayerId));
+
         // Cleanup trick
         await cleanupTrickAsync(endResponse.trick.score);
 
         // Set new game state
-        setStatusState(pState => new StatusState(endResponse.trick.activePlayerId, endResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(endResponse.trick.activePlayerId)
+          .withTrickWinner(-1));
 
         await new Promise(f => setTimeout(f, 1000));
 
@@ -378,7 +395,9 @@ export default function MatchPage() {
           return new BoardState([], [], pState.discard, endResponse.score);
         });
 
-        setStatusState(pState => new StatusState(endResponse.leadId, endResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(endResponse.leadId)
+          .withGamePhase(endResponse.phase));
       });
 
       // Join match
@@ -422,7 +441,7 @@ export default function MatchPage() {
     }
 
     onNext() {
-      setStatusState(pState => new StatusState(pState.activePlayerId, GamePhase.Waiting, pState.matchPhase));
+      setStatusState(pState => new StatusState(pState).withGamePhase(GamePhase.Waiting));
       socket?.emit("next", new NextRequest(matchId, this.activeId()));
     };
 
@@ -451,8 +470,8 @@ export default function MatchPage() {
           return <PlayerZone
             key={player.id}
             player={player}
-            activePlayerId={statusState.activePlayerId}
             trumpState={trumpState}
+            statusState={statusState}
             parentZone={zone}
             options={options}
             controller={controller} />

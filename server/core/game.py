@@ -350,6 +350,7 @@ class Game:
             self.__match_id,
             request.player_id,
             self.__active_player_id,
+            trick.winner_id,
             request.cards,
         )
 

@@ -1,20 +1,40 @@
+// React tooltip require anchor tags without href
+/* eslint-disable jsx-a11y/anchor-is-valid */
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
-import { OptionsState, PlayerState, TrumpState } from "../abstractions/states";
+import { OptionsState, PlayerState, StatusState, TrumpState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardsZone } from ".";
+import { Tooltip } from "react-tooltip";
+import { ReactNode } from "react";
+
+const createStatus = (status: string): ReactNode => {
+  const {codepoint, description} = Constants.statusDetails[status];
+  return (
+    <>
+      <h3  style={{
+        margin: "0px 6px 0px 6px",
+      }}>
+        <a data-tooltip-id={`${status}-tooltip`} data-tooltip-content={description}>
+        {String.fromCodePoint(codepoint)}
+        </a>
+      </h3>
+      <Tooltip id={`${status}-tooltip`} />
+    </>
+  )
+}
 
 interface PlayerZoneArgument {
   player: PlayerState;
-  activePlayerId: number;
   trumpState: TrumpState;
+  statusState: StatusState;
   parentZone: Zone;
   options: OptionsState;
   controller: ControllerInterface;
 }
 
-export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId, trumpState, parentZone, options, controller}) => {
+export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, statusState, parentZone, options, controller}) => {
 
   let handZone: Zone, nameZone: Zone, playingZone: Zone, trickStatusZone: Zone, playerStatusZone: Zone;
   let nameRotate: number = 0;
@@ -216,36 +236,42 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, activePlayerId
         width: nameZone.size.width,
         height: nameZone.size.height,
         rotate: `${nameRotate}deg`,
-        backgroundColor: activePlayerId === player.id ? "rgba(0, 255, 0, 0.5)" : Constants.backgroundColor,
+        backgroundColor: statusState.activePlayerId === player.id ?
+          "rgba(0, 255, 0, 0.5)" : Constants.backgroundColor,
         borderRadius: Constants.margin
       }}>
         <h4 style={{ margin: 0 }}>{player.name}</h4>
       </div>
-      <div className="container" style={{
-        position: "fixed",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        left: trickStatusZone.left(),
-        top: trickStatusZone.top(),
-        width: trickStatusZone.size.width,
-        height: trickStatusZone.size.height,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        <h4 style={{ margin: 0 }}>T</h4>
+      <div className="container"
+        style={{
+          position: "fixed",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          left: trickStatusZone.left(),
+          top: trickStatusZone.top(),
+          width: trickStatusZone.size.width,
+          height: trickStatusZone.size.height,
+          backgroundColor: Constants.backgroundColor,
+        }}>
+
+          {player.id === statusState.trickWinnerId && (
+            createStatus('Winner')
+          )}
       </div>
       <div className="container" style={{
         position: "fixed",
-        display: "flex",
-        justifyContent: "center",
+        marginLeft: "auto",
+        marginRight: "auto",
         alignItems: "center",
+        display: "flex",
+        flexDirection: player.seat === Seat.North || player.seat === Seat.South ? "row" : "column",
         left: playerStatusZone.left(),
         top: playerStatusZone.top(),
         width: playerStatusZone.size.width,
         height: playerStatusZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
-        <h4 style={{ margin: 0 }}>P</h4>
       </div>
       <CardsZone
         cards={player.hand}

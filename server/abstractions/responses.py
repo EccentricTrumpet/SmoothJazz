@@ -242,17 +242,20 @@ class PlayResponse(SocketResponse):
         recipient: str,
         player_id: int,
         active_player_id: int,
+        trick_winner_id: int,
         cards: Sequence[Card],
     ):
         super().__init__("play", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.active_player_id = active_player_id
+        self.trick_winner_id = trick_winner_id
         self.cards = cards
 
     def json(self) -> dict:
         return {
             "playerId": self.player_id,
             "activePlayerId": self.active_player_id,
+            "trickWinnerId": self.trick_winner_id,
             "cards": [
                 {"id": card.id, "suit": card.suit, "rank": card.rank}
                 for card in self.cards
