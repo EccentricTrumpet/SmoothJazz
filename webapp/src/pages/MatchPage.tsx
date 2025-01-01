@@ -137,7 +137,7 @@ export default function MatchPage() {
           if (player.id === playerId) {
             const [newPlaying, newHand] = partition(player.hand, card => playCards.has(card.id));
             newPlaying.forEach(card => card.updateInfo(playCards.get(card.id)!));
-            return new PlayerState(player.id, player.name, player.seat, newHand, [...player.playing, ...newPlaying]);
+            return new PlayerState(player.id, player.name, player.level, player.seat, newHand, [...player.playing, ...newPlaying]);
           }
           return player;
         }));
@@ -155,7 +155,7 @@ export default function MatchPage() {
               card.state.rotate = 0;
               discards.push(card);
             }
-            return new PlayerState(player.id, player.name, player.seat, player.hand);
+            return new PlayerState(player.id, player.name, player.level, player.seat, player.hand);
           });
 
           // Add discarded cards to pile and update score
@@ -171,7 +171,7 @@ export default function MatchPage() {
               card.resetState();
               card.state.facedown = !matchResponse.debug && player.id !== thisPlayerId;
             }
-            return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...player.playing]);
+            return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand, ...player.playing]);
           }
           return player;
         }));
@@ -192,7 +192,7 @@ export default function MatchPage() {
               }
             }
 
-            return new PlayerState(player.id, player.name, player.seat, [...player.hand], player.playing);
+            return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand], player.playing);
           }));
         }
       });
@@ -231,7 +231,7 @@ export default function MatchPage() {
             ? matchResponse.seatOffset
             : prevPlayers.findIndex(player => player.id === thisPlayerId);
           const seat = PlayerState.getSeat(prevPlayers.length, seatOffset, matchResponse.numPlayers);
-          return [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, seat)];
+          return [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, joinResponse.level, seat)];
         });
       });
 
@@ -239,17 +239,20 @@ export default function MatchPage() {
         console.log(`raw start response: ${JSON.stringify(response)}`);
         const startResponse = new StartResponse(response);
 
-        setStatusState(pState => new StatusState(startResponse.activePlayerId, startResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(startResponse.activePlayerId)
+          .withGamePhase(startResponse.phase)
+          .withTeamInfo(startResponse.kittyPlayerId, startResponse.attackers, startResponse.defenders));
         setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
         setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new Card(-(1 + i)))));
-        setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.seat)));
+        setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.level, player.seat)));
       });
 
       socket.on("phase", (response) => {
         console.log(`raw phase response: ${JSON.stringify(response)}`);
         const phaseResponse = new MatchPhaseResponse(response);
 
-        setStatusState(pState => new StatusState(pState.activePlayerId, pState.gamePhase, phaseResponse.matchPhase));
+        setStatusState(pState => new StatusState(pState).withMatchPhase(phaseResponse.matchPhase));
       });
 
       socket.on("draw", (response) => {
@@ -266,7 +269,7 @@ export default function MatchPage() {
                 drawnCards[i].updateInfo(drawResponse.cards[i]);
               }
 
-              return new PlayerState(player.id, player.name, player.seat, [...player.hand, ...drawnCards], player.playing);
+              return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand, ...drawnCards], player.playing);
             }
             return player;
           }));
@@ -280,7 +283,9 @@ export default function MatchPage() {
         });
 
         // Set new game state
-        setStatusState(pState => new StatusState(drawResponse.activePlayerId, drawResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(drawResponse.activePlayerId)
+          .withGamePhase(drawResponse.phase));
       });
 
       socket.on("bid", (response) => {
@@ -290,6 +295,8 @@ export default function MatchPage() {
         playCards(bidResponse.trumps, bidResponse.playerId);
         withdrawPlaying(bidResponse.playerId);
         setTrumpState(pState => new TrumpState(pState.numCards, pState.trumpRank, bidResponse.trumps[0].suit));
+        setStatusState(pState => new StatusState(pState)
+          .withTeamInfo(bidResponse.kittyPlayerId, bidResponse.attackers, bidResponse.defenders));
       });
 
       socket.on("kitty", (response) => {
@@ -309,13 +316,13 @@ export default function MatchPage() {
 
             setBoardState(pState => new BoardState(pState.deck, kitty, pState.discard, pState.score));
 
-            return new PlayerState(player.id, player.name, player.seat, newHand, player.playing);
+            return new PlayerState(player.id, player.name, player.level, player.seat, newHand, player.playing);
           }
           return player;
         }));
 
         // Set new game state
-        setStatusState(pState => new StatusState(pState.activePlayerId, kittyResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState).withGamePhase(kittyResponse.phase));
       });
 
       socket.on("play", (response) => {
@@ -326,7 +333,9 @@ export default function MatchPage() {
         playCards(playResponse.cards, playResponse.playerId);
 
         // Set new game state
-        setStatusState(pState => new StatusState(playResponse.activePlayerId, pState.gamePhase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(playResponse.activePlayerId)
+          .withTrickWinner(playResponse.trickWinnerId));
       });
 
       socket.on("trick", async (response) => {
@@ -336,11 +345,16 @@ export default function MatchPage() {
         // Play cards
         playCards(trickResponse.play.cards, trickResponse.play.playerId);
 
+        // Set status state
+        setStatusState(pState => new StatusState(pState).withTrickWinner(trickResponse.activePlayerId));
+
         // Cleanup trick
         await cleanupTrickAsync(trickResponse.score);
 
-        // Set new game state
-        setStatusState(pState => new StatusState(trickResponse.activePlayerId, pState.gamePhase, pState.matchPhase));
+        // Set status state
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(trickResponse.activePlayerId)
+          .withTrickWinner(-1));
       });
 
       socket.on("end", async (response) => {
@@ -350,11 +364,17 @@ export default function MatchPage() {
         // Play cards
         playCards(endResponse.trick.play.cards, endResponse.trick.play.playerId);
 
+        // Set status state
+        setStatusState(pState => new StatusState(pState)
+          .withTrickWinner(endResponse.trick.activePlayerId));
+
         // Cleanup trick
         await cleanupTrickAsync(endResponse.trick.score);
 
         // Set new game state
-        setStatusState(pState => new StatusState(endResponse.trick.activePlayerId, endResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(endResponse.trick.activePlayerId)
+          .withTrickWinner(-1));
 
         await new Promise(f => setTimeout(f, 1000));
 
@@ -366,19 +386,22 @@ export default function MatchPage() {
           }
 
           setPlayers(prevPlayers => {
-            return prevPlayers.map((player) => {
-              // Add discarded cards to playing zone
-              if (player.id === endResponse.kittyId) {
-                return new PlayerState(player.id, player.name, player.seat, player.hand, pState.kitty);
-              }
-              return player;
-            });
+            return prevPlayers.map(player => new PlayerState(
+              player.id,
+              player.name,
+              endResponse.players.get(player.id)!,
+              player.seat,
+              player.hand,
+              player.id === endResponse.kittyId ? pState.kitty : player.playing
+            ));
           });
 
           return new BoardState([], [], pState.discard, endResponse.score);
         });
 
-        setStatusState(pState => new StatusState(endResponse.leadId, endResponse.phase, pState.matchPhase));
+        setStatusState(pState => new StatusState(pState)
+          .withActivePlayer(endResponse.leadId)
+          .withGamePhase(endResponse.phase));
       });
 
       // Join match
@@ -417,12 +440,12 @@ export default function MatchPage() {
           return card;
         });
 
-        return new PlayerState(player.id, player.name, player.seat, nextHand, player.playing);
+        return new PlayerState(player.id, player.name, player.level, player.seat, nextHand, player.playing);
       }));
     }
 
     onNext() {
-      setStatusState(pState => new StatusState(pState.activePlayerId, GamePhase.Waiting, pState.matchPhase));
+      setStatusState(pState => new StatusState(pState).withGamePhase(GamePhase.Waiting));
       socket?.emit("next", new NextRequest(matchId, this.activeId()));
     };
 
@@ -434,7 +457,7 @@ export default function MatchPage() {
       // Reset highlights
       setPlayers(prevPlayers => prevPlayers.map((player) => {
         player.hand.forEach(card => card.state.highlighted = false);
-        return new PlayerState(player.id, player.name, player.seat, [...player.hand], player.playing);
+        return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand], player.playing);
       }));
 
       socket?.emit("play", new PlayRequest(matchId, this.activeId(), this.selection()));
@@ -451,8 +474,8 @@ export default function MatchPage() {
           return <PlayerZone
             key={player.id}
             player={player}
-            activePlayerId={statusState.activePlayerId}
             trumpState={trumpState}
+            statusState={statusState}
             parentZone={zone}
             options={options}
             controller={controller} />

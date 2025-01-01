@@ -53,14 +53,14 @@ class Match:
             self.__debug,
             self.__num_players,
             self.__phase,
-            [(player.id, player.name) for player in self.__players],
+            [(player.id, player.name, player.level) for player in self.__players],
         )
 
     def __add_player(self, name: str, socket_id: str) -> JoinResponse:
         player_id = next(self.__player_id)
         new_player = Player(player_id, name, socket_id, [])
         self.__players.append(new_player)
-        return JoinResponse(self.__id, new_player.id, new_player.name)
+        return JoinResponse(self.__id, new_player.id, new_player.name, new_player.level)
 
     def join(self, request: JoinRequest) -> Sequence[JoinResponse]:
         responses: Sequence[SocketResponse] = []

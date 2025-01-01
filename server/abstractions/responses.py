@@ -17,7 +17,7 @@ class MatchResponse(HttpResponse):
         debug: bool,
         num_players: int,
         phase: MatchPhase,
-        players: Sequence[Tuple[int, str]],
+        players: Sequence[Tuple[int, str, int]],
     ):
         self.__id = id
         self.__debug = debug
@@ -32,7 +32,8 @@ class MatchResponse(HttpResponse):
             "numPlayers": self.__num_players,
             "phase": self.__phase,
             "players": [
-                {"id": player[0], "name": player[1]} for player in self.__players
+                {"id": player[0], "name": player[1], "level": [2]}
+                for player in self.__players
             ],
         }
 
@@ -103,13 +104,14 @@ class AlertResponse(SocketResponse):
 
 
 class JoinResponse(SocketResponse):
-    def __init__(self, recipient: str, id: int, name: str):
+    def __init__(self, recipient: str, id: int, name: str, level: int):
         super().__init__("join", recipient, broadcast=True, include_self=True)
         self.__id = id
         self.__name = name
+        self.__level = level
 
     def json(self) -> dict:
-        return {"id": self.__id, "name": self.__name}
+        return {"id": self.__id, "name": self.__name, "level": self.__level}
 
 
 class LeaveResponse(SocketResponse):
@@ -126,12 +128,18 @@ class StartResponse(SocketResponse):
         self,
         recipient: str,
         active_player_id: int,
+        kitty_player_id: int,
+        attackers: Sequence[int],
+        defenders: Sequence[int],
         deck_size: int,
         game_rank: int,
         phase: GamePhase,
     ):
         super().__init__("start", recipient, broadcast=True, include_self=True)
         self.__active_player_id = active_player_id
+        self.__kitty_player_id = kitty_player_id
+        self.__attackers = attackers
+        self.__defenders = defenders
         self.__deck_size = deck_size
         self.__game_rank = game_rank
         self.__phase = phase
@@ -139,6 +147,9 @@ class StartResponse(SocketResponse):
     def json(self) -> dict:
         return {
             "activePlayerId": self.__active_player_id,
+            "kittyPlayerId": self.__kitty_player_id,
+            "attackers": [attacker for attacker in self.__attackers],
+            "defenders": [defender for defender in self.__defenders],
             "deckSize": self.__deck_size,
             "gameRank": self.__game_rank,
             "phase": self.__phase,
@@ -195,10 +206,16 @@ class BidResponse(SocketResponse):
         recipient: str,
         player_id: int,
         trumps: Sequence[Card],
+        kitty_player_id: int,
+        attackers: Sequence[int],
+        defenders: Sequence[int],
     ):
         super().__init__("bid", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.trumps = trumps
+        self.__kitty_player_id = kitty_player_id
+        self.__attackers = attackers
+        self.__defenders = defenders
 
     def json(self) -> dict:
         return {
@@ -207,6 +224,9 @@ class BidResponse(SocketResponse):
                 {"id": trump.id, "suit": trump.suit, "rank": trump.rank}
                 for trump in self.trumps
             ],
+            "kittyPlayerId": self.__kitty_player_id,
+            "attackers": [attacker for attacker in self.__attackers],
+            "defenders": [defender for defender in self.__defenders],
         }
 
 
@@ -242,17 +262,20 @@ class PlayResponse(SocketResponse):
         recipient: str,
         player_id: int,
         active_player_id: int,
+        trick_winner_id: int,
         cards: Sequence[Card],
     ):
         super().__init__("play", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.active_player_id = active_player_id
+        self.trick_winner_id = trick_winner_id
         self.cards = cards
 
     def json(self) -> dict:
         return {
             "playerId": self.player_id,
             "activePlayerId": self.active_player_id,
+            "trickWinnerId": self.trick_winner_id,
             "cards": [
                 {"id": card.id, "suit": card.suit, "rank": card.rank}
                 for card in self.cards
@@ -291,6 +314,7 @@ class EndResponse(SocketResponse):
         kitty: Sequence[Card],
         lead_id: int,
         score: int,
+        players: Sequence[Tuple[int, int]],
     ):
         super().__init__("end", recipient, broadcast=True, include_self=True)
         self.trick = trick
@@ -299,6 +323,7 @@ class EndResponse(SocketResponse):
         self.kitty = kitty
         self.lead_id = lead_id
         self.score = score
+        self.players = players
 
     def json(self) -> dict:
         return {
@@ -311,4 +336,7 @@ class EndResponse(SocketResponse):
             ],
             "leadId": self.lead_id,
             "score": self.score,
+            "players": [
+                {"id": player[0], "level": player[1]} for player in self.players
+            ],
         }
