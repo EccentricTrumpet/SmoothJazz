@@ -25,8 +25,10 @@ export class StatusState {
         return this;
     }
 
-    public withTeamInfo(activePlayerId: number): StatusState {
-        this.activePlayerId = activePlayerId;
+    public withTeamInfo(kittyPlayerId: number, attackers: number[], defenders: number[]): StatusState {
+        this.kittyPlayerId = kittyPlayerId;
+        this.attackers = attackers;
+        this.defenders = defenders;
         return this;
     }
 

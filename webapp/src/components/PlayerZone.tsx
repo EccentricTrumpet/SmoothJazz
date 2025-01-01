@@ -242,6 +242,14 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, st
       }}>
         <h4 style={{ margin: 0 }}>{player.name}</h4>
       </div>
+      <CardsZone
+        cards={player.hand}
+        seat={player.seat}
+        trumpState={trumpState}
+        zone={handZone}
+        options={options}
+        controller={controller}
+      />
       <div className="container"
         style={{
           position: "fixed",
@@ -254,10 +262,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, st
           height: trickStatusZone.size.height,
           backgroundColor: Constants.backgroundColor,
         }}>
-
-          {player.id === statusState.trickWinnerId && (
-            createStatus('Winner')
-          )}
+          {player.id === statusState.trickWinnerId && (createStatus('Winner'))}
       </div>
       <div className="container" style={{
         position: "fixed",
@@ -272,14 +277,10 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, st
         height: playerStatusZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
+        {player.id === statusState.kittyPlayerId && (createStatus('Kitty'))}
+        {statusState.attackers.includes(player.id) && (createStatus('Attacker'))}
+        {statusState.defenders.includes(player.id) && (createStatus('Defender'))}
       </div>
-      <CardsZone
-        cards={player.hand}
-        seat={player.seat}
-        trumpState={trumpState}
-        zone={handZone}
-        options={options}
-        controller={controller} />
     </>
   );
 }

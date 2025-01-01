@@ -126,12 +126,18 @@ class StartResponse(SocketResponse):
         self,
         recipient: str,
         active_player_id: int,
+        kitty_player_id: int,
+        attackers: Sequence[int],
+        defenders: Sequence[int],
         deck_size: int,
         game_rank: int,
         phase: GamePhase,
     ):
         super().__init__("start", recipient, broadcast=True, include_self=True)
         self.__active_player_id = active_player_id
+        self.__kitty_player_id = kitty_player_id
+        self.__attackers = attackers
+        self.__defenders = defenders
         self.__deck_size = deck_size
         self.__game_rank = game_rank
         self.__phase = phase
@@ -139,6 +145,9 @@ class StartResponse(SocketResponse):
     def json(self) -> dict:
         return {
             "activePlayerId": self.__active_player_id,
+            "kittyPlayerId": self.__kitty_player_id,
+            "attackers": [attacker for attacker in self.__attackers],
+            "defenders": [defender for defender in self.__defenders],
             "deckSize": self.__deck_size,
             "gameRank": self.__game_rank,
             "phase": self.__phase,
@@ -195,10 +204,16 @@ class BidResponse(SocketResponse):
         recipient: str,
         player_id: int,
         trumps: Sequence[Card],
+        kitty_player_id: int,
+        attackers: Sequence[int],
+        defenders: Sequence[int],
     ):
         super().__init__("bid", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.trumps = trumps
+        self.__kitty_player_id = kitty_player_id
+        self.__attackers = attackers
+        self.__defenders = defenders
 
     def json(self) -> dict:
         return {
@@ -207,6 +222,9 @@ class BidResponse(SocketResponse):
                 {"id": trump.id, "suit": trump.suit, "rank": trump.rank}
                 for trump in self.trumps
             ],
+            "kittyPlayerId": self.__kitty_player_id,
+            "attackers": [attacker for attacker in self.__attackers],
+            "defenders": [defender for defender in self.__defenders],
         }
 
 

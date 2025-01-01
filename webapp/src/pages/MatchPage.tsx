@@ -241,7 +241,8 @@ export default function MatchPage() {
 
         setStatusState(pState => new StatusState(pState)
           .withActivePlayer(startResponse.activePlayerId)
-          .withGamePhase(startResponse.phase));
+          .withGamePhase(startResponse.phase)
+          .withTeamInfo(startResponse.kittyPlayerId, startResponse.attackers, startResponse.defenders));
         setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
         setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new Card(-(1 + i)))));
         setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.seat)));
@@ -294,6 +295,8 @@ export default function MatchPage() {
         playCards(bidResponse.trumps, bidResponse.playerId);
         withdrawPlaying(bidResponse.playerId);
         setTrumpState(pState => new TrumpState(pState.numCards, pState.trumpRank, bidResponse.trumps[0].suit));
+        setStatusState(pState => new StatusState(pState)
+          .withTeamInfo(bidResponse.kittyPlayerId, bidResponse.attackers, bidResponse.defenders));
       });
 
       socket.on("kitty", (response) => {

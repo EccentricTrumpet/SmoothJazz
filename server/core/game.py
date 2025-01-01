@@ -80,8 +80,21 @@ class Game:
             suit_index = card_index // CARDS_PER_SUIT
             rank_index = card_index % CARDS_PER_SUIT + 1
             self.__deck.append(Card(indices[i], suits[suit_index], rank_index))
-
         random.shuffle(self.__deck)
+
+        self.__assign_teams()
+
+    def __assign_teams(self) -> None:
+        # Assign teams (fixed teams)
+        player_id = self.__kitty_player_id
+        self._defenders.clear()
+        self._attackers.clear()
+        for i in range(len(self.__players)):
+            if i % 2 == 0:
+                self._defenders.add(player_id)
+            else:
+                self._attackers.add(player_id)
+            player_id = self.__next_player_id(player_id)
 
     def __next_player_id(self, player_id: int, increment: int = 1) -> int:
         player_index = -1
@@ -102,6 +115,9 @@ class Game:
         return StartResponse(
             self.__match_id,
             self.__active_player_id,
+            self.__kitty_player_id,
+            self._attackers,
+            self._defenders,
             len(self.__deck),
             self.__game_rank,
             self.phase,
@@ -223,8 +239,16 @@ class Game:
         # In the first game, the bidder is the kitty player
         if self.__game_id == 0:
             self.__kitty_player_id = self.__bidder_id
+            self.__assign_teams()
 
-        return BidResponse(self.__match_id, player.id, request.cards)
+        return BidResponse(
+            self.__match_id,
+            player.id,
+            request.cards,
+            self.__kitty_player_id,
+            self._attackers,
+            self._defenders,
+        )
 
     def kitty(self, request: KittyRequest) -> SocketResponse:
         player = self.__player_for_id(request.player_id)
@@ -255,15 +279,6 @@ class Game:
         # Update states
         self.phase = GamePhase.PLAY
         self.__order.reset(self.__trump_suit)
-
-        # Assign teams (fixed teams)
-        player_id = self.__kitty_player_id
-        for i in range(len(self.__players)):
-            if i % 2 == 0:
-                self._defenders.add(player_id)
-            else:
-                self._attackers.add(player_id)
-            player_id = self.__next_player_id(player_id)
 
         return KittyResponse(
             socket_id,
