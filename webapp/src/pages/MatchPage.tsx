@@ -11,7 +11,7 @@ import {
   DrawResponse,
   StartResponse,
   JoinEvent,
-  JoinResponse,
+  PlayerUpdate,
   MatchResponse,
   CardsEvent,
   BidResponse,
@@ -19,9 +19,8 @@ import {
   PlayResponse,
   TrickResponse,
   EndResponse,
-  AlertResponse,
-  MatchPhaseResponse,
-  LeaveResponse} from "../abstractions/messages";
+  AlertUpdate,
+  MatchUpdate} from "../abstractions/messages";
 import { AlertState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
 import { Constants } from "../Constants";
@@ -175,7 +174,7 @@ export default function MatchPage() {
       // Messages
       socket.on("alert", (response) => {
         console.log(`raw alert response: ${JSON.stringify(response)}`);
-        const alertResponse = new AlertResponse(response);
+        const alertResponse = new AlertUpdate(response);
 
         setAlert(new AlertState(true, alertResponse.title, alertResponse.message));
         if (alertResponse.hintCards.length > 0) {
@@ -194,14 +193,14 @@ export default function MatchPage() {
 
       socket.on("leave", (response) => {
         console.log(`raw leave response: ${JSON.stringify(response)}`);
-        const leaveResponse = new LeaveResponse(response);
+        const update = new PlayerUpdate(response);
 
-        if (leaveResponse.id === thisPlayerId) {
+        if (update.id === thisPlayerId) {
           navigate('/');
         }
         else {
           setPlayers(prevPlayers => {
-            const newPlayers = prevPlayers.filter(player => player.id !== leaveResponse.id);
+            const newPlayers = prevPlayers.filter(player => player.id !== update.id);
             const seatOffset = newPlayers.findIndex(player => player.id === thisPlayerId);
             for (let i = 0; i < newPlayers.length; i++) {
               newPlayers[i].seat = seatOf(i, seatOffset, matchResponse.numPlayers);
@@ -213,20 +212,20 @@ export default function MatchPage() {
 
       socket.on("join", (response) => {
         console.log(`raw join response: ${JSON.stringify(response)}`);
-        const joinResponse = new JoinResponse(response);
+        const update = new PlayerUpdate(response);
 
-        if (joinResponse.name === name) {
-          thisPlayerId = joinResponse.id;
-          setPlayerId(joinResponse.id);
+        if (update.name === name) {
+          thisPlayerId = update.id;
+          setPlayerId(update.id);
         }
 
         // Need to use callback to ensure atomicity
         setPlayers(prevPlayers => {
-          const seatOffset = joinResponse.id === thisPlayerId
+          const seatOffset = update.id === thisPlayerId
             ? matchResponse.seatOffset
             : prevPlayers.findIndex(player => player.id === thisPlayerId);
           const seat = seatOf(prevPlayers.length, seatOffset, matchResponse.numPlayers);
-          return [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, joinResponse.level, seat)];
+          return [...prevPlayers, new PlayerState(update.id, update.name, update.level, seat)];
         });
       });
 
@@ -245,7 +244,7 @@ export default function MatchPage() {
 
       socket.on("phase", (response) => {
         console.log(`raw phase response: ${JSON.stringify(response)}`);
-        const phaseResponse = new MatchPhaseResponse(response);
+        const phaseResponse = new MatchUpdate(response);
 
         setStatusState(pState => new StatusState(pState).withMatchPhase(phaseResponse.matchPhase));
       });

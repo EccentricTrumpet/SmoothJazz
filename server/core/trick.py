@@ -1,5 +1,5 @@
 from typing import Sequence
-from abstractions.responses import AlertResponse
+from abstractions.responses import AlertUpdate
 from abstractions import Card, Suit
 from core import Order, Player
 from core.format import Format
@@ -37,15 +37,11 @@ class Trick:
 
         # Must contain at least one card
         if len(cards) == 0:
-            return AlertResponse(
-                socket_id, "Invalid play", "Must play at least 1 card."
-            )
+            return AlertUpdate(socket_id, "Invalid play", "Must play at least 1 card.")
 
         # Player must possess the cards
         if not player.has_cards(cards):
-            return AlertResponse(
-                socket_id, "Invalid play", "You don't have those cards."
-            )
+            return AlertUpdate(socket_id, "Invalid play", "You don't have those cards.")
 
         # Enforce leading play rules
         if self.__lead_id == -1:
@@ -53,7 +49,7 @@ class Trick:
 
             # Format must be suited
             if not format.suited:
-                return AlertResponse(
+                return AlertUpdate(
                     socket_id, "Invalid play", "Leading play must be suited."
                 )
 
@@ -65,7 +61,7 @@ class Trick:
 
         # Enforce follow length
         if len(cards) != lead.length:
-            return AlertResponse(socket_id, "Invalid play", "Wrong number of cards.")
+            return AlertUpdate(socket_id, "Invalid play", "Wrong number of cards.")
 
         # Enforce follow suit
         hand_cards = player.cards_in_suit(self.__order, lead.suit, lead.trumps)
@@ -73,7 +69,7 @@ class Trick:
         format = Format(self.__order, cards)
 
         if len(format.cards_in_suit(lead.suit, lead.trumps)) < required_suit_cards:
-            return AlertResponse(
+            return AlertUpdate(
                 socket_id, "Invalid play", "Must follow suit.", hand_cards
             )
 
@@ -108,9 +104,9 @@ class Trick:
     # Checks legality and update trick states
     def try_play(
         self, other_players: Sequence[Player], player: Player, cards: Sequence[Card]
-    ) -> AlertResponse | None:
+    ) -> AlertUpdate | None:
         format = self.__resolve_format(other_players, player, cards)
-        if isinstance(format, AlertResponse):
+        if isinstance(format, AlertUpdate):
             return format
 
         # Update states

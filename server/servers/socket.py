@@ -3,7 +3,7 @@ from typing import List
 from flask_socketio import Namespace, SocketIO, emit, join_room
 from flask import Flask, request
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
-from abstractions.responses import SocketResponse
+from abstractions.responses import SocketUpdate
 from services.match import MatchService
 
 
@@ -12,7 +12,7 @@ class MatchNamespace(Namespace):
         super(MatchNamespace, self).__init__(namespace)
         self.__match_service = match_service
 
-    def _emit_responses(self, responses: List[SocketResponse] | SocketResponse | None):
+    def _emit_responses(self, responses: List[SocketUpdate] | SocketUpdate | None):
         if responses is None:
             return
 

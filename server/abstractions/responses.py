@@ -39,7 +39,7 @@ class MatchResponse(HttpResponse):
 
 
 # Socket responses
-class SocketResponse(ABC):
+class SocketUpdate(ABC):
     def __init__(self, event: str, recipient: str, broadcast: bool, include_self: bool):
         self.event = event
         self.recipient = recipient
@@ -83,7 +83,20 @@ class SocketResponse(ABC):
         self._include_self = include_self
 
 
-class AlertResponse(SocketResponse):
+class PlayerUpdate(SocketUpdate):
+    def __init__(
+        self, type: str, recipient: str, id: int, name: str = "", level: int = -1
+    ):
+        super().__init__(type, recipient, broadcast=True, include_self=True)
+        self.__id = id
+        self.__name = name
+        self.__level = level
+
+    def json(self) -> dict:
+        return {"id": self.__id, "name": self.__name, "level": self.__level}
+
+
+class AlertUpdate(SocketUpdate):
     def __init__(
         self, recipient: str, title: str, message: str, hint_cards: Sequence[Card] = []
     ):
@@ -103,27 +116,22 @@ class AlertResponse(SocketResponse):
         }
 
 
-class JoinResponse(SocketResponse):
-    def __init__(self, recipient: str, id: int, name: str, level: int):
-        super().__init__("join", recipient, broadcast=True, include_self=True)
-        self.__id = id
-        self.__name = name
-        self.__level = level
+class MatchUpdate(SocketUpdate):
+    def __init__(
+        self,
+        recipient: str,
+        phase: MatchPhase,
+    ):
+        super().__init__("phase", recipient, broadcast=True, include_self=True)
+        self.__phase = phase
 
     def json(self) -> dict:
-        return {"id": self.__id, "name": self.__name, "level": self.__level}
+        return {
+            "phase": self.__phase,
+        }
 
 
-class LeaveResponse(SocketResponse):
-    def __init__(self, recipient: str, id: int):
-        super().__init__("leave", recipient, broadcast=True, include_self=True)
-        self.__id = id
-
-    def json(self) -> dict:
-        return {"id": self.__id}
-
-
-class StartResponse(SocketResponse):
+class StartResponse(SocketUpdate):
     def __init__(
         self,
         recipient: str,
@@ -156,22 +164,7 @@ class StartResponse(SocketResponse):
         }
 
 
-class MatchPhaseResponse(SocketResponse):
-    def __init__(
-        self,
-        recipient: str,
-        phase: MatchPhase,
-    ):
-        super().__init__("phase", recipient, broadcast=True, include_self=True)
-        self.__phase = phase
-
-    def json(self) -> dict:
-        return {
-            "phase": self.__phase,
-        }
-
-
-class DrawResponse(SocketResponse):
+class DrawResponse(SocketUpdate):
     def __init__(
         self,
         recipient: str,
@@ -200,7 +193,7 @@ class DrawResponse(SocketResponse):
         }
 
 
-class BidResponse(SocketResponse):
+class BidResponse(SocketUpdate):
     def __init__(
         self,
         recipient: str,
@@ -230,7 +223,7 @@ class BidResponse(SocketResponse):
         }
 
 
-class KittyResponse(SocketResponse):
+class KittyResponse(SocketUpdate):
     def __init__(
         self,
         recipient: str,
@@ -256,7 +249,7 @@ class KittyResponse(SocketResponse):
         }
 
 
-class PlayResponse(SocketResponse):
+class PlayResponse(SocketUpdate):
     def __init__(
         self,
         recipient: str,
@@ -283,7 +276,7 @@ class PlayResponse(SocketResponse):
         }
 
 
-class TrickResponse(SocketResponse):
+class TrickResponse(SocketUpdate):
     def __init__(
         self,
         recipient: str,
@@ -304,7 +297,7 @@ class TrickResponse(SocketResponse):
         }
 
 
-class EndResponse(SocketResponse):
+class EndResponse(SocketUpdate):
     def __init__(
         self,
         recipient: str,

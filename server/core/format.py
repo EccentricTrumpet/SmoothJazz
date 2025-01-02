@@ -1,7 +1,7 @@
 from itertools import chain
 from typing import Self, Sequence, Tuple
 from abstractions import Suit, Card
-from abstractions.responses import AlertResponse
+from abstractions.responses import AlertUpdate
 from core import Order
 from core.unit import Single, Pair, Tractor
 
@@ -112,7 +112,7 @@ class Format:
 
     def resolve_play(
         self, played_cards: Sequence[Card], hand_cards: Sequence[Card]
-    ) -> AlertResponse | None:
+    ) -> AlertUpdate | None:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}
         stack = [unit for unit in reversed(self.units)]
@@ -121,7 +121,7 @@ class Format:
             unit = stack.pop()
             hand_format = Format(self.__order, hand_dict.values())
             result = unit.resolve(played_dict, hand_format.units, self.__order)
-            if isinstance(result, AlertResponse):
+            if isinstance(result, AlertUpdate):
                 return result
             if result is None:
                 stack.extend(reversed(unit.decompose()))

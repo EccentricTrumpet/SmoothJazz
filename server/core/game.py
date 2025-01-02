@@ -11,11 +11,11 @@ from abstractions.constants import (
 )
 from abstractions.events import CardsEvent, PlayerEvent
 from abstractions.responses import (
-    AlertResponse,
+    AlertUpdate,
     DrawResponse,
     EndResponse,
     PlayResponse,
-    SocketResponse,
+    SocketUpdate,
     StartResponse,
     KittyResponse,
     TrickResponse,
@@ -123,13 +123,13 @@ class Game:
             self.phase,
         )
 
-    def draw(self, event: PlayerEvent) -> SocketResponse:
+    def draw(self, event: PlayerEvent) -> SocketUpdate:
         player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Only active player can draw
         if event.player_id != self.__active_player_id:
-            return AlertResponse(socket_id, "You can't draw", "It's not your turn.")
+            return AlertUpdate(socket_id, "You can't draw", "It's not your turn.")
 
         if self.phase == GamePhase.DRAW:
             # Draw card
@@ -171,7 +171,7 @@ class Game:
                 include_self=True,
             )
 
-        return AlertResponse(socket_id, "You can't draw", "Not time to draw cards.")
+        return AlertUpdate(socket_id, "You can't draw", "Not time to draw cards.")
 
     def __resolve_trump_type(self, cards: Sequence[Card]) -> TrumpType:
         if len(cards) == 0:
@@ -191,32 +191,30 @@ class Game:
                     return TrumpType.PAIR
         return TrumpType.NONE
 
-    def bid(self, event: CardsEvent) -> SocketResponse:
+    def bid(self, event: CardsEvent) -> SocketUpdate:
         player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Can only bid during draw or reserve (抓底牌) phases
         if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
-            return AlertResponse(socket_id, "Invalid bid", "Not time to bid.")
+            return AlertUpdate(socket_id, "Invalid bid", "Not time to bid.")
 
         # Player must possess the cards
         if not player.has_cards(event.cards):
-            return AlertResponse(
-                socket_id, "Invalid bid", "You don't have those cards."
-            )
+            return AlertUpdate(socket_id, "Invalid bid", "You don't have those cards.")
 
         trump_type = self.__resolve_trump_type(event.cards)
 
         # Player must possess the cards
         if trump_type == TrumpType.NONE:
-            return AlertResponse(
+            return AlertUpdate(
                 socket_id, "Invalid bid", "You must bid with trump ranks or jokers."
             )
 
         if self.__bidder_id != player.id:
             # If bidder is different from current bidder, trumps must be of a higher priority
             if trump_type <= self.__trump_type:
-                return AlertResponse(
+                return AlertUpdate(
                     socket_id, "Invalid bid", "Your bid wasn't high enough."
                 )
         else:
@@ -226,7 +224,7 @@ class Game:
                 or trump_type != TrumpType.SINGLE
                 or self.__trump_suit != event.cards[0].suit
             ):
-                return AlertResponse(
+                return AlertUpdate(
                     socket_id, "Invalid bid", "You can only fortify your current bid."
                 )
             trump_type = TrumpType.PAIR
@@ -250,25 +248,25 @@ class Game:
             self._defenders,
         )
 
-    def kitty(self, event: CardsEvent) -> SocketResponse:
+    def kitty(self, event: CardsEvent) -> SocketUpdate:
         player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Only hide kitty during the kitty phase
         if self.phase != GamePhase.KITTY:
-            return AlertResponse(socket_id, "Invalid kitty", "Not time to hide kitty.")
+            return AlertUpdate(socket_id, "Invalid kitty", "Not time to hide kitty.")
 
         # Only kitty player can hide kitty
         if event.player_id != self.__kitty_player_id:
-            return AlertResponse(socket_id, "Invalid kitty", "It's not your turn.")
+            return AlertUpdate(socket_id, "Invalid kitty", "It's not your turn.")
 
         # Number of cards must be correct
         if len(event.cards) != 8:
-            return AlertResponse(socket_id, "Invalid kitty", "Wrong number of cards.")
+            return AlertUpdate(socket_id, "Invalid kitty", "Wrong number of cards.")
 
         # Player must possess the cards
         if not player.has_cards(event.cards):
-            return AlertResponse(
+            return AlertUpdate(
                 socket_id, "Invalid kitty", "You don't have those cards."
             )
 
@@ -329,17 +327,17 @@ class Game:
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
 
-    def play(self, event: CardsEvent) -> SocketResponse:
+    def play(self, event: CardsEvent) -> SocketUpdate:
         player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Only play during the play phase
         if self.phase != GamePhase.PLAY:
-            return AlertResponse(socket_id, "Invalid play", "Not time to play cards.")
+            return AlertUpdate(socket_id, "Invalid play", "Not time to play cards.")
 
         # Only active player can play
         if event.player_id != self.__active_player_id:
-            return AlertResponse(socket_id, "Invalid play", "It's not your turn.")
+            return AlertUpdate(socket_id, "Invalid play", "It's not your turn.")
 
         # Create new trick if needed
         if len(self._tricks) == 0 or self._tricks[-1].ended:

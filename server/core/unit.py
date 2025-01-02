@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Dict, Self, Sequence, TypeVar
 from abstractions import Card
-from abstractions.responses import AlertResponse
+from abstractions.responses import AlertUpdate
 from core import Order
 
 TUnit = TypeVar("TUnit", bound="Unit")
@@ -58,7 +58,7 @@ class Unit(ABC):
         played: Dict[int, Card],
         candidates: Sequence[Self],
         return_none_on_empty: bool = False,
-    ) -> Sequence[int] | AlertResponse | None:
+    ) -> Sequence[int] | AlertUpdate | None:
         # Return None so unit will be decomposed before resolving again
         if return_none_on_empty and not candidates:
             return None
@@ -69,7 +69,7 @@ class Unit(ABC):
                 self._complement = candidate
                 return ids
 
-        return AlertResponse(
+        return AlertUpdate(
             "",
             f"Illegal format for {self._root_name}",
             f"There are available {self._name}s to play.",
@@ -78,7 +78,7 @@ class Unit(ABC):
 
     def resolve(
         self, played: Dict[int, Card], hand: Sequence[TUnit], order: Order
-    ) -> Sequence[int] | AlertResponse | None:
+    ) -> Sequence[int] | AlertUpdate | None:
         return self._resolve(played, self._candidates(hand, order))
 
     def reset(self):
@@ -123,7 +123,7 @@ class Pair(Unit):
 
     def resolve(
         self, played: Dict[int, Card], hand: Sequence[Unit], order: Order
-    ) -> Sequence[int] | AlertResponse | None:
+    ) -> Sequence[int] | AlertUpdate | None:
         return self._resolve(played, self._candidates(hand, order), True)
 
     def reset(self):
@@ -176,7 +176,7 @@ class Tractor(Unit):
 
     def resolve(
         self, played: Dict[int, Card], hand: Sequence[Unit], order: Order
-    ) -> Sequence[int] | AlertResponse | None:
+    ) -> Sequence[int] | AlertUpdate | None:
         candidates = list(chain(*[c.peers() for c in self._candidates(hand, order)]))
         return self._resolve(played, candidates, True)
 

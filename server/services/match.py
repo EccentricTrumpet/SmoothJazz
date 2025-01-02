@@ -1,6 +1,6 @@
 from itertools import count
 from typing import Dict, Iterator, Sequence
-from abstractions.responses import MatchResponse, SocketResponse
+from abstractions.responses import MatchResponse, SocketUpdate
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from core.match import Match
 
@@ -21,30 +21,30 @@ class MatchService:
         if match_id in self.__matches:
             return self.__matches[match_id].response()
 
-    def join(self, event: JoinEvent) -> Sequence[SocketResponse]:
+    def join(self, event: JoinEvent) -> Sequence[SocketUpdate]:
         if event.match_id in self.__matches:
             return self.__matches[event.match_id].join(event)
 
-    def leave(self, event: PlayerEvent, sid: str) -> SocketResponse | None:
+    def leave(self, event: PlayerEvent, sid: str) -> SocketUpdate | None:
         if event.match_id in self.__matches:
             return self.__matches[event.match_id].leave(event, sid)
 
-    def draw(self, event: PlayerEvent) -> Sequence[SocketResponse] | SocketResponse:
+    def draw(self, event: PlayerEvent) -> Sequence[SocketUpdate] | SocketUpdate:
         if event.match_id in self.__matches:
             return self.__matches[event.match_id].draw(event)
 
-    def bid(self, event: CardsEvent) -> SocketResponse | None:
+    def bid(self, event: CardsEvent) -> SocketUpdate | None:
         if event.match_id in self.__matches:
             return self.__matches[event.match_id].bid(event)
 
-    def kitty(self, event: CardsEvent) -> Sequence[SocketResponse]:
+    def kitty(self, event: CardsEvent) -> Sequence[SocketUpdate]:
         if event.match_id in self.__matches:
             return self.__matches[event.match_id].kitty(event)
 
-    def play(self, event: CardsEvent) -> Sequence[SocketResponse]:
+    def play(self, event: CardsEvent) -> Sequence[SocketUpdate]:
         if event.match_id in self.__matches:
             return self.__matches[event.match_id].play(event)
 
-    def next(self, event: PlayerEvent) -> SocketResponse | None:
+    def next(self, event: PlayerEvent) -> SocketUpdate | None:
         if event.match_id in self.__matches:
             return self.__matches[event.match_id].next(event)

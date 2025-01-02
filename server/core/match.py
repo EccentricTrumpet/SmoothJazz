@@ -4,14 +4,13 @@ from abstractions import Card, GamePhase, MatchPhase, Suit
 from abstractions.constants import END_LEVEL
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from abstractions.responses import (
-    AlertResponse,
+    AlertUpdate,
     DrawResponse,
-    JoinResponse,
     KittyResponse,
-    LeaveResponse,
-    MatchPhaseResponse,
+    MatchUpdate,
     MatchResponse,
-    SocketResponse,
+    SocketUpdate,
+    PlayerUpdate,
 )
 from core import Player
 from core.game import Game
@@ -49,14 +48,14 @@ class Match:
             [(player.id, player.name, player.level) for player in self.__players],
         )
 
-    def __add_player(self, name: str, socket_id: str) -> JoinResponse:
+    def __add_player(self, name: str, socket_id: str) -> PlayerUpdate:
         player_id = next(self.__player_id)
-        new_player = Player(player_id, name, socket_id, [])
-        self.__players.append(new_player)
-        return JoinResponse(self.__id, new_player.id, new_player.name, new_player.level)
+        player = Player(player_id, name, socket_id, [])
+        self.__players.append(player)
+        return PlayerUpdate("join", self.__id, player.id, player.name, player.level)
 
-    def join(self, event: JoinEvent) -> Sequence[JoinResponse]:
-        responses: Sequence[SocketResponse] = []
+    def join(self, event: JoinEvent) -> Sequence[PlayerUpdate]:
+        responses: Sequence[SocketUpdate] = []
 
         # Do not process join event if match if full or ended
         if self.__phase == MatchPhase.STARTED or self.__phase == MatchPhase.ENDED:
@@ -82,11 +81,11 @@ class Match:
             self.__games.append(new_game)
             responses.append(new_game.start())
             self.__phase = MatchPhase.STARTED
-            responses.append(MatchPhaseResponse(self.__id, self.__phase))
+            responses.append(MatchUpdate(self.__id, self.__phase))
 
         return responses
 
-    def leave(self, event: PlayerEvent, sid: str) -> SocketResponse | None:
+    def leave(self, event: PlayerEvent, sid: str) -> SocketUpdate | None:
         # Only allow players to leave a match that hasn't started
         if self.__phase != MatchPhase.CREATED:
             return
@@ -97,12 +96,12 @@ class Match:
 
         self.__players = [p for p in self.__players if p.id != event.player_id]
 
-        return LeaveResponse(self.__id, event.player_id)
+        return PlayerUpdate("leave", self.__id, event.player_id)
 
-    def draw(self, event: PlayerEvent) -> Sequence[SocketResponse] | SocketResponse:
+    def draw(self, event: PlayerEvent) -> Sequence[SocketUpdate] | SocketUpdate:
         response = self.__games[-1].draw(event)
 
-        if self.__debug or isinstance(response, AlertResponse):
+        if self.__debug or isinstance(response, AlertUpdate):
             return response
         else:
             # Send a full response to the player who drew the card and broadcast
@@ -119,13 +118,13 @@ class Match:
                 ),
             ]
 
-    def bid(self, event: CardsEvent) -> SocketResponse:
+    def bid(self, event: CardsEvent) -> SocketUpdate:
         return self.__games[-1].bid(event)
 
-    def kitty(self, event: CardsEvent) -> SocketResponse:
+    def kitty(self, event: CardsEvent) -> SocketUpdate:
         response = self.__games[-1].kitty(event)
 
-        if self.__debug or isinstance(response, AlertResponse):
+        if self.__debug or isinstance(response, AlertUpdate):
             return response
         else:
             # Send a full response to the player who hid the kitty and broadcast
@@ -141,7 +140,7 @@ class Match:
                 ),
             ]
 
-    def play(self, event: CardsEvent) -> Sequence[SocketResponse]:
+    def play(self, event: CardsEvent) -> Sequence[SocketUpdate]:
         game = self.__games[-1]
         responses = [game.play(event)]
         if (
@@ -149,10 +148,10 @@ class Match:
             and self.__players[game.next_lead_id].level == END_LEVEL
         ):
             self.__phase = MatchPhase.ENDED
-            responses.append(MatchPhaseResponse(self.__id, self.__phase))
+            responses.append(MatchUpdate(self.__id, self.__phase))
         return responses
 
-    def next(self, event: CardsEvent) -> SocketResponse | None:
+    def next(self, event: CardsEvent) -> SocketUpdate | None:
         current_game = self.__games[-1]
         if self.__debug or current_game.ready(event.player_id):
             new_game = Game(

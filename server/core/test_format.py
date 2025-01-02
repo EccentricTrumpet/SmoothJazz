@@ -3,7 +3,7 @@ from itertools import batched, combinations
 from random import shuffle
 from typing import Sequence
 from abstractions import Card, Suit
-from abstractions.responses import AlertResponse
+from abstractions.responses import AlertUpdate
 from core import Order
 from core.unit import Single, Pair, Tractor
 from core.format import Format
@@ -518,7 +518,7 @@ class FormatResolvePlayTests(TestCase):
                 play = [hand[i] for i in setup]
 
                 alert = lead.resolve_play(play, hand)
-                self.assertIsInstance(alert, AlertResponse)
+                self.assertIsInstance(alert, AlertUpdate)
                 self.assertEqual("Illegal format for pair", alert._title)
                 self.assertEqual("There are available pairs to play.", alert._message)
                 self.assertListEqual(hand[0:-1], alert._hint_cards)
@@ -619,7 +619,7 @@ class FormatResolvePlayTests(TestCase):
                 hint = [hand[i] for i in hint]
 
                 alert = lead.resolve_play(play, hand)
-                self.assertIsInstance(alert, AlertResponse)
+                self.assertIsInstance(alert, AlertUpdate)
                 self.assertEqual("Illegal format for tractor", alert._title)
                 self.assertEqual(message, alert._message)
                 self.assertListEqual(hint, alert._hint_cards)
