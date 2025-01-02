@@ -1,6 +1,6 @@
 import { Card } from "..";
 
-export class KittyRequest {
+export class CardsEvent {
     constructor(
         public matchId: number,
         public playerId: number,

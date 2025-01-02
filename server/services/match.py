@@ -1,15 +1,7 @@
 from itertools import count
 from typing import Dict, Iterator, Sequence
 from abstractions.responses import MatchResponse, SocketResponse
-from abstractions.requests import (
-    DrawRequest,
-    JoinRequest,
-    KittyRequest,
-    LeaveRequest,
-    NextRequest,
-    PlayRequest,
-    BidRequest,
-)
+from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from core.match import Match
 
 
@@ -29,30 +21,30 @@ class MatchService:
         if match_id in self.__matches:
             return self.__matches[match_id].response()
 
-    def join(self, request: JoinRequest) -> Sequence[SocketResponse]:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].join(request)
+    def join(self, event: JoinEvent) -> Sequence[SocketResponse]:
+        if event.match_id in self.__matches:
+            return self.__matches[event.match_id].join(event)
 
-    def leave(self, request: LeaveRequest, sid: str) -> SocketResponse | None:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].leave(request, sid)
+    def leave(self, event: PlayerEvent, sid: str) -> SocketResponse | None:
+        if event.match_id in self.__matches:
+            return self.__matches[event.match_id].leave(event, sid)
 
-    def draw(self, request: DrawRequest) -> Sequence[SocketResponse] | SocketResponse:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].draw(request)
+    def draw(self, event: PlayerEvent) -> Sequence[SocketResponse] | SocketResponse:
+        if event.match_id in self.__matches:
+            return self.__matches[event.match_id].draw(event)
 
-    def bid(self, request: BidRequest) -> SocketResponse | None:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].bid(request)
+    def bid(self, event: CardsEvent) -> SocketResponse | None:
+        if event.match_id in self.__matches:
+            return self.__matches[event.match_id].bid(event)
 
-    def kitty(self, request: KittyRequest) -> Sequence[SocketResponse]:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].kitty(request)
+    def kitty(self, event: CardsEvent) -> Sequence[SocketResponse]:
+        if event.match_id in self.__matches:
+            return self.__matches[event.match_id].kitty(event)
 
-    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].play(request)
+    def play(self, event: CardsEvent) -> Sequence[SocketResponse]:
+        if event.match_id in self.__matches:
+            return self.__matches[event.match_id].play(event)
 
-    def next(self, request: NextRequest) -> SocketResponse | None:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].next(request)
+    def next(self, event: PlayerEvent) -> SocketResponse | None:
+        if event.match_id in self.__matches:
+            return self.__matches[event.match_id].next(event)

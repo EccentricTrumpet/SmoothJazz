@@ -7,24 +7,20 @@ import { Card, ControllerInterface, seatOf } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
 import {
-  DrawRequest,
+  PlayerEvent,
   DrawResponse,
   StartResponse,
-  JoinRequest,
+  JoinEvent,
   JoinResponse,
-  KittyRequest,
   MatchResponse,
-  BidRequest,
+  CardsEvent,
   BidResponse,
   KittyResponse,
-  PlayRequest,
   PlayResponse,
   TrickResponse,
   EndResponse,
-  NextRequest,
   AlertResponse,
   MatchPhaseResponse,
-  LeaveRequest,
   LeaveResponse} from "../abstractions/messages";
 import { AlertState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
@@ -404,7 +400,7 @@ export default function MatchPage() {
       });
 
       // Join match
-      socket.emit("join", new JoinRequest(Number(matchId), name));
+      socket.emit("join", new JoinEvent(Number(matchId), name));
 
       return () => {
         // Teardown
@@ -445,13 +441,13 @@ export default function MatchPage() {
 
     onNext() {
       setStatusState(pState => new StatusState(pState).withGamePhase(GamePhase.Waiting));
-      socket?.emit("next", new NextRequest(matchId, this.activeId()));
+      socket?.emit("next", new PlayerEvent(matchId, this.activeId()));
     };
 
-    onLeave() { socket?.emit("leave", new LeaveRequest(matchId, this.activeId())); };
-    onDraw() { socket?.emit("draw", new DrawRequest(matchId, this.activeId())); }
-    onBid() { socket?.emit("bid", new BidRequest(matchId, this.activeId(), this.selection())); }
-    onHide() { socket?.emit("kitty", new KittyRequest(matchId, this.activeId(), this.selection())); }
+    onLeave() { socket?.emit("leave", new PlayerEvent(matchId, this.activeId())); };
+    onDraw() { socket?.emit("draw", new PlayerEvent(matchId, this.activeId())); }
+    onBid() { socket?.emit("bid", new CardsEvent(matchId, this.activeId(), this.selection())); }
+    onHide() { socket?.emit("kitty", new CardsEvent(matchId, this.activeId(), this.selection())); }
     onPlay() {
       // Reset highlights
       setPlayers(prevPlayers => prevPlayers.map((player) => {
@@ -459,7 +455,7 @@ export default function MatchPage() {
         return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand], player.playing);
       }));
 
-      socket?.emit("play", new PlayRequest(matchId, this.activeId(), this.selection()));
+      socket?.emit("play", new CardsEvent(matchId, this.activeId(), this.selection()));
     }
   }
   const controller = new Controller();

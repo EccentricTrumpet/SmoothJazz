@@ -9,7 +9,7 @@ from abstractions.constants import (
     END_LEVEL,
     THRESHOLD_PER_DECK,
 )
-from abstractions.requests import DrawRequest, KittyRequest, PlayRequest, BidRequest
+from abstractions.events import CardsEvent, PlayerEvent
 from abstractions.responses import (
     AlertResponse,
     DrawResponse,
@@ -123,12 +123,12 @@ class Game:
             self.phase,
         )
 
-    def draw(self, request: DrawRequest) -> SocketResponse:
-        player = self.__player_for_id(request.player_id)
+    def draw(self, event: PlayerEvent) -> SocketResponse:
+        player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Only active player can draw
-        if request.player_id != self.__active_player_id:
+        if event.player_id != self.__active_player_id:
             return AlertResponse(socket_id, "You can't draw", "It's not your turn.")
 
         if self.phase == GamePhase.DRAW:
@@ -191,8 +191,8 @@ class Game:
                     return TrumpType.PAIR
         return TrumpType.NONE
 
-    def bid(self, request: BidRequest) -> SocketResponse:
-        player = self.__player_for_id(request.player_id)
+    def bid(self, event: CardsEvent) -> SocketResponse:
+        player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Can only bid during draw or reserve (抓底牌) phases
@@ -200,12 +200,12 @@ class Game:
             return AlertResponse(socket_id, "Invalid bid", "Not time to bid.")
 
         # Player must possess the cards
-        if not player.has_cards(request.cards):
+        if not player.has_cards(event.cards):
             return AlertResponse(
                 socket_id, "Invalid bid", "You don't have those cards."
             )
 
-        trump_type = self.__resolve_trump_type(request.cards)
+        trump_type = self.__resolve_trump_type(event.cards)
 
         # Player must possess the cards
         if trump_type == TrumpType.NONE:
@@ -224,7 +224,7 @@ class Game:
             if (
                 self.__trump_type != TrumpType.SINGLE
                 or trump_type != TrumpType.SINGLE
-                or self.__trump_suit != request.cards[0].suit
+                or self.__trump_suit != event.cards[0].suit
             ):
                 return AlertResponse(
                     socket_id, "Invalid bid", "You can only fortify your current bid."
@@ -232,7 +232,7 @@ class Game:
             trump_type = TrumpType.PAIR
 
         # Update states
-        self.__trump_suit = request.cards[0].suit
+        self.__trump_suit = event.cards[0].suit
         self.__trump_type = trump_type
         self.__bidder_id = player.id
 
@@ -244,14 +244,14 @@ class Game:
         return BidResponse(
             self.__match_id,
             player.id,
-            request.cards,
+            event.cards,
             self.__kitty_player_id,
             self._attackers,
             self._defenders,
         )
 
-    def kitty(self, request: KittyRequest) -> SocketResponse:
-        player = self.__player_for_id(request.player_id)
+    def kitty(self, event: CardsEvent) -> SocketResponse:
+        player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Only hide kitty during the kitty phase
@@ -259,22 +259,22 @@ class Game:
             return AlertResponse(socket_id, "Invalid kitty", "Not time to hide kitty.")
 
         # Only kitty player can hide kitty
-        if request.player_id != self.__kitty_player_id:
+        if event.player_id != self.__kitty_player_id:
             return AlertResponse(socket_id, "Invalid kitty", "It's not your turn.")
 
         # Number of cards must be correct
-        if len(request.cards) != 8:
+        if len(event.cards) != 8:
             return AlertResponse(socket_id, "Invalid kitty", "Wrong number of cards.")
 
         # Player must possess the cards
-        if not player.has_cards(request.cards):
+        if not player.has_cards(event.cards):
             return AlertResponse(
                 socket_id, "Invalid kitty", "You don't have those cards."
             )
 
         # Hide kitty
-        player.play(request.cards)
-        self._kitty = request.cards
+        player.play(event.cards)
+        self._kitty = event.cards
 
         # Update states
         self.phase = GamePhase.PLAY
@@ -282,9 +282,9 @@ class Game:
 
         return KittyResponse(
             socket_id,
-            request.player_id,
+            event.player_id,
             self.phase,
-            request.cards,
+            event.cards,
             include_self=True,
         )
 
@@ -329,8 +329,8 @@ class Game:
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
 
-    def play(self, request: PlayRequest) -> SocketResponse:
-        player = self.__player_for_id(request.player_id)
+    def play(self, event: CardsEvent) -> SocketResponse:
+        player = self.__player_for_id(event.player_id)
         socket_id = player.socket_id
 
         # Only play during the play phase
@@ -338,35 +338,35 @@ class Game:
             return AlertResponse(socket_id, "Invalid play", "Not time to play cards.")
 
         # Only active player can play
-        if request.player_id != self.__active_player_id:
+        if event.player_id != self.__active_player_id:
             return AlertResponse(socket_id, "Invalid play", "It's not your turn.")
 
         # Create new trick if needed
         if len(self._tricks) == 0 or self._tricks[-1].ended:
             self._tricks.append(Trick(len(self.__players), self.__order))
 
-        player = self.__player_for_id(request.player_id)
+        player = self.__player_for_id(event.player_id)
         other_players = [
-            player for player in self.__players if player.id != request.player_id
+            player for player in self.__players if player.id != event.player_id
         ]
         trick = self._tricks[-1]
 
-        # Try processing play request
-        alert = trick.try_play(other_players, player, request.cards)
+        # Try processing play event
+        alert = trick.try_play(other_players, player, event.cards)
         if alert is not None:
             return alert
 
         # Play cards from player's hands
-        player.play(request.cards)
+        player.play(event.cards)
 
         # Update play states
         self.__active_player_id = self.__next_player_id(self.__active_player_id)
         response = PlayResponse(
             self.__match_id,
-            request.player_id,
+            event.player_id,
             self.__active_player_id,
             trick.winner_id,
-            request.cards,
+            event.cards,
         )
 
         # Update trick states on end
