@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { debounce } from "lodash";
-import { Card, ControllerInterface } from "../abstractions";
+import { Card, ControllerInterface, seatOf } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
 import {
-  CardInfo,
   DrawRequest,
   DrawResponse,
   StartResponse,
@@ -27,7 +26,7 @@ import {
   MatchPhaseResponse,
   LeaveRequest,
   LeaveResponse} from "../abstractions/messages";
-  import { AlertState, BoardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
+import { AlertState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
 import { Constants } from "../Constants";
 
@@ -124,13 +123,13 @@ export default function MatchPage() {
       // States and helpers
       let thisPlayerId = -1;
 
-      const createCardDict = (cards: CardInfo[]) => {
-        const dict = new Map<number, CardInfo>();
+      const createCardDict = (cards: Card[]) => {
+        const dict = new Map<number, Card>();
         cards.forEach(card => dict.set(card.id, card));
         return dict;
       }
 
-      const playCards = (cards: CardInfo[], playerId: number) => {
+      const playCards = (cards: Card[], playerId: number) => {
         const playCards = createCardDict(cards);
 
         setPlayers(prevPlayers => prevPlayers.map((player) => {
@@ -148,7 +147,7 @@ export default function MatchPage() {
 
         // Remove played cards from players
         setPlayers(prevPlayers => {
-          const discards: Card[] = [];
+          const discards: CardState[] = [];
           const newPlayers = prevPlayers.map((player) => {
             for (const card of player.playing) {
               card.resetState();
@@ -209,7 +208,7 @@ export default function MatchPage() {
             const newPlayers = prevPlayers.filter(player => player.id !== leaveResponse.id);
             const seatOffset = newPlayers.findIndex(player => player.id === thisPlayerId);
             for (let i = 0; i < newPlayers.length; i++) {
-              newPlayers[i].seat = PlayerState.getSeat(i, seatOffset, matchResponse.numPlayers);
+              newPlayers[i].seat = seatOf(i, seatOffset, matchResponse.numPlayers);
             }
             return newPlayers;
           });
@@ -230,7 +229,7 @@ export default function MatchPage() {
           const seatOffset = joinResponse.id === thisPlayerId
             ? matchResponse.seatOffset
             : prevPlayers.findIndex(player => player.id === thisPlayerId);
-          const seat = PlayerState.getSeat(prevPlayers.length, seatOffset, matchResponse.numPlayers);
+          const seat = seatOf(prevPlayers.length, seatOffset, matchResponse.numPlayers);
           return [...prevPlayers, new PlayerState(joinResponse.id, joinResponse.name, joinResponse.level, seat)];
         });
       });
@@ -244,7 +243,7 @@ export default function MatchPage() {
           .withGamePhase(startResponse.phase)
           .withTeamInfo(startResponse.kittyPlayerId, startResponse.attackers, startResponse.defenders));
         setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
-        setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new Card(-(1 + i)))));
+        setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new CardState(-(1 + i)))));
         setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.level, player.seat)));
       });
 
@@ -430,7 +429,7 @@ export default function MatchPage() {
     private selection = () => players.find(player => player.id === this.activeId())!.hand
       .filter(c => c.state.selected).map(c => c.toInfo());
 
-    onSelect(selectedCard: Card) {
+    onSelect(selectedCard: CardState) {
       setPlayers(players.map((player) => {
         const nextHand = player.hand.map((card) => {
           if (card.id === selectedCard.id && (matchResponse.debug || player.id === playerId)) {

@@ -1,9 +1,9 @@
-import { CardInfo } from "./CardInfo";
+import { Card } from "..";
 
 export class BidRequest {
     constructor(
         public matchId: number,
         public playerId: number,
-        public cards: CardInfo[],
+        public cards: Card[],
     ) {}
 }

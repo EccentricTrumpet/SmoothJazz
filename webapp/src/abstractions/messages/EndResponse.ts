@@ -1,12 +1,12 @@
 import { GamePhase, Suit } from "../enums";
-import { CardInfo } from "./CardInfo";
+import { Card } from "..";
 import { TrickResponse } from "./TrickResponse";
 
 export class EndResponse {
     trick: TrickResponse;
     phase: GamePhase;
     kittyId: number;
-    kitty: CardInfo[] = [];
+    kitty: Card[] = [];
     leadId: number;
     score: number;
     players: Map<number, number>;
@@ -16,7 +16,7 @@ export class EndResponse {
         this.phase = jsonObj['phase'] as GamePhase;
         this.kittyId = Number(jsonObj['kittyId']);
         for (const card of jsonObj.kitty) {
-            this.kitty.push(new CardInfo(
+            this.kitty.push(new Card(
                 Number(card['id']),
                 card['suit'] as Suit,
                 Number(card['rank'])

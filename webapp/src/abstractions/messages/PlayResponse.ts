@@ -1,9 +1,9 @@
 import { Suit } from "../enums";
-import { CardInfo } from ".";
+import { Card } from "..";
 
 export class PlayResponse {
     playerId: number;
-    cards: CardInfo[] = [];
+    cards: Card[] = [];
     activePlayerId: number;
     trickWinnerId: number;
 
@@ -12,7 +12,7 @@ export class PlayResponse {
         this.activePlayerId = Number(jsonObj['activePlayerId']);
         this.trickWinnerId = Number(jsonObj['trickWinnerId']);
         for (const card of jsonObj.cards) {
-            this.cards.push(new CardInfo(
+            this.cards.push(new Card(
                 Number(card['id']),
                 card['suit'] as Suit,
                 Number(card['rank'])

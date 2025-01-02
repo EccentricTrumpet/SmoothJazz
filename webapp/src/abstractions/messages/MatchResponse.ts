@@ -1,3 +1,4 @@
+import { seatOf } from "..";
 import { PlayerState } from "../states";
 
 export class MatchResponse {
@@ -20,7 +21,7 @@ export class MatchResponse {
                 Number(player.id),
                 player.name,
                 Number(player.level),
-                PlayerState.getSeat(i, this.seatOffset, this.numPlayers)
+                seatOf(i, this.seatOffset, this.numPlayers)
             ));
         }
     }

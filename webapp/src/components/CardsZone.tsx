@@ -1,13 +1,12 @@
 import { ControllerInterface } from "../abstractions/ControllerInterface";
 import { Position, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
-import { OptionsState, TrumpState } from "../abstractions/states";
+import { CardState, OptionsState, TrumpState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardComponent } from ".";
-import { Card } from "../abstractions";
 
 interface CardsZoneInputs {
-  cards: Card[];
+  cards: CardState[];
   seat: Seat;
   trumpState: TrumpState;
   zone: Zone;

@@ -1,7 +1,7 @@
-import { Card } from "./Card";
+import { CardState } from "./states";
 
 export interface ControllerInterface {
-    onSelect: (card: Card) => any;
+    onSelect: (card: CardState) => any;
     onDraw: () => any;
     onBid: () => any;
     onHide: () => any;

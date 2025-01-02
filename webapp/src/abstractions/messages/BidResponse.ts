@@ -1,9 +1,9 @@
 import { Suit } from "../enums";
-import { CardInfo } from ".";
+import { Card } from "..";
 
 export class BidResponse {
     playerId: number;
-    trumps: CardInfo[] = [];
+    trumps: Card[] = [];
     kittyPlayerId: number;
     attackers: number[];
     defenders: number[];
@@ -14,7 +14,7 @@ export class BidResponse {
         this.attackers = jsonObj['attackers'].map(Number);
         this.defenders = jsonObj['defenders'].map(Number);
         for (const card of jsonObj.trumps) {
-            this.trumps.push(new CardInfo(
+            this.trumps.push(new Card(
                 Number(card['id']),
                 card['suit'] as Suit,
                 Number(card['rank'])

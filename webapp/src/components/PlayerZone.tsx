@@ -14,7 +14,7 @@ const createStatus = (status: string): ReactNode => {
   return (
     <>
       <h3  style={{
-        margin: "0px 6px 0px 6px",
+        margin: "-6px 0px -6px 0px",
       }}>
         <a data-tooltip-id={`${status}-tooltip`} data-tooltip-content={description}>
         {String.fromCodePoint(codepoint)}

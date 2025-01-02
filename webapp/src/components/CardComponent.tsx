@@ -1,11 +1,10 @@
 import { motion } from "framer-motion";
-import { Card } from "../abstractions";
-import { OptionsState } from "../abstractions/states";
+import { CardState, OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
 
 interface CardComponentInputs {
   idx: number;
-  card: Card;
+  card: CardState;
   options: OptionsState;
   onClick?: () => any;
 }

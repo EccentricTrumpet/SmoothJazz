@@ -3,6 +3,7 @@
 export * from './AlertState';
 export * from './BoardState';
 export * from './CardState';
+export * from './CardUIState';
 export * from './CookieState';
 export * from './OptionsState';
 export * from './PlayerState';

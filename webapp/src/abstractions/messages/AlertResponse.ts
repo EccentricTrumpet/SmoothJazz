@@ -1,16 +1,16 @@
 import { Suit } from "../enums";
-import { CardInfo } from "./CardInfo";
+import { Card } from "..";
 
 export class AlertResponse {
     title: string = "";
     message: string = "";
-    hintCards: CardInfo[] = [];
+    hintCards: Card[] = [];
 
     constructor(jsonObj: any) {
         this.title = jsonObj['title'];
         this.message = jsonObj['message'];
         for (const card of jsonObj.hintCards) {
-            this.hintCards.push(new CardInfo(
+            this.hintCards.push(new Card(
                 Number(card['id']),
                 card['suit'] as Suit,
                 Number(card['rank'])

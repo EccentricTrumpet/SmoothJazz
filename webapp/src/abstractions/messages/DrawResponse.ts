@@ -1,18 +1,18 @@
 import { GamePhase, Suit } from "../enums";
-import { CardInfo } from ".";
+import { Card } from "..";
 
 export class DrawResponse {
     id: number;
     phase: GamePhase;
     activePlayerId: number;
-    cards: CardInfo[] = [];
+    cards: Card[] = [];
 
     constructor(jsonObj: any) {
         this.id = Number(jsonObj['id']);
         this.phase = jsonObj['phase'] as GamePhase;
         this.activePlayerId = Number(jsonObj['activePlayerId']);
         for (const card of jsonObj.cards) {
-            this.cards.push(new CardInfo(
+            this.cards.push(new Card(
                 Number(card['id']),
                 card['suit'] as Suit,
                 Number(card['rank'])
