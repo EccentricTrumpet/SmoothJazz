@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Dict, Self, Sequence, TypeVar
-from abstractions import Card
+from abstractions import Card, Room
 from abstractions.responses import AlertUpdate
 from core import Order
 
@@ -40,14 +40,17 @@ class Unit(ABC):
         candidates.sort(key=lambda s: order.of(s.highest))
         return candidates
 
+    # Decompose this unit into units of the given type
     @abstractmethod
     def decompose_into[T: TUnit](self, unit: T) -> Sequence[T]:
         raise NotImplementedError
 
+    # Decompose this unit into smaller units of a lower class
     @abstractmethod
     def decompose(self) -> Sequence[TUnit]:
         raise NotImplementedError
 
+    # Generate card hints for a given set of candidates
     @abstractmethod
     def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
         raise NotImplementedError
@@ -57,8 +60,9 @@ class Unit(ABC):
         self,
         played: Dict[int, Card],
         candidates: Sequence[Self],
+        room: Room,
         return_none_on_empty: bool = False,
-    ) -> Sequence[int] | AlertUpdate | None:
+    ) -> Sequence[int] | None:
         # Return None so unit will be decomposed before resolving again
         if return_none_on_empty and not candidates:
             return None
@@ -69,19 +73,21 @@ class Unit(ABC):
                 self._complement = candidate
                 return ids
 
-        return AlertUpdate(
-            "",
-            f"Illegal format for {self._root_name}",
-            f"There are available {self._name}s to play.",
-            self.generate_hints(candidates),
+        room.reply(
+            "alert",
+            AlertUpdate(
+                f"Illegal format for {self._root_name}",
+                f"There are available {self._name}s to play.",
+                self.generate_hints(candidates),
+            ),
         )
 
     def resolve(
-        self, played: Dict[int, Card], hand: Sequence[TUnit], order: Order
-    ) -> Sequence[int] | AlertUpdate | None:
-        return self._resolve(played, self._candidates(hand, order))
+        self, played: Dict[int, Card], hand: Sequence[TUnit], order: Order, room: Room
+    ) -> Sequence[int] | None:
+        return self._resolve(played, self._candidates(hand, order), room)
 
-    def reset(self):
+    def reset(self) -> None:
         self._complement = None
 
 
@@ -98,7 +104,7 @@ class Single(Unit):
     def decompose(self) -> Sequence[Unit]:
         raise RuntimeWarning(f"{self._name} cannot be decomposed.")
 
-    def generate_hints(self, candidates: Sequence[Self]):
+    def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
         return [s.highest for s in candidates]
 
 
@@ -118,15 +124,15 @@ class Pair(Unit):
     def decompose(self) -> Sequence[Unit]:
         return self.singles
 
-    def generate_hints(self, candidates: Sequence[Self]):
+    def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
         return [card for pair in candidates for card in pair.cards]
 
     def resolve(
-        self, played: Dict[int, Card], hand: Sequence[Unit], order: Order
-    ) -> Sequence[int] | AlertUpdate | None:
-        return self._resolve(played, self._candidates(hand, order), True)
+        self, played: Dict[int, Card], hand: Sequence[Unit], order: Order, room: Room
+    ) -> Sequence[int] | None:
+        return self._resolve(played, self._candidates(hand, order), room, True)
 
-    def reset(self):
+    def reset(self) -> None:
         self._complement = None
         for single in self.singles:
             single.reset()
@@ -156,7 +162,7 @@ class Tractor(Unit):
             return self.pairs
         return [Tractor(self.pairs[0:-1]), self.pairs[-1]]
 
-    def generate_hints(self, candidates: Sequence[Self]):
+    def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
         ids = set()
         cards = [card for tractor in candidates for card in tractor.cards]
         return [ids.add(card.id) or card for card in cards if card.id not in ids]
@@ -175,12 +181,12 @@ class Tractor(Unit):
         return peers
 
     def resolve(
-        self, played: Dict[int, Card], hand: Sequence[Unit], order: Order
-    ) -> Sequence[int] | AlertUpdate | None:
+        self, played: Dict[int, Card], hand: Sequence[Unit], order: Order, room: Room
+    ) -> Sequence[int] | None:
         candidates = list(chain(*[c.peers() for c in self._candidates(hand, order)]))
-        return self._resolve(played, candidates, True)
+        return self._resolve(played, candidates, room, True)
 
-    def reset(self):
+    def reset(self) -> None:
         self._complement = None
         for pair in self.pairs:
             pair.reset()

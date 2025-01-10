@@ -1,32 +1,26 @@
 import logging
-from typing import List
 from flask_socketio import Namespace, SocketIO, emit, join_room
 from flask import Flask, request
+from abstractions import Room
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
-from abstractions.responses import SocketUpdate
 from services.match import MatchService
 
 
 class MatchNamespace(Namespace):
-    def __init__(self, namespace: str, match_service: MatchService):
+    def __init__(self, namespace: str, service: MatchService):
         super(MatchNamespace, self).__init__(namespace)
-        self.__match_service = match_service
+        self.__service = service
 
-    def _emit_responses(self, responses: List[SocketUpdate] | SocketUpdate | None):
-        if responses is None:
-            return
-
-        if not isinstance(responses, list):
-            responses = [responses]
-
-        for response in responses:
-            emit(
-                response.event,
-                response.json(),
-                to=response.recipient,
-                broadcast=response.broadcast,
-                include_self=response.include_self,
-            )
+    def __update(self, room: Room | None):
+        if room is not None:
+            for update in room:
+                emit(
+                    update.name,
+                    update.json(),
+                    to=update.recipient,
+                    broadcast=update.broadcast,
+                    include_self=update.include_self,
+                )
 
     def on_connected(self):
         """event listener when client connects to the server"""
@@ -38,40 +32,38 @@ class MatchNamespace(Namespace):
 
     def on_join(self, payload):
         """event listener when client joins a match"""
-        event = JoinEvent(payload, request.sid)
+        event = JoinEvent(request.sid, payload)
 
         logging.info(
-            f"Player {event.player_name} [{event.socket_id}] joining match: {event.match_id}"
+            f"Player {event.player_name} [{event.sid}] joining match: {event.match_id}"
         )
 
         join_room(event.match_id)
-        self._emit_responses(self.__match_service.join(event))
+        self.__update(self.__service.join(event))
 
     def on_leave(self, payload):
         """event listener when client leaves a match"""
-        self._emit_responses(
-            self.__match_service.leave(PlayerEvent(payload), request.sid)
-        )
+        self.__update(self.__service.leave(PlayerEvent(request.sid, payload)))
 
     def on_draw(self, payload):
         """event listener when client draws a card"""
-        self._emit_responses(self.__match_service.draw(PlayerEvent(payload)))
+        self.__update(self.__service.draw(PlayerEvent(request.sid, payload)))
 
     def on_bid(self, payload):
         """event listener when client bid trumps"""
-        self._emit_responses(self.__match_service.bid(CardsEvent(payload)))
+        self.__update(self.__service.bid(CardsEvent(request.sid, payload)))
 
     def on_kitty(self, payload):
         """event listener when client hides kitty"""
-        self._emit_responses(self.__match_service.kitty(CardsEvent(payload)))
+        self.__update(self.__service.kitty(CardsEvent(request.sid, payload)))
 
     def on_play(self, payload):
         """event listener when client plays a card"""
-        self._emit_responses(self.__match_service.play(CardsEvent(payload)))
+        self.__update(self.__service.play(CardsEvent(request.sid, payload)))
 
     def on_next(self, payload):
         """event listener when client is ready for the next game"""
-        self._emit_responses(self.__match_service.next(PlayerEvent(payload)))
+        self.__update(self.__service.next(PlayerEvent(request.sid, payload)))
 
 
 def init_sockets(app: Flask, match_service: MatchService) -> SocketIO:

@@ -80,18 +80,12 @@ class Order:
 
 
 class Player:
-    def __init__(
-        self,
-        id: int,
-        name: str,
-        socket_id: str,
-        hand: Sequence[Card],
-    ) -> None:
+    def __init__(self, id: int, name: str, sid: str, hand: Sequence[Card]) -> None:
         # Inputs
         self.__hand = hand
         self.id = id
         self.name = name
-        self.socket_id = socket_id
+        self.sid = sid
 
         # Public
         self.level = 2

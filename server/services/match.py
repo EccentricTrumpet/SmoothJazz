@@ -1,6 +1,7 @@
 from itertools import count
-from typing import Dict, Iterator, Sequence
-from abstractions.responses import MatchResponse, SocketUpdate
+from typing import Dict, Iterator
+from abstractions import Room
+from abstractions.responses import MatchResponse
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from core.match import Match
 
@@ -10,6 +11,16 @@ class MatchService:
         # Monotonically increasing ids
         self.__match_id: Iterator[int] = count()
         self.__matches: Dict[int, Match] = dict()
+
+    def __get_room(self, event: PlayerEvent | CardsEvent) -> Room | None:
+        if event.match_id not in self.__matches:
+            return None
+
+        players = self.__matches[event.match_id].players
+        player = next((p for p in players if p.id == event.player_id), None)
+
+        if player is not None:
+            return Room(event.match_id, event.sid)
 
     def create(self, debug: bool) -> MatchResponse:
         match_id = next(self.__match_id)
@@ -21,30 +32,38 @@ class MatchService:
         if match_id in self.__matches:
             return self.__matches[match_id].response()
 
-    def join(self, event: JoinEvent) -> Sequence[SocketUpdate]:
+    def join(self, event: JoinEvent) -> Room | None:
         if event.match_id in self.__matches:
-            return self.__matches[event.match_id].join(event)
+            room = Room(event.match_id, event.sid)
+            self.__matches[event.match_id].join(event, room)
+            return room
 
-    def leave(self, event: PlayerEvent, sid: str) -> SocketUpdate | None:
-        if event.match_id in self.__matches:
-            return self.__matches[event.match_id].leave(event, sid)
+    def leave(self, event: PlayerEvent) -> Room | None:
+        if (room := self.__get_room(event)) is not None:
+            self.__matches[event.match_id].leave(event, room)
+            return room
 
-    def draw(self, event: PlayerEvent) -> Sequence[SocketUpdate] | SocketUpdate:
-        if event.match_id in self.__matches:
-            return self.__matches[event.match_id].draw(event)
+    def draw(self, event: PlayerEvent) -> Room | None:
+        if (room := self.__get_room(event)) is not None:
+            self.__matches[event.match_id].draw(event, room)
+            return room
 
-    def bid(self, event: CardsEvent) -> SocketUpdate | None:
-        if event.match_id in self.__matches:
-            return self.__matches[event.match_id].bid(event)
+    def bid(self, event: CardsEvent) -> Room | None:
+        if (room := self.__get_room(event)) is not None:
+            self.__matches[event.match_id].bid(event, room)
+            return room
 
-    def kitty(self, event: CardsEvent) -> Sequence[SocketUpdate]:
-        if event.match_id in self.__matches:
-            return self.__matches[event.match_id].kitty(event)
+    def kitty(self, event: CardsEvent) -> Room | None:
+        if (room := self.__get_room(event)) is not None:
+            self.__matches[event.match_id].kitty(event, room)
+            return room
 
-    def play(self, event: CardsEvent) -> Sequence[SocketUpdate]:
-        if event.match_id in self.__matches:
-            return self.__matches[event.match_id].play(event)
+    def play(self, event: CardsEvent) -> Room | None:
+        if (room := self.__get_room(event)) is not None:
+            self.__matches[event.match_id].play(event, room)
+            return room
 
-    def next(self, event: PlayerEvent) -> SocketUpdate | None:
-        if event.match_id in self.__matches:
-            return self.__matches[event.match_id].next(event)
+    def next(self, event: PlayerEvent) -> Room | None:
+        if (room := self.__get_room(event)) is not None:
+            self.__matches[event.match_id].next(event, room)
+            return room

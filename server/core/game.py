@@ -1,25 +1,18 @@
 import random
 from bisect import bisect_left, bisect_right
 from typing import List, Sequence, Set
-from abstractions import Card, GamePhase, Suit, TrumpType
-from abstractions.constants import (
-    BOSS_LEVELS,
-    CARDS_PER_DECK,
-    CARDS_PER_SUIT,
-    END_LEVEL,
-    THRESHOLD_PER_DECK,
-)
+from abstractions import Card, GamePhase, Room, Suit, TrumpType
+from abstractions.constants import BOSS_LEVELS, DECK_SIZE, SUIT_SIZE, THRESHOLD_PER_DECK
 from abstractions.events import CardsEvent, PlayerEvent
 from abstractions.responses import (
     AlertUpdate,
-    DrawResponse,
-    EndResponse,
-    PlayResponse,
-    SocketUpdate,
-    StartResponse,
-    KittyResponse,
-    TrickResponse,
-    BidResponse,
+    DrawUpdate,
+    EndUpdate,
+    PlayUpdate,
+    StartUpdate,
+    KittyUpdate,
+    TrickUpdate,
+    BidUpdate,
 )
 from core import Order, Player
 from core.trick import Trick
@@ -29,7 +22,6 @@ class Game:
     def __init__(
         self,
         game_id,
-        match_id: int,
         num_decks: int,
         players: Sequence[Player],
         lead_player_id: int | None = None,
@@ -39,7 +31,6 @@ class Game:
 
         # Inputs
         self.__game_id = game_id
-        self.__match_id = match_id
         self.__num_decks = num_decks
         self.__players = players
 
@@ -66,19 +57,19 @@ class Game:
         self.next_lead_id = -1
 
         # Fix game rank for Aces game
-        if self.__game_rank > CARDS_PER_SUIT:
-            self.__game_rank -= CARDS_PER_SUIT
+        if self.__game_rank > SUIT_SIZE:
+            self.__game_rank -= SUIT_SIZE
 
         # 1 deck for every 2 players, rounded down
-        num_cards = self.__num_decks * CARDS_PER_DECK
+        num_cards = self.__num_decks * DECK_SIZE
         indices = list(range(num_cards))
         random.shuffle(indices)  # Pre-shuffle indices it won't match card order
         suits = list(Suit)
 
         for i in range(num_cards):
-            card_index = i % CARDS_PER_DECK
-            suit_index = card_index // CARDS_PER_SUIT
-            rank_index = card_index % CARDS_PER_SUIT + 1
+            card_index = i % DECK_SIZE
+            suit_index = card_index // SUIT_SIZE
+            rank_index = card_index % SUIT_SIZE + 1
             self.__deck.append(Card(indices[i], suits[suit_index], rank_index))
         random.shuffle(self.__deck)
 
@@ -111,9 +102,8 @@ class Game:
                 return player
         raise RuntimeError(f"Cannot find player with id {player_id}")
 
-    def start(self) -> StartResponse:
-        return StartResponse(
-            self.__match_id,
+    def start(self) -> StartUpdate:
+        return StartUpdate(
             self.__active_player_id,
             self.__kitty_player_id,
             self._attackers,
@@ -123,15 +113,13 @@ class Game:
             self.phase,
         )
 
-    def draw(self, event: PlayerEvent) -> SocketUpdate:
+    def draw(self, event: PlayerEvent, room: Room) -> None:
         player = self.__player_for_id(event.player_id)
-        socket_id = player.socket_id
 
         # Only active player can draw
         if event.player_id != self.__active_player_id:
-            return AlertUpdate(socket_id, "You can't draw", "It's not your turn.")
-
-        if self.phase == GamePhase.DRAW:
+            room.reply("alert", AlertUpdate("You can't draw", "It's not your turn."))
+        elif self.phase == GamePhase.DRAW:
             # Draw card
             card = self.__deck.pop()
             player.draw([card])
@@ -144,15 +132,10 @@ class Game:
                 self.__active_player_id = self.__next_player_id(self.__active_player_id)
                 print(f"Next player: {self.__active_player_id}")
 
-            return DrawResponse(
-                socket_id,
-                player.id,
-                self.phase,
-                self.__active_player_id,
-                [card],
-                include_self=True,
+            room.secret(
+                "draw",
+                DrawUpdate(player.id, self.phase, self.__active_player_id, [card]),
             )
-
         elif self.phase == GamePhase.RESERVE:
             # Draw cards
             cards = self.__deck
@@ -162,16 +145,12 @@ class Game:
             self.__deck = []
             self.phase = GamePhase.KITTY
 
-            return DrawResponse(
-                socket_id,
-                self.__kitty_player_id,
-                self.phase,
-                self.__kitty_player_id,
-                cards,
-                include_self=True,
+            kitty_id = self.__kitty_player_id
+            room.secret("draw", DrawUpdate(kitty_id, self.phase, kitty_id, cards))
+        else:
+            room.reply(
+                "alert", AlertUpdate("You can't draw", "Not time to draw cards.")
             )
-
-        return AlertUpdate(socket_id, "You can't draw", "Not time to draw cards.")
 
     def __resolve_trump_type(self, cards: Sequence[Card]) -> TrumpType:
         if len(cards) == 0:
@@ -191,32 +170,38 @@ class Game:
                     return TrumpType.PAIR
         return TrumpType.NONE
 
-    def bid(self, event: CardsEvent) -> SocketUpdate:
+    def bid(self, event: CardsEvent, room: Room) -> None:
         player = self.__player_for_id(event.player_id)
-        socket_id = player.socket_id
 
         # Can only bid during draw or reserve (抓底牌) phases
         if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
-            return AlertUpdate(socket_id, "Invalid bid", "Not time to bid.")
+            room.reply("alert", AlertUpdate("Invalid bid", "Not time to bid."))
+            return
 
         # Player must possess the cards
         if not player.has_cards(event.cards):
-            return AlertUpdate(socket_id, "Invalid bid", "You don't have those cards.")
+            room.reply(
+                "alert", AlertUpdate("Invalid bid", "You don't have those cards.")
+            )
+            return
 
         trump_type = self.__resolve_trump_type(event.cards)
 
         # Player must possess the cards
         if trump_type == TrumpType.NONE:
-            return AlertUpdate(
-                socket_id, "Invalid bid", "You must bid with trump ranks or jokers."
+            room.reply(
+                "alert",
+                AlertUpdate("Invalid bid", "You must bid with trump ranks or jokers."),
             )
+            return
 
         if self.__bidder_id != player.id:
             # If bidder is different from current bidder, trumps must be of a higher priority
             if trump_type <= self.__trump_type:
-                return AlertUpdate(
-                    socket_id, "Invalid bid", "Your bid wasn't high enough."
+                room.reply(
+                    "alert", AlertUpdate("Invalid bid", "Your bid wasn't high enough.")
                 )
+                return
         else:
             # If bidder is same as current bidder, only allow fortify
             if (
@@ -224,9 +209,13 @@ class Game:
                 or trump_type != TrumpType.SINGLE
                 or self.__trump_suit != event.cards[0].suit
             ):
-                return AlertUpdate(
-                    socket_id, "Invalid bid", "You can only fortify your current bid."
+                room.reply(
+                    "alert",
+                    AlertUpdate(
+                        "Invalid bid", "You can only fortify your current bid."
+                    ),
                 )
+                return
             trump_type = TrumpType.PAIR
 
         # Update states
@@ -239,36 +228,38 @@ class Game:
             self.__kitty_player_id = self.__bidder_id
             self.__assign_teams()
 
-        return BidResponse(
-            self.__match_id,
-            player.id,
-            event.cards,
-            self.__kitty_player_id,
-            self._attackers,
-            self._defenders,
+        kitty_id = self.__kitty_player_id
+        room.public(
+            "bid",
+            BidUpdate(
+                player.id, event.cards, kitty_id, self._attackers, self._defenders
+            ),
         )
 
-    def kitty(self, event: CardsEvent) -> SocketUpdate:
+    def kitty(self, event: CardsEvent, room: Room) -> None:
         player = self.__player_for_id(event.player_id)
-        socket_id = player.socket_id
 
         # Only hide kitty during the kitty phase
         if self.phase != GamePhase.KITTY:
-            return AlertUpdate(socket_id, "Invalid kitty", "Not time to hide kitty.")
+            room.reply("alert", AlertUpdate("Invalid kitty", "Not time to hide kitty."))
+            return
 
         # Only kitty player can hide kitty
         if event.player_id != self.__kitty_player_id:
-            return AlertUpdate(socket_id, "Invalid kitty", "It's not your turn.")
+            room.reply("alert", AlertUpdate("Invalid kitty", "It's not your turn."))
+            return
 
         # Number of cards must be correct
         if len(event.cards) != 8:
-            return AlertUpdate(socket_id, "Invalid kitty", "Wrong number of cards.")
+            room.reply("alert", AlertUpdate("Invalid kitty", "Wrong number of cards."))
+            return
 
         # Player must possess the cards
         if not player.has_cards(event.cards):
-            return AlertUpdate(
-                socket_id, "Invalid kitty", "You don't have those cards."
+            room.reply(
+                "alert", AlertUpdate("Invalid kitty", "You don't have those cards.")
             )
+            return
 
         # Hide kitty
         player.play(event.cards)
@@ -278,13 +269,7 @@ class Game:
         self.phase = GamePhase.PLAY
         self.__order.reset(self.__trump_suit)
 
-        return KittyResponse(
-            socket_id,
-            event.player_id,
-            self.phase,
-            event.cards,
-            include_self=True,
-        )
+        room.secret("kitty", KittyUpdate(event.player_id, self.phase, event.cards))
 
     def _end(self) -> None:
         self.phase = GamePhase.END
@@ -327,17 +312,18 @@ class Game:
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
 
-    def play(self, event: CardsEvent) -> SocketUpdate:
+    def play(self, event: CardsEvent, room: Room) -> None:
         player = self.__player_for_id(event.player_id)
-        socket_id = player.socket_id
 
         # Only play during the play phase
         if self.phase != GamePhase.PLAY:
-            return AlertUpdate(socket_id, "Invalid play", "Not time to play cards.")
+            room.reply("alert", AlertUpdate("Invalid play", "Not time to play cards."))
+            return
 
         # Only active player can play
         if event.player_id != self.__active_player_id:
-            return AlertUpdate(socket_id, "Invalid play", "It's not your turn.")
+            room.reply("alert", AlertUpdate("Invalid play", "It's not your turn."))
+            return
 
         # Create new trick if needed
         if len(self._tricks) == 0 or self._tricks[-1].ended:
@@ -350,51 +336,48 @@ class Game:
         trick = self._tricks[-1]
 
         # Try processing play event
-        alert = trick.try_play(other_players, player, event.cards)
-        if alert is not None:
-            return alert
+        if not trick.try_play(other_players, player, event.cards, room):
+            return
 
         # Play cards from player's hands
         player.play(event.cards)
 
         # Update play states
         self.__active_player_id = self.__next_player_id(self.__active_player_id)
-        response = PlayResponse(
-            self.__match_id,
-            event.player_id,
-            self.__active_player_id,
-            trick.winner_id,
-            event.cards,
+        update = PlayUpdate(
+            event.player_id, self.__active_player_id, trick.winner_id, event.cards
         )
 
+        if not trick.ended:
+            room.public("play", update)
+            return
+
         # Update trick states on end
-        if trick.ended:
-            if trick.winner_id in self._attackers:
-                self._score += trick.score
-            self.__active_player_id = trick.winner_id
+        if trick.winner_id in self._attackers:
+            self._score += trick.score
+        self.__active_player_id = trick.winner_id
 
-            response = TrickResponse(
-                self.__match_id, self._score, self.__active_player_id, response
-            )
+        update = TrickUpdate(update, self._score, self.__active_player_id)
+        if player.has_cards():
+            room.public("trick", update)
+            return
 
-            # Update game states on end
-            if not player.has_cards():
-                self._end()
-
-                response = EndResponse(
-                    self.__match_id,
-                    response,
-                    self.phase,
-                    self.__kitty_player_id,
-                    self._kitty,
-                    self.next_lead_id,
-                    self._score,
-                    [(player.id, player.level) for player in self.__players],
-                )
-
-        return response
+        # Update game states on end
+        self._end()
+        room.public(
+            "end",
+            EndUpdate(
+                update,
+                self.phase,
+                self.__kitty_player_id,
+                self._kitty,
+                self.next_lead_id,
+                self._score,
+                [(player.id, player.level) for player in self.__players],
+            ),
+        )
 
     def ready(self, player_id: int) -> bool:
-        if self.__player_for_id(player_id).level < END_LEVEL:
+        if self.__player_for_id(player_id).level < BOSS_LEVELS[-1]:
             self.__ready_players.add(player_id)
         return len(self.__ready_players) == len(self.__players)

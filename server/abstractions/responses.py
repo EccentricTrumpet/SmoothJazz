@@ -1,13 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Sequence, Tuple
-from abstractions import Card, GamePhase, MatchPhase
-
-
-# HTTP responses
-class HttpResponse(ABC):
-    @abstractmethod
-    def json(self) -> dict:
-        pass
+from abstractions import Card, GamePhase, HttpResponse, MatchPhase, Suit, Update
 
 
 class MatchResponse(HttpResponse):
@@ -38,74 +31,23 @@ class MatchResponse(HttpResponse):
         }
 
 
-# Socket responses
-class SocketUpdate(ABC):
-    def __init__(self, event: str, recipient: str, broadcast: bool, include_self: bool):
-        self.event = event
-        self.recipient = recipient
-        self.broadcast = broadcast
-        self.include_self = include_self
-
-    @abstractmethod
-    def json(self) -> dict:
-        pass
-
-    @property
-    def event(self):
-        return self._event
-
-    @event.setter
-    def event(self, event: str):
-        self._event = event
-
-    @property
-    def recipient(self):
-        return self._recipient
-
-    @recipient.setter
-    def recipient(self, recipient: str):
-        self._recipient = recipient
-
-    @property
-    def broadcast(self):
-        return self._broadcast
-
-    @broadcast.setter
-    def broadcast(self, broadcast: bool):
-        self._broadcast = broadcast
-
-    @property
-    def include_self(self):
-        return self._include_self
-
-    @include_self.setter
-    def include_self(self, include_self: bool):
-        self._include_self = include_self
-
-
-class PlayerUpdate(SocketUpdate):
-    def __init__(
-        self, type: str, recipient: str, id: int, name: str = "", level: int = -1
-    ):
-        super().__init__(type, recipient, broadcast=True, include_self=True)
+class PlayerUpdate(Update):
+    def __init__(self, id: int, name: str = "", level: int = -1):
         self.__id = id
         self.__name = name
         self.__level = level
 
-    def json(self) -> dict:
+    def json(self, _: bool) -> dict:
         return {"id": self.__id, "name": self.__name, "level": self.__level}
 
 
-class AlertUpdate(SocketUpdate):
-    def __init__(
-        self, recipient: str, title: str, message: str, hint_cards: Sequence[Card] = []
-    ):
-        super().__init__("alert", recipient, broadcast=True, include_self=True)
+class AlertUpdate(Update):
+    def __init__(self, title: str, message: str, hint_cards: Sequence[Card] = []):
         self._title = title
         self._message = message
         self._hint_cards = hint_cards
 
-    def json(self) -> dict:
+    def json(self, _: bool) -> dict:
         return {
             "title": self._title,
             "message": self._message,
@@ -116,25 +58,17 @@ class AlertUpdate(SocketUpdate):
         }
 
 
-class MatchUpdate(SocketUpdate):
-    def __init__(
-        self,
-        recipient: str,
-        phase: MatchPhase,
-    ):
-        super().__init__("phase", recipient, broadcast=True, include_self=True)
+class MatchUpdate(Update):
+    def __init__(self, phase: MatchPhase):
         self.__phase = phase
 
-    def json(self) -> dict:
-        return {
-            "phase": self.__phase,
-        }
+    def json(self, _: bool) -> dict:
+        return {"phase": self.__phase}
 
 
-class StartResponse(SocketUpdate):
+class StartUpdate(Update):
     def __init__(
         self,
-        recipient: str,
         active_player_id: int,
         kitty_player_id: int,
         attackers: Sequence[int],
@@ -143,7 +77,6 @@ class StartResponse(SocketUpdate):
         game_rank: int,
         phase: GamePhase,
     ):
-        super().__init__("start", recipient, broadcast=True, include_self=True)
         self.__active_player_id = active_player_id
         self.__kitty_player_id = kitty_player_id
         self.__attackers = attackers
@@ -152,7 +85,7 @@ class StartResponse(SocketUpdate):
         self.__game_rank = game_rank
         self.__phase = phase
 
-    def json(self) -> dict:
+    def json(self, _: bool) -> dict:
         return {
             "activePlayerId": self.__active_player_id,
             "kittyPlayerId": self.__kitty_player_id,
@@ -164,53 +97,47 @@ class StartResponse(SocketUpdate):
         }
 
 
-class DrawResponse(SocketUpdate):
+class DrawUpdate(Update):
     def __init__(
-        self,
-        recipient: str,
-        id: int,
-        phase: GamePhase,
-        activePlayerId: int,
-        cards: Sequence[Card],
-        broadcast: bool = False,
-        include_self: bool = False,
+        self, id: int, phase: GamePhase, activePlayerId: int, cards: Sequence[Card]
     ):
-        super().__init__("draw", recipient, broadcast, include_self)
         self.id = id
         self.phase = phase
         self.activePlayerId = activePlayerId
         self.cards = cards
 
-    def json(self) -> dict:
+    def json(self, secret: bool) -> dict:
         return {
             "id": self.id,
             "phase": self.phase,
             "activePlayerId": self.activePlayerId,
             "cards": [
-                {"id": card.id, "suit": card.suit, "rank": card.rank}
+                {
+                    "id": card.id,
+                    "suit": Suit.UNKNOWN if secret else card.suit,
+                    "rank": 0 if secret else card.rank,
+                }
                 for card in self.cards
             ],
         }
 
 
-class BidResponse(SocketUpdate):
+class BidUpdate(Update):
     def __init__(
         self,
-        recipient: str,
         player_id: int,
         trumps: Sequence[Card],
         kitty_player_id: int,
         attackers: Sequence[int],
         defenders: Sequence[int],
     ):
-        super().__init__("bid", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.trumps = trumps
         self.__kitty_player_id = kitty_player_id
         self.__attackers = attackers
         self.__defenders = defenders
 
-    def json(self) -> dict:
+    def json(self, _: bool) -> dict:
         return {
             "playerId": self.player_id,
             "trumps": [
@@ -223,48 +150,41 @@ class BidResponse(SocketUpdate):
         }
 
 
-class KittyResponse(SocketUpdate):
-    def __init__(
-        self,
-        recipient: str,
-        player_id: int,
-        phase: GamePhase,
-        cards: Sequence[Card],
-        broadcast: bool = False,
-        include_self: bool = False,
-    ):
-        super().__init__("kitty", recipient, broadcast, include_self)
+class KittyUpdate(Update):
+    def __init__(self, player_id: int, phase: GamePhase, cards: Sequence[Card]):
         self.player_id = player_id
         self.phase = phase
         self.cards = cards
 
-    def json(self) -> dict:
+    def json(self, secret: bool) -> dict:
         return {
             "playerId": self.player_id,
             "phase": self.phase,
             "cards": [
-                {"id": card.id, "suit": card.suit, "rank": card.rank}
+                {
+                    "id": card.id,
+                    "suit": Suit.UNKNOWN if secret else card.suit,
+                    "rank": 0 if secret else card.rank,
+                }
                 for card in self.cards
             ],
         }
 
 
-class PlayResponse(SocketUpdate):
+class PlayUpdate(Update):
     def __init__(
         self,
-        recipient: str,
         player_id: int,
         active_player_id: int,
         trick_winner_id: int,
         cards: Sequence[Card],
     ):
-        super().__init__("play", recipient, broadcast=True, include_self=True)
         self.player_id = player_id
         self.active_player_id = active_player_id
         self.trick_winner_id = trick_winner_id
         self.cards = cards
 
-    def json(self) -> dict:
+    def json(self, _: bool) -> dict:
         return {
             "playerId": self.player_id,
             "activePlayerId": self.active_player_id,
@@ -276,32 +196,29 @@ class PlayResponse(SocketUpdate):
         }
 
 
-class TrickResponse(SocketUpdate):
+class TrickUpdate(Update):
     def __init__(
         self,
-        recipient: str,
+        play: PlayUpdate,
         score: int,
         active_player_id: int,
-        play: PlayResponse,
     ):
-        super().__init__("trick", recipient, broadcast=True, include_self=True)
         self.score = score
         self.active_player_id = active_player_id
         self.play = play
 
-    def json(self) -> dict:
+    def json(self, secret: bool) -> dict:
         return {
             "score": self.score,
             "activePlayerId": self.active_player_id,
-            "play": self.play.json(),
+            "play": self.play.json(secret),
         }
 
 
-class EndResponse(SocketUpdate):
+class EndUpdate(Update):
     def __init__(
         self,
-        recipient: str,
-        trick: TrickResponse,
+        trick: TrickUpdate,
         phase: GamePhase,
         kitty_id: int,
         kitty: Sequence[Card],
@@ -309,7 +226,6 @@ class EndResponse(SocketUpdate):
         score: int,
         players: Sequence[Tuple[int, int]],
     ):
-        super().__init__("end", recipient, broadcast=True, include_self=True)
         self.trick = trick
         self.phase = phase
         self.kitty_id = kitty_id
@@ -318,9 +234,9 @@ class EndResponse(SocketUpdate):
         self.score = score
         self.players = players
 
-    def json(self) -> dict:
+    def json(self, secret: bool) -> dict:
         return {
-            "trick": self.trick.json(),
+            "trick": self.trick.json(secret),
             "phase": self.phase,
             "kittyId": self.kitty_id,
             "kitty": [

@@ -3,20 +3,22 @@ from abstractions import Card, Suit
 
 
 class JoinEvent:
-    def __init__(self, payload: dict, socket_id: str):
+    def __init__(self, sid: str, payload: dict):
+        self.sid = sid
         self.match_id = int(payload["matchId"])
         self.player_name: str = payload["playerName"]
-        self.socket_id: str = socket_id
 
 
 class PlayerEvent:
-    def __init__(self, payload: dict):
+    def __init__(self, sid: str, payload: dict):
+        self.sid = sid
         self.match_id = int(payload["matchId"])
         self.player_id = int(payload["playerId"])
 
 
 class CardsEvent:
-    def __init__(self, payload: dict):
+    def __init__(self, sid: str, payload: dict):
+        self.sid = sid
         self.match_id = int(payload["matchId"])
         self.player_id = int(payload["playerId"])
         self.cards: Sequence[Card] = []

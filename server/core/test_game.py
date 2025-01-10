@@ -53,7 +53,7 @@ class GameTests(TestCase):
                 players = [Player(i, "", "", []) for i in range(4)]
                 for player, level in zip(players, start_levels):
                     player.level = level
-                game = Game(0, 0, 2, players)
+                game = Game(0, 2, players)
                 game._tricks.append(Trick(4, Order(2)))
 
                 # Set protected fields
@@ -89,7 +89,7 @@ class GameTests(TestCase):
 
                 order = Order(2)
                 players = [Player(i, "", "", []) for i in range(2)]
-                game = Game(0, 0, 2, players)
+                game = Game(0, 2, players)
                 trick = Trick(4, order)
                 trick.winner_id = player
                 trick._plays[player] = Format(order, play)

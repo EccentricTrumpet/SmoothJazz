@@ -2,7 +2,7 @@ from unittest import TestCase
 from itertools import batched, combinations
 from random import shuffle
 from typing import Sequence
-from abstractions import Card, Suit
+from abstractions import Card, Room, Suit
 from abstractions.responses import AlertUpdate
 from core import Order
 from core.unit import Single, Pair, Tractor
@@ -465,7 +465,7 @@ class FormatResolvePlayTests(TestCase):
 
         # Any of the cards in hand can be played
         for card in hand:
-            self.assertIsNone(lead.resolve_play([card], hand))
+            self.assertTrue(lead.try_play([card], hand, Room(0, "")))
             self.assertEqual(1, len(lead.units))
             single = lead.units[0]
             self.assertIsInstance(single.complement, Single)
@@ -489,7 +489,7 @@ class FormatResolvePlayTests(TestCase):
             with self.subTest(setup=setup):
                 play = [hand[i] for i in setup]
 
-                self.assertIsNone(lead.resolve_play(play, hand))
+                self.assertTrue(lead.try_play(play, hand, Room(0, "")))
                 self.assertEqual(1, len(lead.units))
                 pair = lead.units[0]
                 self.assertIsInstance(pair.complement, Pair)
@@ -501,7 +501,7 @@ class FormatResolvePlayTests(TestCase):
         hand = initialize([S8, S7, S5, S4])
 
         for play in combinations(hand, 2):
-            self.assertIsNone(lead.resolve_play(play, hand))
+            self.assertTrue(lead.try_play(play, hand, Room(0, "")))
             self.assertEqual(1, len(lead.units))
             pair = lead.units[0]
             self.assertIsNone(pair.complement)
@@ -516,9 +516,12 @@ class FormatResolvePlayTests(TestCase):
         for setup in cases:
             with self.subTest(setup=setup):
                 play = [hand[i] for i in setup]
+                room = Room(0, "")
 
-                alert = lead.resolve_play(play, hand)
-                self.assertIsInstance(alert, AlertUpdate)
+                self.assertFalse(lead.try_play(play, hand, room))
+                update = next(room)
+                self.assertEqual("alert", update.name)
+                alert: AlertUpdate = update._update
                 self.assertEqual("Illegal format for pair", alert._title)
                 self.assertEqual("There are available pairs to play.", alert._message)
                 self.assertListEqual(hand[0:-1], alert._hint_cards)
@@ -547,7 +550,7 @@ class FormatResolvePlayTests(TestCase):
             with self.subTest(setup=setup):
                 play = [hand[i] for i in setup]
 
-                self.assertIsNone(lead.resolve_play(play, hand))
+                self.assertTrue(lead.try_play(play, hand, Room(0, "")))
                 self.assertEqual(1, len(lead.units))
                 tractor = lead.units[0]
                 self.assertIsInstance(tractor.complement, Tractor)
@@ -570,7 +573,7 @@ class FormatResolvePlayTests(TestCase):
                 hand = initialize(hand)
                 play = [hand[i] for i in play]
 
-                self.assertIsNone(lead.resolve_play(play, hand))
+                self.assertTrue(lead.try_play(play, hand, Room(0, "")))
                 self.assertEqual(1, len(lead.units))
                 tractor = lead.units[0]
                 self.assertIsNone(tractor.complement)
@@ -617,9 +620,12 @@ class FormatResolvePlayTests(TestCase):
                 play = [hand[i] for i in play]
                 (message, hint) = expected
                 hint = [hand[i] for i in hint]
+                room = Room(0, "")
 
-                alert = lead.resolve_play(play, hand)
-                self.assertIsInstance(alert, AlertUpdate)
+                self.assertFalse(lead.try_play(play, hand, room))
+                update = next(room)
+                self.assertEqual("alert", update.name)
+                alert: AlertUpdate = update._update
                 self.assertEqual("Illegal format for tractor", alert._title)
                 self.assertEqual(message, alert._message)
                 self.assertListEqual(hint, alert._hint_cards)

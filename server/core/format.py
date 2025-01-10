@@ -1,7 +1,6 @@
 from itertools import chain
 from typing import Self, Sequence, Tuple
-from abstractions import Suit, Card
-from abstractions.responses import AlertUpdate
+from abstractions import Room, Suit, Card
 from core import Order
 from core.unit import Single, Pair, Tractor
 
@@ -110,9 +109,12 @@ class Format:
     def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Sequence[Card]:
         return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
-    def resolve_play(
-        self, played_cards: Sequence[Card], hand_cards: Sequence[Card]
-    ) -> AlertUpdate | None:
+    def try_play(
+        self,
+        played_cards: Sequence[Card],
+        hand_cards: Sequence[Card],
+        room: Room,
+    ) -> bool:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}
         stack = [unit for unit in reversed(self.units)]
@@ -120,9 +122,9 @@ class Format:
         while stack:
             unit = stack.pop()
             hand_format = Format(self.__order, hand_dict.values())
-            result = unit.resolve(played_dict, hand_format.units, self.__order)
-            if isinstance(result, AlertUpdate):
-                return result
+            result = unit.resolve(played_dict, hand_format.units, self.__order, room)
+            if room.has_updates:
+                return False
             if result is None:
                 stack.extend(reversed(unit.decompose()))
                 continue
@@ -130,7 +132,7 @@ class Format:
                 del played_dict[id]
                 del hand_dict[id]
 
-        return None
+        return True
 
     def beats(self, other: Self) -> bool:
         # This check will be obsolete once format matching is completed
