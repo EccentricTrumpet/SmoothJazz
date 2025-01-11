@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import IntEnum, StrEnum
-from typing import Iterator, Self
+from typing import Iterator, Optional, Self, Sequence
 
 
 class TrumpType(IntEnum):
@@ -127,3 +127,23 @@ class Room(ABC):
     # Broadcast a public update to the match
     def public(self, name: str, update: Update) -> None:
         self.__updates.append(SocketUpdate(name, self.__room_id, update, True))
+
+
+Room_ = Optional[Room]
+
+
+class PlayerError(Update, Exception):
+    def __init__(self, title: str, message: str, hint_cards: Sequence[Card] = []):
+        self._title = title
+        self._message = message
+        self._hint_cards = hint_cards
+
+    def json(self, _: bool) -> dict:
+        return {
+            "title": self._title,
+            "message": self._message,
+            "hintCards": [
+                {"id": card.id, "suit": card.suit, "rank": card.rank}
+                for card in self._hint_cards
+            ],
+        }

@@ -1,6 +1,6 @@
 // This directory contains states which are used by React to render UI elements
 
-export * from './AlertState';
+export * from './ErrorState';
 export * from './BoardState';
 export * from './CardState';
 export * from './CardUIState';

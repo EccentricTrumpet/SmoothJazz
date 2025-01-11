@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { BackdropComponent } from "./BackdropComponent";
-import { AlertState } from "../abstractions/states";
+import { ErrorState } from "../abstractions/states";
 
 const dropIn = {
   hidden: {
@@ -23,11 +23,11 @@ const dropIn = {
   },
 }
 
-interface AlertComponentInputs {
-  alertState: AlertState;
+interface ErrorComponentInputs {
+  errorState: ErrorState;
   onClose?: () => any;
 }
-export const AlertComponent: React.FC<AlertComponentInputs> = ({ alertState, onClose = () => {} }) => {
+export const ErrorComponent: React.FC<ErrorComponentInputs> = ({ errorState, onClose = () => {} }) => {
   return (
     <BackdropComponent onClick={onClose}>
       <motion.div
@@ -48,8 +48,8 @@ export const AlertComponent: React.FC<AlertComponentInputs> = ({ alertState, onC
         animate="visible"
         exit="exit"
       >
-        <h2>{alertState.title}</h2>
-        <h4>{alertState.message}</h4>
+        <h2>{errorState.title}</h2>
+        <h4>{errorState.message}</h4>
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}

@@ -1,6 +1,6 @@
 import logging
 
-from abstractions import Room
+from abstractions import Room_
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from flask import Flask, request
 from flask_socketio import Namespace, SocketIO, emit, join_room
@@ -12,7 +12,7 @@ class MatchNamespace(Namespace):
         super(MatchNamespace, self).__init__(namespace)
         self.__service = service
 
-    def __update(self, room: Room | None) -> None:
+    def __update(self, room: Room_) -> None:
         for update in room or []:
             emit(
                 update.name,

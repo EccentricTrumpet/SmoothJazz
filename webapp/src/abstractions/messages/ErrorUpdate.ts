@@ -1,7 +1,7 @@
 import { Suit } from "../enums";
 import { Card } from "..";
 
-export class AlertUpdate {
+export class ErrorUpdate {
     title: string = "";
     message: string = "";
     hintCards: Card[] = [];

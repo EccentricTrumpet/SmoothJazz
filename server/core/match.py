@@ -2,10 +2,10 @@ from itertools import count
 from typing import Iterator, List
 
 from abstractions import GamePhase, MatchPhase, Room
-from abstractions.constants import BOSS_LEVELS
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from abstractions.responses import MatchResponse, MatchUpdate, PlayerUpdate
 from core import Player
+from core.constants import BOSS_LEVELS
 from core.game import Game
 
 

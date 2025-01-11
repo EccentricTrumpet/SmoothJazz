@@ -2,11 +2,9 @@ import random
 from bisect import bisect_left, bisect_right
 from typing import List, Sequence, Set
 
-from abstractions import Card, GamePhase, Room, Suit, TrumpType
-from abstractions.constants import BOSS_LEVELS, DECK_SIZE, SUIT_SIZE, THRESHOLD_PER_DECK
+from abstractions import Card, GamePhase, PlayerError, Room, Suit, TrumpType
 from abstractions.events import CardsEvent, PlayerEvent
 from abstractions.responses import (
-    AlertUpdate,
     BidUpdate,
     DrawUpdate,
     EndUpdate,
@@ -16,6 +14,7 @@ from abstractions.responses import (
     TrickUpdate,
 )
 from core import Order, Player
+from core.constants import BOSS_LEVELS, DECK_SIZE, DECK_THRESHOLD, KITTY_SIZE, SUIT_SIZE
 from core.trick import Trick
 
 
@@ -38,8 +37,8 @@ class Game:
         self.__trump_type = TrumpType.NONE
         self.__kitty_pid = lead_pid
         self.__active_pid = lead_pid
-        self.__game_rank = self.__player_for_pid(lead_pid).level
-        self.__order = Order(self.__game_rank)
+        self.__rank = self.__player_for_pid(lead_pid).level
+        self.__order = Order(self.__rank)
         self.__ready_players: Set[int] = set()
 
         # Protected for testing
@@ -54,8 +53,8 @@ class Game:
         self.next_lead_pid = -1
 
         # Fix game rank for Aces game
-        if self.__game_rank > SUIT_SIZE:
-            self.__game_rank -= SUIT_SIZE
+        if self.__rank > SUIT_SIZE:
+            self.__rank -= SUIT_SIZE
 
         # 1 deck for every 2 players, rounded down
         num_cards = self.__decks * DECK_SIZE
@@ -106,7 +105,7 @@ class Game:
             self._attackers,
             self._defenders,
             len(self.__deck),
-            self.__game_rank,
+            self.__rank,
             self.phase,
         )
 
@@ -115,14 +114,18 @@ class Game:
 
         # Only active player can draw
         if event.pid != self.__active_pid:
-            room.reply("alert", AlertUpdate("You can't draw", "It's not your turn."))
-        elif self.phase == GamePhase.DRAW:
+            raise PlayerError("You can't draw", "It's not your turn.")
+
+        if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
+            raise PlayerError("You can't draw", "Not time to draw cards.")
+
+        if self.phase == GamePhase.DRAW:
             # Draw card
             card = self.__deck.pop()
             player.draw([card])
 
             # Update states
-            if len(self.__deck) == 8:
+            if len(self.__deck) == KITTY_SIZE:
                 self.phase = GamePhase.RESERVE
                 self.__active_pid = self.__kitty_pid
             else:
@@ -132,7 +135,7 @@ class Game:
                 "draw",
                 DrawUpdate(player.id, self.phase, self.__active_pid, [card]),
             )
-        elif self.phase == GamePhase.RESERVE:
+        else:
             # Draw cards
             cards = self.__deck
             player.draw(cards)
@@ -143,59 +146,44 @@ class Game:
 
             kitty_pid = self.__kitty_pid
             room.secret("draw", DrawUpdate(kitty_pid, self.phase, kitty_pid, cards))
-        else:
-            room.reply(
-                "alert", AlertUpdate("You can't draw", "Not time to draw cards.")
-            )
 
     def __resolve_trump_type(self, cards: Sequence[Card]) -> TrumpType:
-        if len(cards) == 0:
+        if len(cards) == 0 or len(cards) > 2:
             return TrumpType.NONE
-        if len(cards) == 1 and cards[0].rank == self.__game_rank:
-            return TrumpType.SINGLE
-        if len(cards) == 2:
-            # Must be pairs
-            if cards[0].suit != cards[1].suit or cards[0].rank != cards[1].rank:
+        if len(cards) == 1:
+            if cards[0].rank == self.__rank and cards[0].suit != Suit.JOKER:
+                return TrumpType.SINGLE
+            else:
                 return TrumpType.NONE
-            if cards[0].suit == Suit.JOKER:
-                return (
-                    TrumpType.BIG_JOKER if cards[0].rank == 2 else TrumpType.SMALL_JOKER
-                )
-            if cards[0].rank == self.__game_rank:
-                return TrumpType.PAIR
+        # Must be pairs
+        if cards[0].suit != cards[1].suit or cards[0].rank != cards[1].rank:
+            return TrumpType.NONE
+        if cards[0].suit == Suit.JOKER:
+            return TrumpType.BIG_JOKER if cards[0].rank == 2 else TrumpType.SMALL_JOKER
+        if cards[0].rank == self.__rank:
+            return TrumpType.PAIR
 
     def bid(self, event: CardsEvent, room: Room) -> None:
         player = self.__player_for_pid(event.pid)
 
         # Can only bid during draw or reserve (抓底牌) phases
         if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
-            room.reply("alert", AlertUpdate("Invalid bid", "Not time to bid."))
-            return
+            raise PlayerError("Invalid bid", "Not time to bid.")
 
         # Player must possess the cards
         if not player.has_cards(event.cards):
-            room.reply(
-                "alert", AlertUpdate("Invalid bid", "You don't have those cards.")
-            )
-            return
+            raise PlayerError("Invalid bid", "You don't have those cards.")
 
         trump_type = self.__resolve_trump_type(event.cards)
 
         # Player must possess the cards
         if trump_type == TrumpType.NONE:
-            room.reply(
-                "alert",
-                AlertUpdate("Invalid bid", "You must bid with trump ranks or jokers."),
-            )
-            return
+            raise PlayerError("Invalid bid", "You must bid trump ranks or joker pairs.")
 
         if self.__bidder_pid != player.id:
             # If bidder is different from current bidder, trumps must be of a higher priority
             if trump_type <= self.__trump_type:
-                room.reply(
-                    "alert", AlertUpdate("Invalid bid", "Your bid wasn't high enough.")
-                )
-                return
+                raise PlayerError("Invalid bid", "Your bid wasn't high enough.")
         else:
             # If bidder is same as current bidder, only allow fortify
             if (
@@ -203,13 +191,7 @@ class Game:
                 or trump_type != TrumpType.SINGLE
                 or self.__trump_suit != event.cards[0].suit
             ):
-                room.reply(
-                    "alert",
-                    AlertUpdate(
-                        "Invalid bid", "You can only fortify your current bid."
-                    ),
-                )
-                return
+                raise PlayerError("Invalid bid", "You can only fortify your bid.")
             trump_type = TrumpType.PAIR
 
         # Update states
@@ -235,25 +217,19 @@ class Game:
 
         # Only hide kitty during the kitty phase
         if self.phase != GamePhase.KITTY:
-            room.reply("alert", AlertUpdate("Invalid kitty", "Not time to hide kitty."))
-            return
+            raise PlayerError("Invalid kitty", "Not time to hide kitty.")
 
         # Only kitty player can hide kitty
         if event.pid != self.__kitty_pid:
-            room.reply("alert", AlertUpdate("Invalid kitty", "It's not your turn."))
-            return
+            raise PlayerError("Invalid kitty", "It's not your turn.")
 
         # Number of cards must be correct
-        if len(event.cards) != 8:
-            room.reply("alert", AlertUpdate("Invalid kitty", "Wrong number of cards."))
-            return
+        if len(event.cards) != KITTY_SIZE:
+            raise PlayerError("Invalid kitty", "Wrong number of cards.")
 
         # Player must possess the cards
         if not player.has_cards(event.cards):
-            room.reply(
-                "alert", AlertUpdate("Invalid kitty", "You don't have those cards.")
-            )
-            return
+            raise PlayerError("Invalid kitty", "You don't have those cards.")
 
         # Hide kitty
         player.play(event.cards)
@@ -280,7 +256,7 @@ class Game:
             self._score += multiple * sum([c.points for c in self._kitty])
 
         # Update level up players and resolve next lead player
-        threshold = THRESHOLD_PER_DECK * self.__decks
+        threshold = DECK_THRESHOLD * self.__decks
         win_threshold = 2 * threshold
         if self._score >= win_threshold:
             # Attackers win
@@ -311,13 +287,11 @@ class Game:
 
         # Only play during the play phase
         if self.phase != GamePhase.PLAY:
-            room.reply("alert", AlertUpdate("Invalid play", "Not time to play cards."))
-            return
+            raise PlayerError("Invalid play", "Not time to play cards.")
 
         # Only active player can play
         if event.pid != self.__active_pid:
-            room.reply("alert", AlertUpdate("Invalid play", "It's not your turn."))
-            return
+            raise PlayerError("Invalid play", "It's not your turn.")
 
         # Create new trick if needed
         if len(self._tricks) == 0 or self._tricks[-1].ended:
@@ -327,11 +301,8 @@ class Game:
         others = [player for player in self.__players if player.id != event.pid]
         trick = self._tricks[-1]
 
-        # Try processing play event
-        if not trick.try_play(others, player, event.cards, room):
-            return
-
-        # Play cards from player's hands
+        # Process play event and play cards from player's hands
+        trick.play(others, player, event.cards, room)
         player.play(event.cards)
 
         # Update play states
@@ -339,8 +310,7 @@ class Game:
         update = PlayUpdate(event.pid, self.__active_pid, trick.winner_pid, event.cards)
 
         if not trick.ended:
-            room.public("play", update)
-            return
+            return room.public("play", update)
 
         # Update trick states on end
         if trick.winner_pid in self._attackers:
@@ -349,8 +319,7 @@ class Game:
 
         update = TrickUpdate(update, self._score, self.__active_pid)
         if player.has_cards():
-            room.public("trick", update)
-            return
+            return room.public("trick", update)
 
         # Update game states on end
         self._end()

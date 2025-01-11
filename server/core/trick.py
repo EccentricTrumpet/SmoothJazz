@@ -1,7 +1,6 @@
 from typing import Sequence
 
-from abstractions import Card, Room, Suit
-from abstractions.responses import AlertUpdate
+from abstractions import Card, PlayerError, Room, Suit
 from core import Order, Player
 from core.format import Format
 
@@ -40,17 +39,11 @@ class Trick:
     ) -> Format | None:
         # Must contain at least one card
         if len(cards) == 0:
-            room.reply(
-                "alert", AlertUpdate("Invalid play", "Must play at least 1 card.")
-            )
-            return
+            raise PlayerError("Invalid play", "Must play at least 1 card.")
 
         # Player must possess the cards
         if not player.has_cards(cards):
-            room.reply(
-                "alert", AlertUpdate("Invalid play", "You don't have those cards.")
-            )
-            return
+            raise PlayerError("Invalid play", "You don't have those cards.")
 
         # Enforce leading play rules
         if self.__lead_pid == -1:
@@ -58,10 +51,7 @@ class Trick:
 
             # Format must be suited
             if not format.suited:
-                room.reply(
-                    "alert", AlertUpdate("Invalid play", "Leading play must be suited.")
-                )
-                return
+                raise PlayerError("Invalid play", "Leading play must be suited.")
 
             # TODO: Enforce toss rules
 
@@ -71,8 +61,7 @@ class Trick:
 
         # Enforce follow length
         if len(cards) != lead.length:
-            room.reply("alert", AlertUpdate("Invalid play", "Wrong number of cards."))
-            return
+            raise PlayerError("Invalid play", "Wrong number of cards.")
 
         # Enforce follow suit
         hand_cards = player.cards_in_suit(self.__order, lead.suit, lead.trumps)
@@ -80,10 +69,7 @@ class Trick:
         format = Format(self.__order, cards)
 
         if len(format.cards_in_suit(lead.suit, lead.trumps)) < required_suit_cards:
-            room.reply(
-                "alert", AlertUpdate("Invalid play", "Must follow suit.", hand_cards)
-            )
-            return
+            raise PlayerError("Invalid play", "Must follow suit.", hand_cards)
 
         # Partial or mismatched non-trump follow, format need not to be matched
         if not (
@@ -102,26 +88,27 @@ class Trick:
             if not lead.trumps and format.trumps
             else player.cards_in_suit(self.__order, lead.suit, format.trumps)
         )
-        if not lead.try_play(cards, played_suit, room):
+
+        try:
+            lead.play(cards, played_suit, room)
+        except PlayerError:
             lead.reset()
-            return
+            raise
 
         # Resolution successful
-        format.try_reform(lead)
+        format.reform(lead)
         lead.reset()
         return format
 
     # Checks legality and update trick states
-    def try_play(
+    def play(
         self,
         others: Sequence[Player],
         player: Player,
         cards: Sequence[Card],
         room: Room,
-    ) -> bool:
+    ) -> None:
         format = self.__resolve_format(others, player, cards, room)
-        if format is None:
-            return False
 
         # Update states
         self.score += sum([c.points for c in cards])
@@ -144,5 +131,3 @@ class Trick:
             elif format.beats(winner):
                 print("Winning play")
                 self.winner_pid = player.id
-
-        return True

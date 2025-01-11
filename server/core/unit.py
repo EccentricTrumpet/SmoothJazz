@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Dict, Self, Sequence, TypeVar
 
-from abstractions import Card, Room
-from abstractions.responses import AlertUpdate
+from abstractions import Card, PlayerError, Room
 from core import Order
 
 TUnit = TypeVar("TUnit", bound="Unit")
@@ -66,13 +65,10 @@ class Unit(ABC):
                 self._complement = candidate
                 return ids
 
-        room.reply(
-            "alert",
-            AlertUpdate(
-                f"Illegal format for {self._root}",
-                f"There are available {self._name}s to play.",
-                self.generate_hints(candidates),
-            ),
+        raise PlayerError(
+            f"Illegal format for {self._root}",
+            f"There are available {self._name}s to play.",
+            self.generate_hints(candidates),
         )
 
     def resolve(

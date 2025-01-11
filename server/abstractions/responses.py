@@ -41,23 +41,6 @@ class PlayerUpdate(Update):
         return {"id": self.__id, "name": self.__name, "level": self.__level}
 
 
-class AlertUpdate(Update):
-    def __init__(self, title: str, message: str, hint_cards: Sequence[Card] = []):
-        self._title = title
-        self._message = message
-        self._hint_cards = hint_cards
-
-    def json(self, _: bool) -> dict:
-        return {
-            "title": self._title,
-            "message": self._message,
-            "hintCards": [
-                {"id": card.id, "suit": card.suit, "rank": card.rank}
-                for card in self._hint_cards
-            ],
-        }
-
-
 class MatchUpdate(Update):
     def __init__(self, phase: MatchPhase):
         self.__phase = phase

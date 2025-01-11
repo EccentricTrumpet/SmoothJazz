@@ -19,10 +19,10 @@ import {
   PlayResponse,
   TrickResponse,
   EndResponse,
-  AlertUpdate,
+  ErrorUpdate,
   MatchUpdate} from "../abstractions/messages";
-import { AlertState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { AlertComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
+import { ErrorState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
+import { ErrorComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
 import { Constants } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
@@ -60,7 +60,7 @@ export default function MatchPage() {
     ),
     new Size(Constants.cardWidth, Constants.cardHeight)
   );
-  const [alert, setAlert] = useState(new AlertState());
+  const [error, setError] = useState(new ErrorState());
 
   // Game states
   const [playerId, setPlayerId] = useState(-1);
@@ -172,13 +172,13 @@ export default function MatchPage() {
       }
 
       // Messages
-      socket.on("alert", (response) => {
-        console.log(`raw alert response: ${JSON.stringify(response)}`);
-        const alertResponse = new AlertUpdate(response);
+      socket.on("error", (response) => {
+        console.log(`raw error response: ${JSON.stringify(response)}`);
+        const errorResponse = new ErrorUpdate(response);
 
-        setAlert(new AlertState(true, alertResponse.title, alertResponse.message));
-        if (alertResponse.hintCards.length > 0) {
-          const hintCards = createCardDict(alertResponse.hintCards);
+        setError(new ErrorState(true, errorResponse.title, errorResponse.message));
+        if (errorResponse.hintCards.length > 0) {
+          const hintCards = createCardDict(errorResponse.hintCards);
           setPlayers(prevPlayers => prevPlayers.map((player) => {
             for (const card of player.hand) {
               if (hintCards.has(card.id)) {
@@ -413,7 +413,7 @@ export default function MatchPage() {
         socket.off("start");
         socket.off("join");
         socket.off("leave");
-        socket.off("alert");
+        socket.off("error");
       };
     }
   // Must not depend on any mutable states
@@ -483,7 +483,7 @@ export default function MatchPage() {
           mode="wait"
           onExitComplete={() => null}
         >
-          {alert.show && <AlertComponent alertState={alert} onClose={() => setAlert(new AlertState())}/>}
+          {error.show && <ErrorComponent errorState={error} onClose={() => setError(new ErrorState())}/>}
         </AnimatePresence>
       </motion.div>
     ));

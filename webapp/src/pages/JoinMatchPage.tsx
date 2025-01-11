@@ -45,6 +45,7 @@ export default function JoinMatchPage() {
         <form onSubmit={handleSubmit}>
           <label htmlFor="name">Player name</label>
           <input
+            autoFocus
             id="name"
             type="text"
             name="name"

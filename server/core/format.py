@@ -99,7 +99,7 @@ class Format:
         for single in self.singles:
             single.reset()
 
-    def try_reform(self, format: Self) -> None:
+    def reform(self, format: Self) -> None:
         if all(unit.complement is not None for unit in format.units):
             self.tractors = [tractor.complement for tractor in format.tractors]
             self.pairs = [pair.complement for pair in format.pairs]
@@ -109,9 +109,9 @@ class Format:
     def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Sequence[Card]:
         return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
-    def try_play(
+    def play(
         self, played_cards: Sequence[Card], hand_cards: Sequence[Card], room: Room
-    ) -> bool:
+    ) -> None:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}
         stack = [unit for unit in reversed(self.units)]
@@ -120,16 +120,12 @@ class Format:
             unit = stack.pop()
             hand_format = Format(self.__order, hand_dict.values())
             result = unit.resolve(played_dict, hand_format.units, self.__order, room)
-            if room.has_updates:
-                return False
             if result is None:
                 stack.extend(reversed(unit.decompose()))
                 continue
             for id in result:
                 del played_dict[id]
                 del hand_dict[id]
-
-        return True
 
     def beats(self, other: Self) -> bool:
         # This check will be obsolete once format matching is completed
