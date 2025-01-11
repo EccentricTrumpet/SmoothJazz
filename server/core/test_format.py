@@ -1,16 +1,17 @@
-from unittest import TestCase
 from itertools import batched, combinations
 from random import shuffle
 from typing import Sequence
+from unittest import TestCase
+
 from abstractions import Card, Room, Suit
 from abstractions.responses import AlertUpdate
 from core import Order
-from core.unit import Single, Pair, Tractor
 from core.format import Format
-from testing import initialize, JB, JR
-from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, ST
-from testing.hearts import H2, H3, H4, H5, H6, H7, H8, HA, HK
+from core.unit import Pair, Single, Tractor
+from testing import JB, JR, initialize
 from testing.diamonds import D2, D3, D4, D5, D6, D7, D8, D9
+from testing.hearts import H2, H3, H4, H5, H6, H7, H8, HA, HK
+from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, ST
 
 
 class FormatCreateTests(TestCase):

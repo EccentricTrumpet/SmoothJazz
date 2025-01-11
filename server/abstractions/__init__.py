@@ -41,7 +41,7 @@ class Card:
         self.suit = suit
         self.rank = rank
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, Card)
             and self.id == other.id
@@ -60,7 +60,7 @@ class Card:
             return 10
         return 0
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"[ Card ({self.id}) - {self.suit} {self.rank} ]"
 
 
@@ -80,21 +80,16 @@ class Update(ABC):
 
 class SocketUpdate:
     def __init__(
-        self,
-        name: str,
-        recipient: str,
-        update: Update,
-        broadcast: bool = False,
-        include_self: bool = True,
+        self, name: str, to: str, update: Update, cast: bool = False, echo: bool = True
     ):
         self.name = name
-        self.recipient = recipient
+        self.to = to
         self._update = update
-        self.broadcast = broadcast
-        self.include_self = include_self
+        self.cast = cast
+        self.echo = echo
 
     def json(self) -> dict:
-        return self._update.json(self.broadcast and not self.include_self)
+        return self._update.json(self.cast and not self.echo)
 
 
 class Room(ABC):

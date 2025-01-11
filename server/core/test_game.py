@@ -1,9 +1,10 @@
 from unittest import TestCase
+
+from core import Order, Player
 from core.format import Format
 from core.game import Game
-from core import Order, Player
 from core.trick import Trick
-from testing import initialize, JB, JR
+from testing import JB, JR, initialize
 from testing.spades import S2, S5
 
 
@@ -65,7 +66,7 @@ class GameTests(TestCase):
 
                 game._end()
 
-                self.assertEqual(next_lead, game.next_lead_id)
+                self.assertEqual(next_lead, game.next_lead_pid)
                 for player, level in zip(players, next_levels):
                     self.assertEqual(level, player.level)
 
@@ -91,7 +92,7 @@ class GameTests(TestCase):
                 players = [Player(i, "", "", []) for i in range(2)]
                 game = Game(0, 2, players)
                 trick = Trick(4, order)
-                trick.winner_id = player
+                trick.winner_pid = player
                 trick._plays[player] = Format(order, play)
                 game._tricks.append(trick)
 

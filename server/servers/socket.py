@@ -1,8 +1,9 @@
 import logging
-from flask_socketio import Namespace, SocketIO, emit, join_room
-from flask import Flask, request
+
 from abstractions import Room
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
+from flask import Flask, request
+from flask_socketio import Namespace, SocketIO, emit, join_room
 from services.match import MatchService
 
 
@@ -11,16 +12,15 @@ class MatchNamespace(Namespace):
         super(MatchNamespace, self).__init__(namespace)
         self.__service = service
 
-    def __update(self, room: Room | None):
-        if room is not None:
-            for update in room:
-                emit(
-                    update.name,
-                    update.json(),
-                    to=update.recipient,
-                    broadcast=update.broadcast,
-                    include_self=update.include_self,
-                )
+    def __update(self, room: Room | None) -> None:
+        for update in room or []:
+            emit(
+                update.name,
+                update.json(),
+                to=update.to,
+                broadcast=update.cast,
+                include_self=update.echo,
+            )
 
     def on_connected(self):
         """event listener when client connects to the server"""

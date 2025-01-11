@@ -1,6 +1,7 @@
 from typing import Sequence
-from abstractions.responses import AlertUpdate
+
 from abstractions import Card, Room, Suit
+from abstractions.responses import AlertUpdate
 from core import Order, Player
 from core.format import Format
 
@@ -13,14 +14,14 @@ class Trick:
         self.__order = order
 
         # Private
-        self.__lead_id = -1
+        self.__lead_pid = -1
 
         # Protected for testing
         self._plays: dict[int, Format] = {}
 
         # Public
         self.score = 0
-        self.winner_id = -1
+        self.winner_pid = -1
 
     @property
     def ended(self) -> bool:
@@ -28,17 +29,15 @@ class Trick:
 
     @property
     def winning_play(self) -> Format:
-        return self._plays[self.winner_id]
+        return self._plays[self.winner_pid]
 
     def __resolve_format(
         self,
-        other_players: Sequence[Player],
+        others: Sequence[Player],
         player: Player,
         cards: Sequence[Card],
         room: Room,
     ) -> Format | None:
-        socket_id = player.sid
-
         # Must contain at least one card
         if len(cards) == 0:
             room.reply(
@@ -54,7 +53,7 @@ class Trick:
             return
 
         # Enforce leading play rules
-        if self.__lead_id == -1:
+        if self.__lead_pid == -1:
             format = Format(self.__order, cards)
 
             # Format must be suited
@@ -68,7 +67,7 @@ class Trick:
 
             return format
 
-        lead = self._plays[self.__lead_id]
+        lead = self._plays[self.__lead_pid]
 
         # Enforce follow length
         if len(cards) != lead.length:
@@ -115,12 +114,12 @@ class Trick:
     # Checks legality and update trick states
     def try_play(
         self,
-        other_players: Sequence[Player],
+        others: Sequence[Player],
         player: Player,
         cards: Sequence[Card],
         room: Room,
     ) -> bool:
-        format = self.__resolve_format(other_players, player, cards, room)
+        format = self.__resolve_format(others, player, cards, room)
         if format is None:
             return False
 
@@ -129,28 +128,21 @@ class Trick:
         self._plays[player.id] = format
 
         # Update lead player id, if needed
-        if self.__lead_id == -1:
-            self.__lead_id = player.id
-            self.winner_id = player.id
+        if self.__lead_pid == -1:
+            self.__lead_pid = player.id
+            self.winner_pid = player.id
             print("Leading play")
-            return True
-
-        # Resolve winning hand
-        if not format.suited:
-            print("Losing play: mixed suits")
-            return True
-
-        winning = self._plays[self.winner_id]
-        if winning.trumps and not format.trumps:
-            print("Losing play: did not follow trumps")
-            return True
-
-        if not winning.trumps and not format.trumps and winning.suit != format.suit:
-            print("Losing play: did not follow non trump suit")
-            return True
-
-        if format.beats(winning):
-            print("Winning play")
-            self.winner_id = player.id
+        else:
+            # Resolve winning hand
+            winner = self._plays[self.winner_pid]
+            if not format.suited:
+                print("Losing play: mixed suits")
+            elif winner.trumps and not format.trumps:
+                print("Losing play: did not follow trumps")
+            elif not winner.trumps and not format.trumps and winner.suit != format.suit:
+                print("Losing play: did not follow non trump suit")
+            elif format.beats(winner):
+                print("Winning play")
+                self.winner_pid = player.id
 
         return True

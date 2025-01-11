@@ -1,8 +1,9 @@
 from itertools import count
 from typing import Dict, Iterator
+
 from abstractions import Room
-from abstractions.responses import MatchResponse
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
+from abstractions.responses import MatchResponse
 from core.match import Match
 
 
@@ -17,7 +18,7 @@ class MatchService:
             return None
 
         players = self.__matches[event.match_id].players
-        player = next((p for p in players if p.id == event.player_id), None)
+        player = next((p for p in players if p.id == event.pid), None)
 
         if player is not None:
             return Room(event.match_id, event.sid)

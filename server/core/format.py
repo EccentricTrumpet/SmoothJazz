@@ -1,18 +1,15 @@
 from itertools import chain
 from typing import Self, Sequence, Tuple
-from abstractions import Room, Suit, Card
+
+from abstractions import Card, Room, Suit
 from core import Order
-from core.unit import Single, Pair, Tractor
+from core.unit import Pair, Single, Tractor
 
 
 # Container class for format of set of cards in a play
 # Assume non-zero number of cards
 class Format:
-    def __init__(
-        self,
-        order: Order,
-        cards: Sequence[Card],
-    ) -> None:
+    def __init__(self, order: Order, cards: Sequence[Card]) -> None:
         self.__order = order
         self.__cards = cards
 
@@ -26,7 +23,10 @@ class Format:
         )
         self.suited = self.trumps or (no_trumps and self.suit != Suit.UNKNOWN)
 
-        (self.singles, self.pairs, self.tractors) = (
+        self.singles: Sequence[Single]
+        self.pairs: Sequence[Pair]
+        self.tractors: Sequence[Tractor]
+        self.singles, self.pairs, self.tractors = (
             self.__create(cards) if self.suited else ([], [], [])
         )
         self.units = list(chain(self.tractors, self.pairs, self.singles))
@@ -99,7 +99,7 @@ class Format:
         for single in self.singles:
             single.reset()
 
-    def try_reform(self, format: Self):
+    def try_reform(self, format: Self) -> None:
         if all(unit.complement is not None for unit in format.units):
             self.tractors = [tractor.complement for tractor in format.tractors]
             self.pairs = [pair.complement for pair in format.pairs]
@@ -110,10 +110,7 @@ class Format:
         return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
     def try_play(
-        self,
-        played_cards: Sequence[Card],
-        hand_cards: Sequence[Card],
-        room: Room,
+        self, played_cards: Sequence[Card], hand_cards: Sequence[Card], room: Room
     ) -> bool:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}

@@ -1,6 +1,7 @@
-from unittest import TestCase
 from typing import Sequence, Tuple
-from core.unit import Unit, Single, Pair, Tractor
+from unittest import TestCase
+
+from core.unit import Pair, Single, Tractor, Unit
 from testing import initialize
 from testing.spades import S3, S4, S5, S6, S7
 

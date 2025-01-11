@@ -1,6 +1,6 @@
 from typing import List
-from abstractions import Card, Suit
 
+from abstractions import Card, Suit
 
 # Jokers
 # Red (Big)

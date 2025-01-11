@@ -1,4 +1,5 @@
 from typing import Sequence
+
 from abstractions import Card, Suit
 
 
@@ -13,14 +14,12 @@ class PlayerEvent:
     def __init__(self, sid: str, payload: dict):
         self.sid = sid
         self.match_id = int(payload["matchId"])
-        self.player_id = int(payload["playerId"])
+        self.pid = int(payload["playerId"])
 
 
-class CardsEvent:
+class CardsEvent(PlayerEvent):
     def __init__(self, sid: str, payload: dict):
-        self.sid = sid
-        self.match_id = int(payload["matchId"])
-        self.player_id = int(payload["playerId"])
+        super().__init__(sid, payload)
         self.cards: Sequence[Card] = []
         for card in payload["cards"]:
             self.cards.append(

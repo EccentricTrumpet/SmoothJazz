@@ -1,7 +1,8 @@
 import logging
 import os.path as PATH
-from os import environ as ENV
 from argparse import ArgumentParser
+from os import environ as ENV
+
 from servers.http import init_http
 from servers.socket import init_sockets
 from services.match import MatchService

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Dict, Self, Sequence, TypeVar
+
 from abstractions import Card, Room
 from abstractions.responses import AlertUpdate
 from core import Order
@@ -15,18 +16,18 @@ class Unit(ABC):
         self._length = len(cards)
         self._complement: Self | None = None
         self._name = type(self).__name__.lower()
-        self._root_name = self._name
+        self._root = self._name
 
     @property
-    def cards(self):
+    def cards(self) -> Sequence[Card]:
         return self._cards
 
     @property
-    def highest(self):
+    def highest(self) -> Card:
         return self._highest
 
     @property
-    def length(self):
+    def length(self) -> int:
         return self._length
 
     @property
@@ -57,16 +58,8 @@ class Unit(ABC):
 
     # Default resolution implementation
     def _resolve(
-        self,
-        played: Dict[int, Card],
-        candidates: Sequence[Self],
-        room: Room,
-        return_none_on_empty: bool = False,
+        self, played: Dict[int, Card], candidates: Sequence[Self], room: Room
     ) -> Sequence[int] | None:
-        # Return None so unit will be decomposed before resolving again
-        if return_none_on_empty and not candidates:
-            return None
-
         for candidate in candidates:
             ids = [card.id for card in candidate.cards]
             if all(id in played for id in ids):
@@ -76,7 +69,7 @@ class Unit(ABC):
         room.reply(
             "alert",
             AlertUpdate(
-                f"Illegal format for {self._root_name}",
+                f"Illegal format for {self._root}",
                 f"There are available {self._name}s to play.",
                 self.generate_hints(candidates),
             ),
@@ -96,9 +89,7 @@ class Single(Unit):
         super().__init__([card])
 
     def decompose_into(self, unit: Unit) -> Sequence[Self]:
-        if isinstance(unit, Single):
-            return [self]
-        return []
+        return [self] if isinstance(unit, Single) else []
 
     # This should never be called
     def decompose(self) -> Sequence[Unit]:
@@ -130,7 +121,8 @@ class Pair(Unit):
     def resolve(
         self, played: Dict[int, Card], hand: Sequence[Unit], order: Order, room: Room
     ) -> Sequence[int] | None:
-        return self._resolve(played, self._candidates(hand, order), room, True)
+        if len(candidates := self._candidates(hand, order)) > 0:
+            return self._resolve(played, candidates, room)
 
     def reset(self) -> None:
         self._complement = None
@@ -143,7 +135,7 @@ class Tractor(Unit):
         super().__init__([card for pair in pairs for card in pair.cards])
         self.pairs = pairs
         for pair in pairs:
-            pair._root_name = self._name
+            pair._root = self._name
 
     def decompose_into(self, unit: Unit) -> Sequence[Self]:
         if isinstance(unit, Tractor) and self.length >= unit.length:
@@ -167,7 +159,7 @@ class Tractor(Unit):
         cards = [card for tractor in candidates for card in tractor.cards]
         return [ids.add(card.id) or card for card in cards if card.id not in ids]
 
-    def peers(self) -> Sequence[Self]:
+    def __peers(self) -> Sequence[Self]:
         peers = [self]
         for index, pair in enumerate(self.pairs):
             # There can only be one set of equivalent pairs in any suit:
@@ -183,8 +175,9 @@ class Tractor(Unit):
     def resolve(
         self, played: Dict[int, Card], hand: Sequence[Unit], order: Order, room: Room
     ) -> Sequence[int] | None:
-        candidates = list(chain(*[c.peers() for c in self._candidates(hand, order)]))
-        return self._resolve(played, candidates, room, True)
+        candidates = list(chain(*[c.__peers() for c in self._candidates(hand, order)]))
+        if len(candidates) > 0:
+            return self._resolve(played, candidates, room)
 
     def reset(self) -> None:
         self._complement = None

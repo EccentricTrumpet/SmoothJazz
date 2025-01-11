@@ -1,11 +1,12 @@
 from unittest import TestCase
+
 from abstractions import Room, Suit
-from core.trick import Trick
 from core import Order, Player
-from testing import initialize, JB
-from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
-from testing.hearts import H3, H4, H5, H6, H7
+from core.trick import Trick
+from testing import JB, initialize
 from testing.diamonds import D3, D4
+from testing.hearts import H3, H4, H5, H6, H7
+from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
 
 
 class TrickPlayTests(TestCase):
@@ -138,7 +139,7 @@ class TrickPlayTests(TestCase):
                             [], Player(player, "", "", play), play, Room(0, "")
                         )
                     )
-                    self.assertEqual(winner, trick.winner_id)
+                    self.assertEqual(winner, trick.winner_pid)
 
     def test_trick_play_accumulates_score(self) -> None:
         trick = Trick(4, Order(2))

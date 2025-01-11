@@ -1,12 +1,10 @@
 from typing import Sequence, Tuple
+
 from abstractions import Card, Suit
 
 
 class Order:
-    def __init__(
-        self,
-        trump_rank: int,
-    ) -> None:
+    def __init__(self, trump_rank: int) -> None:
         # Inputs
         self.__trump_rank = trump_rank
 
@@ -18,7 +16,7 @@ class Order:
         self.__all_ranks.remove(self.__trump_rank)
         self.reset(Suit.JOKER)
 
-    def reset(self, trump_suit: Suit):
+    def reset(self, trump_suit: Suit) -> None:
         self.__trump_suit = trump_suit
         non_trump_suits = [
             suit
@@ -67,7 +65,9 @@ class Order:
             or card.rank == self.__trump_rank
         )
 
-    def cards_in_suit(self, cards: Sequence[Card], suit: Suit, trump_suit: bool):
+    def cards_in_suit(
+        self, cards: Sequence[Card], suit: Suit, trump_suit: bool
+    ) -> Sequence[Card]:
         return [
             card
             for card in cards
