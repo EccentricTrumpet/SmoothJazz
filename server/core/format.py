@@ -22,10 +22,6 @@ class Format:
             else next(iter(suits))
         )
         self.suited = self.trumps or (no_trumps and self.suit != Suit.UNKNOWN)
-
-        self.singles: list[Single]
-        self.pairs: list[Pair]
-        self.tractors: list[Tractor]
         self.singles, self.pairs, self.tractors = (
             self.__create(cards) if self.suited else ([], [], [])
         )
@@ -97,6 +93,7 @@ class Format:
         for single in self.singles:
             single.reset()
 
+    # Recreate this format using the given format as a template
     def reform(self, format: Self) -> None:
         if all(unit.complement is not None for unit in format.units):
             self.tractors = [tractor.complement for tractor in format.tractors]
@@ -107,7 +104,8 @@ class Format:
     def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Cards:
         return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
-    def play(self, played_cards: Cards, hand_cards: Cards, room: Room) -> None:
+    # Ensure the following play follows the lead format
+    def valid_follow(self, played_cards: Cards, hand_cards: Cards, room: Room) -> None:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}
         stack = [unit for unit in reversed(self.units)]

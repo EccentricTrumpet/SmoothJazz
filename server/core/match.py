@@ -1,4 +1,4 @@
-from abstractions import GamePhase, MatchPhase, Room
+from abstractions import GamePhase, MatchPhase, PlayerError, Room
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from abstractions.responses import MatchResponse, MatchUpdate
 from core.constants import BOSS_LEVELS
@@ -23,6 +23,13 @@ class Match:
         # 1 deck for every 2 players, rounded down
         self.__num_decks = self.__num_players // 2
 
+    def __add_player(self, name: str, sid: str, room: Room) -> None:
+        room.public("join", self.players.add(name, sid).update())
+
+    def __ensure_cards(self, event: CardsEvent) -> None:
+        if not self.players[event.pid].has_cards(event.cards):
+            raise PlayerError("Invalid cards", "You don't have those cards.")
+
     def response(self) -> MatchResponse:
         return MatchResponse(
             self.__id,
@@ -32,11 +39,7 @@ class Match:
             self.players.updates(),
         )
 
-    def __add_player(self, name: str, sid: str, room: Room) -> None:
-        room.public("join", self.players.add(name, sid).update())
-
     def join(self, event: JoinEvent, room: Room) -> None:
-
         # Do not process join event if match if full or ended
         if self.__phase == MatchPhase.STARTED or self.__phase == MatchPhase.ENDED:
             return
@@ -60,7 +63,7 @@ class Match:
     def leave(self, event: PlayerEvent, room: Room) -> None:
         # Only allow players to leave a match that hasn't started
         if self.__phase != MatchPhase.CREATED:
-            return
+            raise PlayerError("Cannot leave", "You can't leave after starting a match.")
 
         if event.pid in self.players:
             room.public("leave", self.players.remove(event.pid).update())
@@ -69,12 +72,15 @@ class Match:
         self.__games[-1].draw(event, room)
 
     def bid(self, event: CardsEvent, room: Room) -> None:
+        self.__ensure_cards(event)
         self.__games[-1].bid(event, room)
 
     def kitty(self, event: CardsEvent, room: Room) -> None:
+        self.__ensure_cards(event)
         self.__games[-1].kitty(event, room)
 
     def play(self, event: CardsEvent, room: Room) -> None:
+        self.__ensure_cards(event)
         game = self.__games[-1]
         game.play(event, room)
         if (
@@ -84,7 +90,7 @@ class Match:
             self.__phase = MatchPhase.ENDED
             room.public("match", MatchUpdate(self.__phase))
 
-    def next(self, event: CardsEvent, room: Room) -> None:
+    def next(self, event: PlayerEvent, room: Room) -> None:
         game = self.__games[-1]
         if self.__debug or game.ready(event.pid):
             new_game = Game(self.__num_decks, self.players, game.next_pid)

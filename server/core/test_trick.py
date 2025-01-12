@@ -16,14 +16,6 @@ class TrickPlayTests(TestCase):
         with self.assertRaises(PlayerError):
             trick.play(Player(0, "", ""), [], Room(0, ""))
 
-    def test_trick_play_enforce_possession(self) -> None:
-        trick = Trick(4, Order(2))
-        cards = initialize([S2, S3])
-        hand = [cards[0]]
-        play = [cards[1]]
-        with self.assertRaises(PlayerError):
-            trick.play(Player(0, "", "", hand), play, Room(0, ""))
-
     def test_trick_play_enforce_lead_suited(self) -> None:
         cases = [
             # Trumps and non-trump

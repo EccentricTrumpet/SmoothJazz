@@ -77,6 +77,12 @@ class Game:
                 self._attackers.add(pid)
             pid = self.__players.next(pid)
 
+    def __ensure_valid_event(self, phase: GamePhase, pid: int | None = None) -> None:
+        if phase != self.phase:
+            raise PlayerError("Invalid action", "You can't do that right now.")
+        if pid is not None and pid != self.__active_pid:
+            raise PlayerError("Invalid action", "It's not your turn.")
+
     def start(self) -> StartUpdate:
         return StartUpdate(
             self.__active_pid,
@@ -89,12 +95,7 @@ class Game:
         )
 
     def draw(self, event: PlayerEvent, room: Room) -> None:
-        # Only active player can draw
-        if event.pid != self.__active_pid:
-            raise PlayerError("You can't draw", "It's not your turn.")
-
-        if self.phase != GamePhase.DRAW:
-            raise PlayerError("You can't draw", "Not time to draw cards.")
+        self.__ensure_valid_event(GamePhase.DRAW, event.pid)
 
         # Draw cards
         player = self.__players[event.pid]
@@ -131,22 +132,15 @@ class Game:
             return TrumpType.PAIR
 
     def bid(self, event: CardsEvent, room: Room) -> None:
-        # Can only bid during draw phase
-        if self.phase != GamePhase.DRAW:
-            raise PlayerError("Invalid bid", "Not time to bid.")
-
-        # Player must possess the cards
-        player = self.__players[event.pid]
-        if not player.has_cards(event.cards):
-            raise PlayerError("Invalid bid", "You don't have those cards.")
-
+        self.__ensure_valid_event(GamePhase.DRAW)
         trump_type = self.__resolve_trump_type(event.cards)
 
         # Player must possess the cards
         if trump_type == TrumpType.NONE:
             raise PlayerError("Invalid bid", "You must bid trump ranks or joker pairs.")
 
-        if self.__bidder_pid != player.pid:
+        pid = self.__players[event.pid].pid
+        if self.__bidder_pid != pid:
             # If bidder is different from current bidder, trumps must be of a higher priority
             if trump_type <= self.__trump_type:
                 raise PlayerError("Invalid bid", "Your bid wasn't high enough.")
@@ -163,7 +157,7 @@ class Game:
         # Update states
         self.__trump_suit = event.cards[0].suit
         self.__trump_type = trump_type
-        self.__bidder_pid = player.pid
+        self.__bidder_pid = pid
 
         if self.__bid_team:
             self.__kitty_pid = self.__bidder_pid
@@ -172,31 +166,18 @@ class Game:
         kitty_pid = self.__kitty_pid
         room.public(
             "bid",
-            BidUpdate(
-                player.pid, event.cards, kitty_pid, self._attackers, self._defenders
-            ),
+            BidUpdate(pid, event.cards, kitty_pid, self._attackers, self._defenders),
         )
 
     def kitty(self, event: CardsEvent, room: Room) -> None:
-        # Only hide kitty during the kitty phase
-        if self.phase != GamePhase.KITTY:
-            raise PlayerError("Invalid kitty", "Not time to hide kitty.")
-
-        # Only kitty player can hide kitty
-        if event.pid != self.__kitty_pid:
-            raise PlayerError("Invalid kitty", "It's not your turn.")
+        self.__ensure_valid_event(GamePhase.KITTY, event.pid)
 
         # Number of cards must be correct
         if len(event.cards) != KITTY_SIZE:
             raise PlayerError("Invalid kitty", "Wrong number of cards.")
 
-        # Player must possess the cards
-        player = self.__players[event.pid]
-        if not player.has_cards(event.cards):
-            raise PlayerError("Invalid kitty", "You don't have those cards.")
-
         # Hide kitty
-        player.play(event.cards)
+        self.__players[event.pid].play(event.cards)
         self._kitty = event.cards
 
         # Update states
@@ -207,10 +188,9 @@ class Game:
 
     def _end(self) -> None:
         self.phase = GamePhase.END
-        trick = self._tricks[-1]
 
         # Add kitty score
-        if trick.winner_pid in self._attackers:
+        if (trick := self._tricks[-1]).winner_pid in self._attackers:
             multiple = 2
             winner = trick.winning_play
             if len(winner.tractors) > 0:
@@ -220,8 +200,7 @@ class Game:
             self._score += multiple * sum([c.points for c in self._kitty])
 
         # Update level up players and resolve next lead player
-        threshold = DECK_THRESHOLD * self.__decks
-        if self._score >= 2 * threshold:
+        if self._score >= 2 * (threshold := DECK_THRESHOLD * self.__decks):
             # Attackers win
             levels = (self._score - 2 * threshold) // threshold
             self.next_pid = self.__players.next(self.__kitty_pid)
@@ -245,13 +224,7 @@ class Game:
                 player.level = min(max_level, player.level + levels)
 
     def play(self, event: CardsEvent, room: Room) -> None:
-        # Only play during the play phase
-        if self.phase != GamePhase.PLAY:
-            raise PlayerError("Invalid play", "Not time to play cards.")
-
-        # Only active player can play
-        if event.pid != self.__active_pid:
-            raise PlayerError("Invalid play", "It's not your turn.")
+        self.__ensure_valid_event(GamePhase.PLAY, event.pid)
 
         # Create new trick if needed
         if len(self._tricks) == 0 or self._tricks[-1].ended:

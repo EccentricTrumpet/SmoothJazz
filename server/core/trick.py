@@ -33,10 +33,6 @@ class Trick:
         if len(cards) == 0:
             raise PlayerError("Invalid play", "Must play at least 1 card.")
 
-        # Player must possess the cards
-        if not player.has_cards(cards):
-            raise PlayerError("Invalid play", "You don't have those cards.")
-
         # Enforce leading play rules
         if self.__lead_pid == -1:
             format = Format(self.__order, cards)
@@ -82,7 +78,7 @@ class Trick:
         )
 
         try:
-            lead.play(cards, played_suit, room)
+            lead.valid_follow(cards, played_suit, room)
         except PlayerError:
             lead.reset()
             raise
