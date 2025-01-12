@@ -29,10 +29,9 @@ class MatchPhase(IntEnum):
 
 class GamePhase(IntEnum):
     DRAW = 0
-    RESERVE = 1  # 抓底牌
-    KITTY = 2  # 埋底牌
-    PLAY = 3
-    END = 4
+    KITTY = 1  # 埋底牌
+    PLAY = 2
+    END = 3
 
 
 class Card:

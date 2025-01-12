@@ -1,6 +1,6 @@
 from abstractions import GamePhase, MatchPhase, Room
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
-from abstractions.responses import MatchResponse, MatchUpdate, PlayerUpdate
+from abstractions.responses import MatchResponse, MatchUpdate
 from core.constants import BOSS_LEVELS
 from core.game import Game
 from core.players import Players

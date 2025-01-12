@@ -12,7 +12,7 @@ from abstractions.responses import (
     StartUpdate,
     TrickUpdate,
 )
-from core import Order, Player
+from core import Order
 from core.constants import BOSS_LEVELS, DECK_SIZE, DECK_THRESHOLD, KITTY_SIZE, SUIT_SIZE
 from core.players import Players
 from core.trick import Trick
@@ -20,9 +20,6 @@ from core.trick import Trick
 
 class Game:
     def __init__(self, decks: int, players: Players, lead: int = -1, bid_team=False):
-        if lead == -1:
-            lead = players.first().pid
-
         # Inputs
         self.__decks = decks
         self.__players = players
@@ -33,9 +30,9 @@ class Game:
         self.__bidder_pid = -1
         self.__trump_suit = Suit.UNKNOWN
         self.__trump_type = TrumpType.NONE
-        self.__kitty_pid = lead
-        self.__active_pid = lead
-        self.__rank = self.__players[lead].level
+        self.__kitty_pid = lead if lead != -1 else players.first().pid
+        self.__active_pid = self.__kitty_pid
+        self.__rank = self.__players[self.__kitty_pid].level
         self.__order = Order(self.__rank)
         self.__ready_players: set[int] = set()
 
@@ -45,6 +42,7 @@ class Game:
         self._tricks: list[Trick] = []
         self._attackers: set[int] = set()
         self._defenders: set[int] = set()
+        self.__assign_teams()
 
         # Public
         self.phase = GamePhase.DRAW
@@ -66,8 +64,6 @@ class Game:
             rank_index = card_index % SUIT_SIZE + 1
             self.__deck.append(Card(indices[i], suits[suit_index], rank_index))
         random.shuffle(self.__deck)
-
-        self.__assign_teams()
 
     def __assign_teams(self) -> None:
         # Assign teams (fixed teams)
@@ -93,42 +89,30 @@ class Game:
         )
 
     def draw(self, event: PlayerEvent, room: Room) -> None:
-        player = self.__players[event.pid]
-
         # Only active player can draw
         if event.pid != self.__active_pid:
             raise PlayerError("You can't draw", "It's not your turn.")
 
-        if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
+        if self.phase != GamePhase.DRAW:
             raise PlayerError("You can't draw", "Not time to draw cards.")
 
-        if self.phase == GamePhase.DRAW:
-            # Draw card
-            card = self.__deck.pop()
-            player.draw([card])
+        # Draw cards
+        player = self.__players[event.pid]
+        count = 1 if len(self.__deck) > KITTY_SIZE else KITTY_SIZE
+        cards = [self.__deck.pop() for _ in range(count)]
+        player.draw(cards)
 
-            # Update states
-            if len(self.__deck) == KITTY_SIZE:
-                self.phase = GamePhase.RESERVE
-                self.__active_pid = self.__kitty_pid
-            else:
-                self.__active_pid = self.__players.next(self.__active_pid)
-
-            room.secret(
-                "draw",
-                DrawUpdate(player.pid, self.phase, self.__active_pid, [card]),
-            )
-        else:
-            # Draw cards
-            cards = self.__deck
-            player.draw(cards)
-
-            # Update states
-            self.__deck = []
+        # Update states
+        if len(self.__deck) == 0:
             self.phase = GamePhase.KITTY
+        elif len(self.__deck) == KITTY_SIZE:
+            self.__active_pid = self.__kitty_pid
+        else:
+            self.__active_pid = self.__players.next(self.__active_pid)
 
-            kitty_pid = self.__kitty_pid
-            room.secret("draw", DrawUpdate(kitty_pid, self.phase, kitty_pid, cards))
+        room.secret(
+            "draw", DrawUpdate(player.pid, self.phase, self.__active_pid, cards)
+        )
 
     def __resolve_trump_type(self, cards: Cards) -> TrumpType:
         if len(cards) == 0 or len(cards) > 2:
@@ -147,13 +131,12 @@ class Game:
             return TrumpType.PAIR
 
     def bid(self, event: CardsEvent, room: Room) -> None:
-        player = self.__players[event.pid]
-
-        # Can only bid during draw or reserve (抓底牌) phases
-        if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
+        # Can only bid during draw phase
+        if self.phase != GamePhase.DRAW:
             raise PlayerError("Invalid bid", "Not time to bid.")
 
         # Player must possess the cards
+        player = self.__players[event.pid]
         if not player.has_cards(event.cards):
             raise PlayerError("Invalid bid", "You don't have those cards.")
 
@@ -195,8 +178,6 @@ class Game:
         )
 
     def kitty(self, event: CardsEvent, room: Room) -> None:
-        player = self.__players[event.pid]
-
         # Only hide kitty during the kitty phase
         if self.phase != GamePhase.KITTY:
             raise PlayerError("Invalid kitty", "Not time to hide kitty.")
@@ -210,6 +191,7 @@ class Game:
             raise PlayerError("Invalid kitty", "Wrong number of cards.")
 
         # Player must possess the cards
+        player = self.__players[event.pid]
         if not player.has_cards(event.cards):
             raise PlayerError("Invalid kitty", "You don't have those cards.")
 
@@ -263,8 +245,6 @@ class Game:
                 player.level = min(max_level, player.level + levels)
 
     def play(self, event: CardsEvent, room: Room) -> None:
-        player = self.__players[event.pid]
-
         # Only play during the play phase
         if self.phase != GamePhase.PLAY:
             raise PlayerError("Invalid play", "Not time to play cards.")

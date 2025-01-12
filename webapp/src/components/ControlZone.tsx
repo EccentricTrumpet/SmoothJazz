@@ -31,7 +31,6 @@ export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, statusStat
     case MatchPhase.STARTED:
       switch(statusState.gamePhase) {
         case GamePhase.Draw:
-        case GamePhase.Reserve:
           buttonText = "Bid";
           buttonAction = () => controller.onBid();
           break;
