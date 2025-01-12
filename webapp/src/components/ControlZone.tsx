@@ -1,3 +1,4 @@
+import { FC } from "react";
 import { Constants } from "../Constants";
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
@@ -10,7 +11,7 @@ interface ControlZoneInputs {
   controller: ControllerInterface;
 }
 
-export const ControlZone: React.FC<ControlZoneInputs> = ({parentZone, statusState, controller}) => {
+export const ControlZone: FC<ControlZoneInputs> = ({parentZone, statusState, controller}) => {
   const zone = new Zone(
     new Position(
       parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,

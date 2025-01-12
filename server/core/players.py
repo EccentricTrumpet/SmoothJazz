@@ -1,7 +1,7 @@
 from itertools import count
 from typing import Iterator
 
-from abstractions.responses import PlayerUpdate
+from abstractions import PlayerInfo
 from core import Player
 
 
@@ -20,8 +20,8 @@ class Players:
     def __getitem__(self, pid: int) -> Player:
         return self.__players[pid]
 
-    def updates(self) -> list[PlayerUpdate]:
-        return [player.update() for player in self.__players.values()]
+    def infos(self) -> list[PlayerInfo]:
+        return [player.info() for player in self.__players.values()]
 
     def add(self, name: str, sid: str) -> Player:
         player = Player(next(self.__player_ids), name, sid)

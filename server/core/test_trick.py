@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from abstractions import PlayerError, Room, Suit
+from abstractions import PlayerError, Suit
 from core import Order, Player
 from core.trick import Trick
 from testing import JB, initialize

@@ -1,9 +1,34 @@
-from abstractions import GamePhase, MatchPhase, PlayerError, Room
+from abstractions import GamePhase, MatchPhase, PlayerError, PlayerInfo, Response, Room
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
-from abstractions.responses import MatchResponse, MatchUpdate
 from core import BOSS_LEVELS
 from core.game import Game
 from core.players import Players
+from core.updates import MatchUpdate, PlayerUpdate
+
+
+class MatchResponse(Response):
+    def __init__(
+        self,
+        id: int,
+        debug: bool,
+        num_players: int,
+        phase: MatchPhase,
+        players: list[PlayerInfo],
+    ):
+        self.__id = id
+        self.__debug = debug
+        self.__num_players = num_players
+        self.__phase = phase
+        self.__players = players
+
+    def json(self) -> dict:
+        return {
+            "id": self.__id,
+            "debug": self.__debug,
+            "numPlayers": self.__num_players,
+            "phase": self.__phase,
+            "players": [player.json() for player in self.__players],
+        }
 
 
 class Match:
@@ -24,7 +49,7 @@ class Match:
         self.__num_decks = self.__num_players // 2
 
     def __add_player(self, name: str, sid: str, room: Room) -> None:
-        room.public("join", self.players.add(name, sid).update())
+        room.public("join", PlayerUpdate(self.players.add(name, sid).info()))
 
     def __ensure_cards(self, event: CardsEvent) -> None:
         if not self.players[event.pid].has_cards(event.cards):
@@ -36,7 +61,7 @@ class Match:
             self.__debug,
             self.__num_players,
             self.__phase,
-            self.players.updates(),
+            self.players.infos(),
         )
 
     def join(self, event: JoinEvent, room: Room) -> None:
@@ -66,7 +91,7 @@ class Match:
             raise PlayerError("Cannot leave", "You can't leave after starting a match.")
 
         if event.pid in self.players:
-            room.public("leave", self.players.remove(event.pid).update())
+            room.public("leave", PlayerUpdate(self.players.remove(event.pid).info()))
 
     def draw(self, event: PlayerEvent, room: Room) -> None:
         self.__games[-1].draw(event, room)

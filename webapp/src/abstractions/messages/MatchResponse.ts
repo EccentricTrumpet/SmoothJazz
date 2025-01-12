@@ -10,7 +10,7 @@ export class MatchResponse {
 
     constructor(jsonText: string) {
         console.log(`raw match response: ${jsonText}`);
-        var jsonObj = JSON.parse(jsonText);
+        const jsonObj = JSON.parse(jsonText);
         this.matchId = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
         this.numPlayers = Number(jsonObj["numPlayers"]);

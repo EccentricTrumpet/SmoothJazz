@@ -17,10 +17,10 @@ import {
   BidResponse,
   KittyResponse,
   PlayResponse,
-  TrickResponse,
   EndResponse,
   ErrorUpdate,
-  MatchUpdate} from "../abstractions/messages";
+  MatchUpdate
+} from "../abstractions/messages";
 import { ErrorState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { ErrorComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
 import { Constants } from "../Constants";
@@ -124,20 +124,24 @@ export default function MatchPage() {
         return dict;
       }
 
-      const playCards = (cards: Card[], playerId: number) => {
+      const playCards = (cards: Card[], pid: number, winnerPid?: number) => {
         const playCards = createCardDict(cards);
 
         setPlayers(prevPlayers => prevPlayers.map((player) => {
-          if (player.id === playerId) {
+          if (player.id === pid) {
             const [newPlaying, newHand] = partition(player.hand, card => playCards.has(card.id));
             newPlaying.forEach(card => card.updateInfo(playCards.get(card.id)!));
             return new PlayerState(player.id, player.name, player.level, player.seat, newHand, [...player.playing, ...newPlaying]);
           }
           return player;
         }));
+
+        if (winnerPid !== undefined) {
+          setStatusState(pState => new StatusState(pState).withWinner(winnerPid));
+        }
       }
 
-      const cleanupTrickAsync = async (score: number) => {
+      const cleanupTrickAsync = async (score: number, activePid?: number) => {
         await new Promise(f => setTimeout(f, 1000));
 
         // Remove played cards from players
@@ -156,6 +160,9 @@ export default function MatchPage() {
           setBoardState(pState => new BoardState(pState.deck, pState.kitty, [...pState.discard, ...discards], score));
           return newPlayers;
         });
+
+        // Update status state
+        setStatusState(pState => new StatusState(pState).withActivePlayer(activePid).withWinner(-1));
       }
 
       const withdrawPlaying = (ignorePlayer: number | undefined = undefined) => {
@@ -319,36 +326,22 @@ export default function MatchPage() {
         setStatusState(pState => new StatusState(pState).withGamePhase(kittyResponse.phase));
       });
 
-      socket.on("play", (response) => {
+      socket.on("play", async (response) => {
         console.log(`raw play response: ${JSON.stringify(response)}`);
         const playResponse = new PlayResponse(response);
 
         // Play cards
-        playCards(playResponse.cards, playResponse.playerId);
+        playCards(playResponse.cards, playResponse.pid, playResponse.winnerPid);
 
         // Set new game state
-        setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(playResponse.activePlayerId)
-          .withTrickWinner(playResponse.trickWinnerId));
-      });
-
-      socket.on("trick", async (response) => {
-        console.log(`raw trick response: ${JSON.stringify(response)}`);
-        const trickResponse = new TrickResponse(response);
-
-        // Play cards
-        playCards(trickResponse.play.cards, trickResponse.play.playerId);
-
-        // Set status state
-        setStatusState(pState => new StatusState(pState).withTrickWinner(trickResponse.activePlayerId));
-
-        // Cleanup trick
-        await cleanupTrickAsync(trickResponse.score);
-
-        // Set status state
-        setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(trickResponse.activePlayerId)
-          .withTrickWinner(-1));
+        if (playResponse.score === undefined) {
+          // Trick not complete
+          setStatusState(pState => new StatusState(pState).withActivePlayer(playResponse.activePid));
+        }
+        else {
+          // Trick complete
+          await cleanupTrickAsync(playResponse.score, playResponse.activePid);
+        }
       });
 
       socket.on("end", async (response) => {
@@ -356,24 +349,15 @@ export default function MatchPage() {
         const endResponse = new EndResponse(response);
 
         // Play cards
-        playCards(endResponse.trick.play.cards, endResponse.trick.play.playerId);
-
-        // Set status state
-        setStatusState(pState => new StatusState(pState)
-          .withTrickWinner(endResponse.trick.activePlayerId));
+        playCards(endResponse.play.cards, endResponse.play.pid, endResponse.play.winnerPid);
 
         // Cleanup trick
-        await cleanupTrickAsync(endResponse.trick.score);
-
-        // Set new game state
-        setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(endResponse.trick.activePlayerId)
-          .withTrickWinner(-1));
+        await cleanupTrickAsync(endResponse.play.score!, endResponse.play.activePid);
 
         await new Promise(f => setTimeout(f, 1000));
 
         // Display kitty
-        const kittyCards = createCardDict(endResponse.kitty);
+        const kittyCards = createCardDict(endResponse.kitty.cards);
         setBoardState(pState => {
           for (const card of pState.kitty) {
             card.updateInfo(kittyCards.get(card.id)!);
@@ -386,15 +370,15 @@ export default function MatchPage() {
               endResponse.players.get(player.id)!,
               player.seat,
               player.hand,
-              player.id === endResponse.kittyId ? pState.kitty : player.playing
+              player.id === endResponse.kitty.pid ? pState.kitty : player.playing
             ));
           });
 
-          return new BoardState([], [], pState.discard, endResponse.score);
+          return new BoardState([], [], pState.discard, endResponse.kitty.score);
         });
 
         setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(endResponse.leadId)
+          .withActivePlayer(endResponse.kitty.activePid)
           .withGamePhase(endResponse.phase));
       });
 
@@ -404,7 +388,6 @@ export default function MatchPage() {
       return () => {
         // Teardown
         socket.off("end");
-        socket.off("trick");
         socket.off("play");
         socket.off("kitty");
         socket.off("bid");

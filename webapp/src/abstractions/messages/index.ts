@@ -13,4 +13,3 @@ export * from './PlayerEvent';
 export * from './PlayerUpdate';
 export * from './PlayResponse';
 export * from './StartResponse';
-export * from './TrickResponse';

@@ -2,7 +2,7 @@ from itertools import batched, combinations
 from random import shuffle
 from unittest import TestCase
 
-from abstractions import Card, Cards, PlayerError, Room, Suit
+from abstractions import Card, Cards, PlayerError, Suit
 from core import Order
 from core.format import Format
 from core.unit import Pair, Single, Tractor

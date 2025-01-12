@@ -1,5 +1,4 @@
-from abstractions import Card, Cards, Cards_, Suit
-from abstractions.responses import PlayerUpdate
+from abstractions import Card, Cards, Cards_, PlayerInfo, Suit
 
 # Level 14 is Aces, Level 15 is the end level
 BOSS_LEVELS = [2, 5, 10, 13, 14, 15]
@@ -94,8 +93,8 @@ class Player:
         # Public
         self.level = 2
 
-    def update(self) -> PlayerUpdate:
-        return PlayerUpdate(self.pid, self.name, self.level)
+    def info(self) -> PlayerInfo:
+        return PlayerInfo(self.pid, self.name, self.level)
 
     def draw(self, cards: Cards) -> None:
         self.__hand.extend(cards)

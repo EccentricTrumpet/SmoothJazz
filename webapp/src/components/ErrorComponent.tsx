@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BackdropComponent } from "./BackdropComponent";
 import { ErrorState } from "../abstractions/states";
+import { FC } from "react";
 
 const dropIn = {
   hidden: {
@@ -25,9 +26,9 @@ const dropIn = {
 
 interface ErrorComponentInputs {
   errorState: ErrorState;
-  onClose?: () => any;
+  onClose: () => void;
 }
-export const ErrorComponent: React.FC<ErrorComponentInputs> = ({ errorState, onClose = () => {} }) => {
+export const ErrorComponent: FC<ErrorComponentInputs> = ({ errorState, onClose = () => {} }) => {
   return (
     <BackdropComponent onClick={onClose}>
       <motion.div

@@ -1,31 +1,20 @@
-import { GamePhase, Suit } from "../enums";
-import { Card } from "..";
-import { TrickResponse } from "./TrickResponse";
+import { GamePhase} from "../enums";
+import { PlayerUpdate } from "./PlayerUpdate";
+import { PlayJsonInterface, PlayResponse } from "./PlayResponse";
 
 export class EndResponse {
-    trick: TrickResponse;
+    play: PlayResponse;
+    kitty: PlayResponse;
     phase: GamePhase;
-    kittyId: number;
-    kitty: Card[] = [];
-    leadId: number;
-    score: number;
     players: Map<number, number>;
 
-    constructor(jsonObj: any) {
-        this.trick = new TrickResponse(jsonObj['trick']);
-        this.phase = jsonObj['phase'] as GamePhase;
-        this.kittyId = Number(jsonObj['kittyId']);
-        for (const card of jsonObj.kitty) {
-            this.kitty.push(new Card(
-                Number(card['id']),
-                card['suit'] as Suit,
-                Number(card['rank'])
-            ));
-        }
-        this.leadId = Number(jsonObj['leadId']);
-        this.score = Number(jsonObj['score']);
+    constructor(jsonObj: {play: PlayJsonInterface, kitty: PlayJsonInterface, phase: unknown, players: []}) {
+        this.play = new PlayResponse(jsonObj.play);
+        this.kitty = new PlayResponse(jsonObj.kitty);
+        this.phase = jsonObj.phase as GamePhase;
         this.players = new Map<number, number>();
-        for (const player of jsonObj.players) {
+        const players = jsonObj.players.map(PlayerUpdate.fromJson);
+        for (const player of players) {
             this.players.set(player.id, player.level);
         }
     }

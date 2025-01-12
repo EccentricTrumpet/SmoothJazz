@@ -7,7 +7,7 @@ import { OptionsState, PlayerState, StatusState, TrumpState } from "../abstracti
 import { Constants } from "../Constants";
 import { CardsZone } from ".";
 import { Tooltip } from "react-tooltip";
-import { ReactNode } from "react";
+import { FC, ReactNode } from "react";
 
 const createStatus = (status: string): ReactNode => {
   const {codepoint, description} = Constants.statusDetails[status];
@@ -34,7 +34,7 @@ interface PlayerZoneArgument {
   controller: ControllerInterface;
 }
 
-export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, statusState, parentZone, options, controller}) => {
+export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusState, parentZone, options, controller}) => {
 
   let handZone: Zone, nameZone: Zone, playingZone: Zone, trickStatusZone: Zone, playerStatusZone: Zone;
   let nameRotate: number = 0;

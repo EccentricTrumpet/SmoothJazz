@@ -3,7 +3,7 @@ from enum import IntEnum, StrEnum
 from typing import Iterator, Self
 
 
-class TrumpType(IntEnum):
+class Trump(IntEnum):
     NONE = 0
     SINGLE = 1
     PAIR = 2
@@ -48,8 +48,8 @@ class Card:
             and self.rank == other.rank
         )
 
-    def matches(self, card: Self) -> bool:
-        return self.suit == card.suit and self.rank == card.rank
+    def __str__(self) -> str:
+        return f"[ Card ({self.id}) - {self.suit} {self.rank} ]"
 
     @property
     def points(self) -> int:
@@ -59,12 +59,25 @@ class Card:
             return 10
         return 0
 
-    def __str__(self) -> str:
-        return f"[ Card ({self.id}) - {self.suit} {self.rank} ]"
+    def json(self) -> dict:
+        return {"id": self.id, "suit": self.suit, "rank": self.rank}
+
+    def matches(self, card: Self) -> bool:
+        return self.suit == card.suit and self.rank == card.rank
+
+
+class PlayerInfo:
+    def __init__(self, pid: int, name: str = "", level: int = -1):
+        self.__pid = pid
+        self.__name = name
+        self.__level = level
+
+    def json(self) -> dict:
+        return {"id": self.__pid, "name": self.__name, "level": self.__level}
 
 
 # HTTP responses
-class HttpResponse(ABC):
+class Response(ABC):
     @abstractmethod
     def json(self) -> dict: ...
 

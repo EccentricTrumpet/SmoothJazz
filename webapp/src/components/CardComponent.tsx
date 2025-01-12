@@ -1,20 +1,21 @@
 import { motion } from "framer-motion";
 import { CardState, OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
+import { FC } from "react";
 
 interface CardComponentInputs {
   idx: number;
   card: CardState;
   options: OptionsState;
-  onClick?: () => any;
+  onClick?: () => void;
 }
 
-export const CardComponent: React.FC<CardComponentInputs> = ({idx, card, options, onClick = () => {}}) => {
+export const CardComponent: FC<CardComponentInputs> = ({idx, card, options, onClick = () => {}}) => {
   const altText = card.state.facedown ? "unknown" : `${card.suit} ${card.rank}`
   const imgSource = card.state.facedown ? options.cardBack : `${card.suit}${card.rank}.png`
   return (
     <motion.img
-      onClick={() => onClick()}
+      onClick={onClick}
       style={{
         position: "fixed",
         top: 0,
