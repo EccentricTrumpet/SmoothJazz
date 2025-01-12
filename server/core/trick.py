@@ -1,4 +1,4 @@
-from abstractions import Cards, PlayerError, Room, Suit
+from abstractions import Cards, PlayerError, Suit
 from core import Order, Player
 from core.format import Format
 
@@ -28,7 +28,7 @@ class Trick:
     def winning_play(self) -> Format:
         return self._plays[self.winner_pid]
 
-    def __infer_format(self, player: Player, cards: Cards, room: Room) -> Format | None:
+    def __infer_format(self, player: Player, cards: Cards) -> Format | None:
         # Must contain at least one card
         if len(cards) == 0:
             raise PlayerError("Invalid play", "Must play at least 1 card.")
@@ -78,7 +78,7 @@ class Trick:
         )
 
         try:
-            lead.valid_follow(cards, played_suit, room)
+            lead.validate_follow(cards, played_suit)
         except PlayerError:
             lead.reset()
             raise
@@ -89,9 +89,9 @@ class Trick:
         return format
 
     # Checks legality and update trick states
-    def play(self, player: Player, cards: Cards, room: Room) -> None:
+    def play(self, player: Player, cards: Cards) -> None:
         # Resolve format
-        format = self.__infer_format(player, cards, room)
+        format = self.__infer_format(player, cards)
 
         # Remove cards from player's hand
         player.play(cards)

@@ -1,7 +1,7 @@
 from itertools import chain
 from typing import Self
 
-from abstractions import Cards, Room, Suit
+from abstractions import Cards, Suit
 from core import Order
 from core.unit import Pair, Single, Tractor
 
@@ -105,7 +105,7 @@ class Format:
         return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
     # Ensure the following play follows the lead format
-    def valid_follow(self, played_cards: Cards, hand_cards: Cards, room: Room) -> None:
+    def validate_follow(self, played_cards: Cards, hand_cards: Cards) -> None:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}
         stack = [unit for unit in reversed(self.units)]
@@ -113,7 +113,7 @@ class Format:
         while stack:
             unit = stack.pop()
             hand_format = Format(self.__order, hand_dict.values())
-            result = unit.resolve(played_dict, hand_format.units, self.__order, room)
+            result = unit.resolve(played_dict, hand_format.units, self.__order)
             if result is None:
                 stack.extend(reversed(unit.decompose()))
                 continue

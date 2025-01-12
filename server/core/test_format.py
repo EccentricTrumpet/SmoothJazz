@@ -457,20 +457,20 @@ class FormatBeatTests(TestCase):
 
 
 class FormatResolvePlayTests(TestCase):
-    def test_format_valid_follow_single_with_complement(self) -> None:
+    def test_format_validate_follow_single_with_complement(self) -> None:
         order = Order(2)
         lead = Format(order, initialize([S3]))
         hand = initialize([S4, S5, S5, S7, S7, S8, S8])
 
         # Any of the cards in hand can be played
         for card in hand:
-            self.assertIsNone(lead.valid_follow([card], hand, Room(0, "")))
+            self.assertIsNone(lead.validate_follow([card], hand))
             self.assertEqual(1, len(lead.units))
             single = lead.units[0]
             self.assertIsInstance(single.complement, Single)
             self.assertListEqual([card], single.complement.cards)
 
-    def test_format_valid_follow_pair_with_complement(self) -> None:
+    def test_format_validate_follow_pair_with_complement(self) -> None:
         order = Order(2)
         lead = Format(order, initialize([S3, S3]))
         hand = initialize([S8, S8, S7, S7, S5, S5, S4])
@@ -488,24 +488,24 @@ class FormatResolvePlayTests(TestCase):
             with self.subTest(setup=setup):
                 play = [hand[i] for i in setup]
 
-                self.assertIsNone(lead.valid_follow(play, hand, Room(0, "")))
+                self.assertIsNone(lead.validate_follow(play, hand))
                 self.assertEqual(1, len(lead.units))
                 pair = lead.units[0]
                 self.assertIsInstance(pair.complement, Pair)
                 self.assertListEqual(play, pair.complement.cards)
 
-    def test_format_valid_follow_pair_no_complement(self) -> None:
+    def test_format_validate_follow_pair_no_complement(self) -> None:
         order = Order(2)
         lead = Format(order, initialize([S3, S3]))
         hand = initialize([S8, S7, S5, S4])
 
         for play in combinations(hand, 2):
-            self.assertIsNone(lead.valid_follow(play, hand, Room(0, "")))
+            self.assertIsNone(lead.validate_follow(play, hand))
             self.assertEqual(1, len(lead.units))
             pair = lead.units[0]
             self.assertIsNone(pair.complement)
 
-    def test_format_valid_follow_pair_invalid(self) -> None:
+    def test_format_validate_follow_pair_invalid(self) -> None:
         order = Order(2)
         lead = Format(order, initialize([S3, S3]))
         hand = initialize([S8, S8, S7, S7, S5, S5, S4])
@@ -515,17 +515,16 @@ class FormatResolvePlayTests(TestCase):
         for setup in cases:
             with self.subTest(setup=setup):
                 play = [hand[i] for i in setup]
-                room = Room(0, "")
 
                 with self.assertRaises(PlayerError) as context:
-                    lead.valid_follow(play, hand, room)
+                    lead.validate_follow(play, hand)
                 self.assertEqual("Illegal format for pair", context.exception._title)
                 self.assertEqual(
                     "There are available pairs to play.", context.exception._message
                 )
                 self.assertListEqual(hand[0:-1], context.exception._hint_cards)
 
-    def test_format_valid_follow_tractor_with_complement(self) -> None:
+    def test_format_validate_follow_tractor_with_complement(self) -> None:
         order = Order(2)
         order.reset(Suit.SPADE)
         lead = Format(order, initialize([S3, S3, S4, S4]))
@@ -549,14 +548,14 @@ class FormatResolvePlayTests(TestCase):
             with self.subTest(setup=setup):
                 play = [hand[i] for i in setup]
 
-                self.assertIsNone(lead.valid_follow(play, hand, Room(0, "")))
+                self.assertIsNone(lead.validate_follow(play, hand))
                 self.assertEqual(1, len(lead.units))
                 tractor = lead.units[0]
                 self.assertIsInstance(tractor.complement, Tractor)
                 self.assertEqual(play[0], tractor.complement.highest)
                 self.assertListEqual(play, tractor.complement.cards)
 
-    def test_format_valid_follow_tractor_no_complement(self) -> None:
+    def test_format_validate_follow_tractor_no_complement(self) -> None:
         order = Order(2)
         lead = Format(order, initialize([S3, S3, S4, S4]))
 
@@ -572,12 +571,12 @@ class FormatResolvePlayTests(TestCase):
                 hand = initialize(hand)
                 play = [hand[i] for i in play]
 
-                self.assertIsNone(lead.valid_follow(play, hand, Room(0, "")))
+                self.assertIsNone(lead.validate_follow(play, hand))
                 self.assertEqual(1, len(lead.units))
                 tractor = lead.units[0]
                 self.assertIsNone(tractor.complement)
 
-    def test_format_valid_follow_tractor_invalid(self) -> None:
+    def test_format_validate_follow_tractor_invalid(self) -> None:
         order = Order(2)
         cases = [
             (
@@ -619,10 +618,9 @@ class FormatResolvePlayTests(TestCase):
                 play = [hand[i] for i in play]
                 (message, hint) = expected
                 hint = [hand[i] for i in hint]
-                room = Room(0, "")
 
                 with self.assertRaises(PlayerError) as context:
-                    lead.valid_follow(play, hand, room)
+                    lead.validate_follow(play, hand)
                 self.assertEqual("Illegal format for tractor", context.exception._title)
                 self.assertEqual(message, context.exception._message)
                 self.assertListEqual(hint, context.exception._hint_cards)

@@ -2,10 +2,11 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Self, TypeVar
 
-from abstractions import Card, Cards, PlayerError, Room
+from abstractions import Card, Cards, PlayerError
 from core import Order
 
 TUnit = TypeVar("TUnit", bound="Unit")
+Ids_ = list[int] | None
 
 
 class Unit(ABC):
@@ -33,12 +34,12 @@ class Unit(ABC):
     def complement(self):
         return self._complement
 
-    def _candidates(self, hand: list[TUnit], order: Order) -> list[Self]:
-        candidates: list[Self] = []
+    def _matches(self, hand: list[TUnit], order: Order) -> list[Self]:
+        matches: list[Self] = []
         for unit in hand:
-            candidates.extend(unit.decompose_into(self))
-        candidates.sort(key=lambda s: order.of(s.highest))
-        return candidates
+            matches.extend(unit.decompose_into(self))
+        matches.sort(key=lambda s: order.of(s.highest))
+        return matches
 
     # Decompose this unit into units of the given type
     @abstractmethod
@@ -50,31 +51,27 @@ class Unit(ABC):
     def decompose(self) -> list[TUnit]:
         raise NotImplementedError
 
-    # Generate card hints for a given set of candidates
+    # Generate card hints for a given set of matches
     @abstractmethod
-    def generate_hints(self, candidates: list[Self]) -> Cards:
+    def generate_hints(self, matches: list[Self]) -> Cards:
         raise NotImplementedError
 
     # Default resolution implementation
-    def _resolve(
-        self, played: dict[int, Card], candidates: list[Self], room: Room
-    ) -> list[int] | None:
-        for candidate in candidates:
-            ids = [card.id for card in candidate.cards]
-            if all(id in played for id in ids):
-                self._complement = candidate
+    def _resolve(self, play: dict[int, Card], matches: list[Self]) -> Ids_:
+        for match in matches:
+            ids = [card.id for card in match.cards]
+            if all(id in play for id in ids):
+                self._complement = match
                 return ids
 
         raise PlayerError(
             f"Illegal format for {self._root}",
             f"There are available {self._name}s to play.",
-            self.generate_hints(candidates),
+            self.generate_hints(matches),
         )
 
-    def resolve(
-        self, played: dict[int, Card], hand: list[TUnit], order: Order, room: Room
-    ) -> list[int] | None:
-        return self._resolve(played, self._candidates(hand, order), room)
+    def resolve(self, play: dict[int, Card], hand: list[TUnit], order: Order) -> Ids_:
+        return self._resolve(play, self._matches(hand, order))
 
     def reset(self) -> None:
         self._complement = None
@@ -91,8 +88,8 @@ class Single(Unit):
     def decompose(self) -> list[Unit]:
         raise RuntimeWarning(f"{self._name} cannot be decomposed.")
 
-    def generate_hints(self, candidates: list[Self]) -> Cards:
-        return [s.highest for s in candidates]
+    def generate_hints(self, matches: list[Self]) -> Cards:
+        return [s.highest for s in matches]
 
 
 class Pair(Unit):
@@ -111,14 +108,12 @@ class Pair(Unit):
     def decompose(self) -> list[Unit]:
         return self.singles
 
-    def generate_hints(self, candidates: list[Self]) -> Cards:
-        return [card for pair in candidates for card in pair.cards]
+    def generate_hints(self, matches: list[Self]) -> Cards:
+        return [card for pair in matches for card in pair.cards]
 
-    def resolve(
-        self, played: dict[int, Card], hand: list[Unit], order: Order, room: Room
-    ) -> list[int] | None:
-        if len(candidates := self._candidates(hand, order)) > 0:
-            return self._resolve(played, candidates, room)
+    def resolve(self, play: dict[int, Card], hand: list[Unit], order: Order) -> Ids_:
+        if len(matches := self._matches(hand, order)) > 0:
+            return self._resolve(play, matches)
 
     def reset(self) -> None:
         self._complement = None
@@ -150,9 +145,9 @@ class Tractor(Unit):
             return self.pairs
         return [Tractor(self.pairs[0:-1]), self.pairs[-1]]
 
-    def generate_hints(self, candidates: list[Self]) -> Cards:
+    def generate_hints(self, matches: list[Self]) -> Cards:
         ids = set()
-        cards = [card for tractor in candidates for card in tractor.cards]
+        cards = [card for tractor in matches for card in tractor.cards]
         return [ids.add(card.id) or card for card in cards if card.id not in ids]
 
     def __peers(self) -> list[Self]:
@@ -163,17 +158,15 @@ class Tractor(Unit):
             # pair. This implementation isn't robust and must be updated
             # if two or more equivalent pairs exist in a single Tractor.
             for peer in pair.peers:
-                new_candidate = [p for p in self.pairs]
-                new_candidate[index] = peer
-                peers.append(Tractor(new_candidate))
+                new_match = [p for p in self.pairs]
+                new_match[index] = peer
+                peers.append(Tractor(new_match))
         return peers
 
-    def resolve(
-        self, played: dict[int, Card], hand: list[Unit], order: Order, room: Room
-    ) -> list[int] | None:
-        candidates = list(chain(*[c.__peers() for c in self._candidates(hand, order)]))
-        if len(candidates) > 0:
-            return self._resolve(played, candidates, room)
+    def resolve(self, play: dict[int, Card], hand: list[Unit], order: Order) -> Ids_:
+        matches = list(chain(*[c.__peers() for c in self._matches(hand, order)]))
+        if len(matches) > 0:
+            return self._resolve(play, matches)
 
     def reset(self) -> None:
         self._complement = None

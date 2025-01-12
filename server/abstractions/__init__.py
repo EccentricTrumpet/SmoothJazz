@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import IntEnum, StrEnum
-from typing import Iterator, Optional, Self
+from typing import Iterator, Self
 
 
 class TrumpType(IntEnum):
@@ -127,8 +127,8 @@ class Room(ABC):
 
 
 Cards = list[Card]
-Cards_ = Optional[Cards]
-Room_ = Optional[Room]
+Cards_ = Cards | None
+Room_ = Room | None
 
 
 class PlayerError(Update, Exception):

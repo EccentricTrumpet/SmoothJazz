@@ -12,8 +12,7 @@ from abstractions.responses import (
     StartUpdate,
     TrickUpdate,
 )
-from core import Order
-from core.constants import BOSS_LEVELS, DECK_SIZE, DECK_THRESHOLD, KITTY_SIZE, SUIT_SIZE
+from core import BOSS_LEVELS, DECK_SIZE, DECK_THRESHOLD, KITTY_SIZE, SUIT_SIZE, Order
 from core.players import Players
 from core.trick import Trick
 
@@ -233,7 +232,7 @@ class Game:
         # Process play event and play cards from player's hands
         player = self.__players[event.pid]
         trick = self._tricks[-1]
-        trick.play(player, event.cards, room)
+        trick.play(player, event.cards)
 
         # Update play states
         self.__active_pid = self.__players.next(self.__active_pid)

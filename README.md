@@ -55,4 +55,4 @@ Run the docker image
 Here are some helpful contractions and conventions used in the code.
 
 1. pid - shorthand for player id. These are unique ids associated with a player
-2. type_ - shorthand for `Optional[type]` in python files
+2. Type_ - shorthand for `Type | None` in python
