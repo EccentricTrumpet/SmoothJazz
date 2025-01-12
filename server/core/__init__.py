@@ -1,6 +1,6 @@
 from typing import Sequence, Tuple
 
-from abstractions import Card, Suit
+from abstractions import Card, Cards, Suit
 
 
 class Order:
@@ -65,9 +65,7 @@ class Order:
             or card.rank == self.__trump_rank
         )
 
-    def cards_in_suit(
-        self, cards: Sequence[Card], suit: Suit, trump_suit: bool
-    ) -> Sequence[Card]:
+    def cards_in_suit(self, cards: Cards, suit: Suit, trump_suit: bool) -> Cards:
         return [
             card
             for card in cards
@@ -80,7 +78,7 @@ class Order:
 
 
 class Player:
-    def __init__(self, id: int, name: str, sid: str, hand: Sequence[Card]) -> None:
+    def __init__(self, id: int, name: str, sid: str, hand: Cards) -> None:
         # Inputs
         self.__hand = hand
         self.id = id
@@ -90,12 +88,12 @@ class Player:
         # Public
         self.level = 2
 
-    def draw(self, cards: Sequence[Card]) -> None:
+    def draw(self, cards: Cards) -> None:
         self.__hand.extend(cards)
 
     # If non-empty cards is passed in, checks if the player has the specified cards.
     # If cards is empty, checks if the player has any cards in hand.
-    def has_cards(self, cards: Sequence[Card] | None = None) -> bool:
+    def has_cards(self, cards: Cards | None = None) -> bool:
         if cards is None:
             return len(self.__hand) > 0
 
@@ -111,12 +109,13 @@ class Player:
 
         return True
 
-    def cards_in_suit(
-        self, order: Order, suit: Suit, include_trumps: bool
-    ) -> Sequence[Card]:
+    def cards_in_suit(self, order: Order, suit: Suit, include_trumps: bool) -> Cards:
         return order.cards_in_suit(self.__hand, suit, include_trumps)
 
     # Always call has_cards before calling play
-    def play(self, cards: Sequence[Card]) -> None:
+    def play(self, cards: Cards) -> None:
         card_ids = set([card.id for card in cards])
         self.__hand = [card for card in self.__hand if card.id not in card_ids]
+
+
+Players = Sequence[Player]

@@ -1,7 +1,7 @@
 from typing import Sequence
 
-from abstractions import Card, PlayerError, Room, Suit
-from core import Order, Player
+from abstractions import Card, Cards, PlayerError, Room, Suit
+from core import Order, Player, Players
 from core.format import Format
 
 
@@ -31,11 +31,7 @@ class Trick:
         return self._plays[self.winner_pid]
 
     def __resolve_format(
-        self,
-        others: Sequence[Player],
-        player: Player,
-        cards: Sequence[Card],
-        room: Room,
+        self, others: Players, player: Player, cards: Cards, room: Room
     ) -> Format | None:
         # Must contain at least one card
         if len(cards) == 0:
@@ -101,14 +97,12 @@ class Trick:
         return format
 
     # Checks legality and update trick states
-    def play(
-        self,
-        others: Sequence[Player],
-        player: Player,
-        cards: Sequence[Card],
-        room: Room,
-    ) -> None:
+    def play(self, others: Players, player: Player, cards: Cards, room: Room) -> None:
+        # Resolve format
         format = self.__resolve_format(others, player, cards, room)
+
+        # Remove cards from player's hand
+        player.play(cards)
 
         # Update states
         self.score += sum([c.points for c in cards])

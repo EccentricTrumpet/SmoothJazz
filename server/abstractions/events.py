@@ -1,6 +1,4 @@
-from typing import Sequence
-
-from abstractions import Card, Suit
+from abstractions import Card, Cards, Suit
 
 
 class JoinEvent:
@@ -20,7 +18,7 @@ class PlayerEvent:
 class CardsEvent(PlayerEvent):
     def __init__(self, sid: str, payload: dict):
         super().__init__(sid, payload)
-        self.cards: Sequence[Card] = []
+        self.cards: Cards = []
         for card in payload["cards"]:
             self.cards.append(
                 Card(int(card["id"]), Suit(card["suit"]), int(card["rank"]))

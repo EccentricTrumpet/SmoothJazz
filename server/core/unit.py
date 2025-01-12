@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Dict, Self, Sequence, TypeVar
 
-from abstractions import Card, PlayerError, Room
+from abstractions import Card, Cards, PlayerError, Room
 from core import Order
 
 TUnit = TypeVar("TUnit", bound="Unit")
 
 
 class Unit(ABC):
-    def __init__(self, cards: Sequence[Card]) -> None:
+    def __init__(self, cards: Cards) -> None:
         self._cards = cards
         self._highest = cards[0]
         self._length = len(cards)
@@ -18,7 +18,7 @@ class Unit(ABC):
         self._root = self._name
 
     @property
-    def cards(self) -> Sequence[Card]:
+    def cards(self) -> Cards:
         return self._cards
 
     @property
@@ -52,7 +52,7 @@ class Unit(ABC):
 
     # Generate card hints for a given set of candidates
     @abstractmethod
-    def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
+    def generate_hints(self, candidates: Sequence[Self]) -> Cards:
         raise NotImplementedError
 
     # Default resolution implementation
@@ -91,12 +91,12 @@ class Single(Unit):
     def decompose(self) -> Sequence[Unit]:
         raise RuntimeWarning(f"{self._name} cannot be decomposed.")
 
-    def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
+    def generate_hints(self, candidates: Sequence[Self]) -> Cards:
         return [s.highest for s in candidates]
 
 
 class Pair(Unit):
-    def __init__(self, cards: Sequence[Card]) -> None:
+    def __init__(self, cards: Cards) -> None:
         super().__init__(cards)
         self.singles = [Single(card) for card in cards]
         self.peers: Sequence[Self] = []
@@ -111,7 +111,7 @@ class Pair(Unit):
     def decompose(self) -> Sequence[Unit]:
         return self.singles
 
-    def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
+    def generate_hints(self, candidates: Sequence[Self]) -> Cards:
         return [card for pair in candidates for card in pair.cards]
 
     def resolve(
@@ -150,7 +150,7 @@ class Tractor(Unit):
             return self.pairs
         return [Tractor(self.pairs[0:-1]), self.pairs[-1]]
 
-    def generate_hints(self, candidates: Sequence[Self]) -> Sequence[Card]:
+    def generate_hints(self, candidates: Sequence[Self]) -> Cards:
         ids = set()
         cards = [card for tractor in candidates for card in tractor.cards]
         return [ids.add(card.id) or card for card in cards if card.id not in ids]

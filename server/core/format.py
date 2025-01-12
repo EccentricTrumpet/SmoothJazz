@@ -1,7 +1,7 @@
 from itertools import chain
 from typing import Self, Sequence, Tuple
 
-from abstractions import Card, Room, Suit
+from abstractions import Cards, Room, Suit
 from core import Order
 from core.unit import Pair, Single, Tractor
 
@@ -9,7 +9,7 @@ from core.unit import Pair, Single, Tractor
 # Container class for format of set of cards in a play
 # Assume non-zero number of cards
 class Format:
-    def __init__(self, order: Order, cards: Sequence[Card]) -> None:
+    def __init__(self, order: Order, cards: Cards) -> None:
         self.__order = order
         self.__cards = cards
 
@@ -33,7 +33,7 @@ class Format:
         self.is_toss = len(self.tractors) + len(self.pairs) + len(self.singles) != 1
 
     def __create(
-        self, cards: Sequence[Card]
+        self, cards: Cards
     ) -> Tuple[Sequence[Single], Sequence[Pair], Sequence[Tractor]]:
         order = self.__order
         cards = sorted(cards, key=lambda card: (order.of(card), card.suit))
@@ -106,12 +106,10 @@ class Format:
             self.singles = [single.complement for single in format.singles]
             self.units = list(chain(self.tractors, self.pairs, self.singles))
 
-    def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Sequence[Card]:
+    def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Cards:
         return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
-    def play(
-        self, played_cards: Sequence[Card], hand_cards: Sequence[Card], room: Room
-    ) -> None:
+    def play(self, played_cards: Cards, hand_cards: Cards, room: Room) -> None:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}
         stack = [unit for unit in reversed(self.units)]

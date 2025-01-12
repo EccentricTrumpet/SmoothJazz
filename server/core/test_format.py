@@ -3,7 +3,7 @@ from random import shuffle
 from typing import Sequence
 from unittest import TestCase
 
-from abstractions import Card, PlayerError, Room, Suit
+from abstractions import Card, Cards, PlayerError, Room, Suit
 from core import Order
 from core.format import Format
 from core.unit import Pair, Single, Tractor
@@ -194,7 +194,7 @@ class FormatCreateTests(TestCase):
     def test_format_create_toss_combination(self) -> None:
         order = Order(2)
         order.reset(Suit.SPADE)
-        empty: Sequence[Card] = []
+        empty: Cards = []
 
         cases = [
             # Multiple tractors are sorted by length, then highest card

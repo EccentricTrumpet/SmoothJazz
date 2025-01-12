@@ -1,8 +1,7 @@
 import random
 from bisect import bisect_left, bisect_right
-from typing import List, Sequence, Set
 
-from abstractions import Card, GamePhase, PlayerError, Room, Suit, TrumpType
+from abstractions import Card, Cards, GamePhase, PlayerError, Room, Suit, TrumpType
 from abstractions.events import CardsEvent, PlayerEvent
 from abstractions.responses import (
     BidUpdate,
@@ -13,15 +12,13 @@ from abstractions.responses import (
     StartUpdate,
     TrickUpdate,
 )
-from core import Order, Player
+from core import Order, Player, Players
 from core.constants import BOSS_LEVELS, DECK_SIZE, DECK_THRESHOLD, KITTY_SIZE, SUIT_SIZE
 from core.trick import Trick
 
 
 class Game:
-    def __init__(
-        self, game_id, decks: int, players: Sequence[Player], lead_pid: int = -1
-    ) -> None:
+    def __init__(self, game_id, decks: int, players: Players, lead_pid: int = -1):
         if lead_pid == -1:
             lead_pid = players[0].id
 
@@ -31,7 +28,7 @@ class Game:
         self.__players = players
 
         # Private
-        self.__deck: List[Card] = []
+        self.__deck: list[Card] = []
         self.__bidder_pid = -1
         self.__trump_suit = Suit.UNKNOWN
         self.__trump_type = TrumpType.NONE
@@ -39,14 +36,14 @@ class Game:
         self.__active_pid = lead_pid
         self.__rank = self.__player_for_pid(lead_pid).level
         self.__order = Order(self.__rank)
-        self.__ready_players: Set[int] = set()
+        self.__ready_players: set[int] = set()
 
         # Protected for testing
         self._score = 0
-        self._kitty: List[Card] = []
-        self._tricks: List[Trick] = []
-        self._attackers: Set[int] = set()
-        self._defenders: Set[int] = set()
+        self._kitty: list[Card] = []
+        self._tricks: list[Trick] = []
+        self._attackers: set[int] = set()
+        self._defenders: set[int] = set()
 
         # Public
         self.phase = GamePhase.DRAW
@@ -84,19 +81,11 @@ class Game:
             pid = self.__next_pid(pid)
 
     def __next_pid(self, pid: int, increment: int = 1) -> int:
-        player_index = -1
-        for index, player in enumerate(self.__players):
-            if player.id == pid:
-                player_index = index
-
-        next_index = (player_index + increment) % len(self.__players)
-        return self.__players[next_index].id
+        index = next((i for i, p in enumerate(self.__players) if p.id == pid), -1)
+        return self.__players[(index + increment) % len(self.__players)].id
 
     def __player_for_pid(self, pid: int) -> Player:
-        for player in self.__players:
-            if player.id == pid:
-                return player
-        raise RuntimeError(f"Cannot find player with id {pid}")
+        return next(filter(lambda p: p.id == pid, self.__players))
 
     def start(self) -> StartUpdate:
         return StartUpdate(
@@ -147,7 +136,7 @@ class Game:
             kitty_pid = self.__kitty_pid
             room.secret("draw", DrawUpdate(kitty_pid, self.phase, kitty_pid, cards))
 
-    def __resolve_trump_type(self, cards: Sequence[Card]) -> TrumpType:
+    def __resolve_trump_type(self, cards: Cards) -> TrumpType:
         if len(cards) == 0 or len(cards) > 2:
             return TrumpType.NONE
         if len(cards) == 1:
@@ -257,10 +246,9 @@ class Game:
 
         # Update level up players and resolve next lead player
         threshold = DECK_THRESHOLD * self.__decks
-        win_threshold = 2 * threshold
-        if self._score >= win_threshold:
+        if self._score >= 2 * threshold:
             # Attackers win
-            levels = (self._score - win_threshold) // threshold
+            levels = (self._score - 2 * threshold) // threshold
             self.next_lead_pid = self.__next_pid(self.__kitty_pid)
             for attacker in self._attackers:
                 player = self.__player_for_pid(attacker)
@@ -269,11 +257,10 @@ class Game:
                 player.level = min(max_level, player.level + levels)
         else:
             # Defenders win
-            score = self._score
             levels = (
-                3 + (0 - score) // threshold
-                if score <= 0
-                else 2 if score < threshold else 1
+                3 + (0 - self._score) // threshold
+                if self._score <= 0
+                else 2 if self._score < threshold else 1
             )
             self.next_lead_pid = self.__next_pid(self.__kitty_pid, 2)
             for defender in self._defenders:
@@ -303,7 +290,6 @@ class Game:
 
         # Process play event and play cards from player's hands
         trick.play(others, player, event.cards, room)
-        player.play(event.cards)
 
         # Update play states
         self.__active_pid = self.__next_pid(self.__active_pid)

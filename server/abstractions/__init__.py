@@ -64,6 +64,9 @@ class Card:
         return f"[ Card ({self.id}) - {self.suit} {self.rank} ]"
 
 
+Cards = Sequence[Card]
+
+
 # HTTP responses
 class HttpResponse(ABC):
     @abstractmethod
@@ -133,7 +136,7 @@ Room_ = Optional[Room]
 
 
 class PlayerError(Update, Exception):
-    def __init__(self, title: str, message: str, hint_cards: Sequence[Card] = []):
+    def __init__(self, title: str, message: str, hint_cards: Cards = []):
         self._title = title
         self._message = message
         self._hint_cards = hint_cards

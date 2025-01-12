@@ -1,6 +1,6 @@
 from typing import Sequence, Tuple
 
-from abstractions import Card, GamePhase, HttpResponse, MatchPhase, Suit, Update
+from abstractions import Cards, GamePhase, HttpResponse, MatchPhase, Suit, Update
 
 
 class MatchResponse(HttpResponse):
@@ -81,9 +81,7 @@ class StartUpdate(Update):
 
 
 class DrawUpdate(Update):
-    def __init__(
-        self, id: int, phase: GamePhase, activePlayerId: int, cards: Sequence[Card]
-    ):
+    def __init__(self, id: int, phase: GamePhase, activePlayerId: int, cards: Cards):
         self.id = id
         self.phase = phase
         self.activePlayerId = activePlayerId
@@ -109,7 +107,7 @@ class BidUpdate(Update):
     def __init__(
         self,
         pid: int,
-        trumps: Sequence[Card],
+        trumps: Cards,
         kitty_pid: int,
         attackers: Sequence[int],
         defenders: Sequence[int],
@@ -134,7 +132,7 @@ class BidUpdate(Update):
 
 
 class KittyUpdate(Update):
-    def __init__(self, pid: int, phase: GamePhase, cards: Sequence[Card]):
+    def __init__(self, pid: int, phase: GamePhase, cards: Cards):
         self.pid = pid
         self.phase = phase
         self.cards = cards
@@ -155,9 +153,7 @@ class KittyUpdate(Update):
 
 
 class PlayUpdate(Update):
-    def __init__(
-        self, pid: int, active_pid: int, winner_pid: int, cards: Sequence[Card]
-    ):
+    def __init__(self, pid: int, active_pid: int, winner_pid: int, cards: Cards):
         self.pid = pid
         self.active_pid = active_pid
         self.winner_pid = winner_pid
@@ -195,7 +191,7 @@ class EndUpdate(Update):
         trick: TrickUpdate,
         phase: GamePhase,
         kitty_pid: int,
-        kitty: Sequence[Card],
+        kitty: Cards,
         lead_pid: int,
         score: int,
         players: Sequence[Tuple[int, int]],
