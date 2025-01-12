@@ -18,12 +18,12 @@ export class CardState {
         this.state = this.state.clone();
     }
 
-    public updateInfo(info: Card) {
+    public updateInfo(card: Card) {
         this.resetState();
-        this.id = info.id;
-        this.suit = info.suit;
-        this.rank = info.rank;
-        this.state.facedown = info.suit === Suit.Unknown;
+        this.id = card.id;
+        this.suit = card.suit;
+        this.rank = card.rank;
+        this.state.facedown = card.suit === Suit.Unknown;
         this.state.selected = false;
     }
 

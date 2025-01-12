@@ -3,6 +3,7 @@ from unittest import TestCase
 from core import Order, Player
 from core.format import Format
 from core.game import Game
+from core.players import Players
 from core.trick import Trick
 from testing import JB, JR, initialize
 from testing.spades import S2, S5
@@ -51,10 +52,10 @@ class GameTests(TestCase):
                 (start_levels, score) = setup
                 (next_levels, next_lead) = expected
 
-                players = [Player(i, "", "", []) for i in range(4)]
-                for player, level in zip(players, start_levels):
-                    player.level = level
-                game = Game(0, 2, players)
+                players = Players()
+                for level in start_levels:
+                    players.add("", "").level = level
+                game = Game(2, players)
                 game._tricks.append(Trick(4, Order(2)))
 
                 # Set protected fields
@@ -66,9 +67,9 @@ class GameTests(TestCase):
 
                 game._end()
 
-                self.assertEqual(next_lead, game.next_lead_pid)
-                for player, level in zip(players, next_levels):
-                    self.assertEqual(level, player.level)
+                self.assertEqual(next_lead, game.next_pid)
+                for index, level in enumerate(next_levels):
+                    self.assertEqual(level, players[index].level)
 
     def test_end_adds_kitty_score(self) -> None:
         cases = [
@@ -89,9 +90,9 @@ class GameTests(TestCase):
                 play = initialize(raw_play)
 
                 order = Order(2)
-                players = [Player(i, "", "", []) for i in range(2)]
-                game = Game(0, 2, players)
-                trick = Trick(4, order)
+                players = Players([Player(i, "", "") for i in range(2)])
+                game = Game(2, players)
+                trick = Trick(2, order)
                 trick.winner_pid = player
                 trick._plays[player] = Format(order, play)
                 game._tricks.append(trick)

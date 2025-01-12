@@ -12,29 +12,30 @@ from abstractions.responses import (
     StartUpdate,
     TrickUpdate,
 )
-from core import Order, Player, Players
+from core import Order, Player
 from core.constants import BOSS_LEVELS, DECK_SIZE, DECK_THRESHOLD, KITTY_SIZE, SUIT_SIZE
+from core.players import Players
 from core.trick import Trick
 
 
 class Game:
-    def __init__(self, game_id, decks: int, players: Players, lead_pid: int = -1):
-        if lead_pid == -1:
-            lead_pid = players[0].id
+    def __init__(self, decks: int, players: Players, lead: int = -1, bid_team=False):
+        if lead == -1:
+            lead = players.first().pid
 
         # Inputs
-        self.__game_id = game_id
         self.__decks = decks
         self.__players = players
+        self.__bid_team = bid_team
 
         # Private
         self.__deck: list[Card] = []
         self.__bidder_pid = -1
         self.__trump_suit = Suit.UNKNOWN
         self.__trump_type = TrumpType.NONE
-        self.__kitty_pid = lead_pid
-        self.__active_pid = lead_pid
-        self.__rank = self.__player_for_pid(lead_pid).level
+        self.__kitty_pid = lead
+        self.__active_pid = lead
+        self.__rank = self.__players[lead].level
         self.__order = Order(self.__rank)
         self.__ready_players: set[int] = set()
 
@@ -47,7 +48,7 @@ class Game:
 
         # Public
         self.phase = GamePhase.DRAW
-        self.next_lead_pid = -1
+        self.next_pid = -1
 
         # Fix game rank for Aces game
         if self.__rank > SUIT_SIZE:
@@ -78,14 +79,7 @@ class Game:
                 self._defenders.add(pid)
             else:
                 self._attackers.add(pid)
-            pid = self.__next_pid(pid)
-
-    def __next_pid(self, pid: int, increment: int = 1) -> int:
-        index = next((i for i, p in enumerate(self.__players) if p.id == pid), -1)
-        return self.__players[(index + increment) % len(self.__players)].id
-
-    def __player_for_pid(self, pid: int) -> Player:
-        return next(filter(lambda p: p.id == pid, self.__players))
+            pid = self.__players.next(pid)
 
     def start(self) -> StartUpdate:
         return StartUpdate(
@@ -99,7 +93,7 @@ class Game:
         )
 
     def draw(self, event: PlayerEvent, room: Room) -> None:
-        player = self.__player_for_pid(event.pid)
+        player = self.__players[event.pid]
 
         # Only active player can draw
         if event.pid != self.__active_pid:
@@ -118,11 +112,11 @@ class Game:
                 self.phase = GamePhase.RESERVE
                 self.__active_pid = self.__kitty_pid
             else:
-                self.__active_pid = self.__next_pid(self.__active_pid)
+                self.__active_pid = self.__players.next(self.__active_pid)
 
             room.secret(
                 "draw",
-                DrawUpdate(player.id, self.phase, self.__active_pid, [card]),
+                DrawUpdate(player.pid, self.phase, self.__active_pid, [card]),
             )
         else:
             # Draw cards
@@ -153,7 +147,7 @@ class Game:
             return TrumpType.PAIR
 
     def bid(self, event: CardsEvent, room: Room) -> None:
-        player = self.__player_for_pid(event.pid)
+        player = self.__players[event.pid]
 
         # Can only bid during draw or reserve (抓底牌) phases
         if self.phase != GamePhase.DRAW and self.phase != GamePhase.RESERVE:
@@ -169,7 +163,7 @@ class Game:
         if trump_type == TrumpType.NONE:
             raise PlayerError("Invalid bid", "You must bid trump ranks or joker pairs.")
 
-        if self.__bidder_pid != player.id:
+        if self.__bidder_pid != player.pid:
             # If bidder is different from current bidder, trumps must be of a higher priority
             if trump_type <= self.__trump_type:
                 raise PlayerError("Invalid bid", "Your bid wasn't high enough.")
@@ -186,10 +180,9 @@ class Game:
         # Update states
         self.__trump_suit = event.cards[0].suit
         self.__trump_type = trump_type
-        self.__bidder_pid = player.id
+        self.__bidder_pid = player.pid
 
-        # In the first game, the bidder is the kitty player
-        if self.__game_id == 0:
+        if self.__bid_team:
             self.__kitty_pid = self.__bidder_pid
             self.__assign_teams()
 
@@ -197,12 +190,12 @@ class Game:
         room.public(
             "bid",
             BidUpdate(
-                player.id, event.cards, kitty_pid, self._attackers, self._defenders
+                player.pid, event.cards, kitty_pid, self._attackers, self._defenders
             ),
         )
 
     def kitty(self, event: CardsEvent, room: Room) -> None:
-        player = self.__player_for_pid(event.pid)
+        player = self.__players[event.pid]
 
         # Only hide kitty during the kitty phase
         if self.phase != GamePhase.KITTY:
@@ -249,9 +242,9 @@ class Game:
         if self._score >= 2 * threshold:
             # Attackers win
             levels = (self._score - 2 * threshold) // threshold
-            self.next_lead_pid = self.__next_pid(self.__kitty_pid)
+            self.next_pid = self.__players.next(self.__kitty_pid)
             for attacker in self._attackers:
-                player = self.__player_for_pid(attacker)
+                player = self.__players[attacker]
                 # Bisect left: lowest level >= player's level
                 max_level = BOSS_LEVELS[bisect_left(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
@@ -262,15 +255,15 @@ class Game:
                 if self._score <= 0
                 else 2 if self._score < threshold else 1
             )
-            self.next_lead_pid = self.__next_pid(self.__kitty_pid, 2)
+            self.next_pid = self.__players.next(self.__kitty_pid, 2)
             for defender in self._defenders:
-                player = self.__player_for_pid(defender)
+                player = self.__players[defender]
                 # Bisect right: lowest level > player's level
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
 
     def play(self, event: CardsEvent, room: Room) -> None:
-        player = self.__player_for_pid(event.pid)
+        player = self.__players[event.pid]
 
         # Only play during the play phase
         if self.phase != GamePhase.PLAY:
@@ -284,15 +277,13 @@ class Game:
         if len(self._tricks) == 0 or self._tricks[-1].ended:
             self._tricks.append(Trick(len(self.__players), self.__order))
 
-        player = self.__player_for_pid(event.pid)
-        others = [player for player in self.__players if player.id != event.pid]
-        trick = self._tricks[-1]
-
         # Process play event and play cards from player's hands
-        trick.play(others, player, event.cards, room)
+        player = self.__players[event.pid]
+        trick = self._tricks[-1]
+        trick.play(player, event.cards, room)
 
         # Update play states
-        self.__active_pid = self.__next_pid(self.__active_pid)
+        self.__active_pid = self.__players.next(self.__active_pid)
         update = PlayUpdate(event.pid, self.__active_pid, trick.winner_pid, event.cards)
 
         if not trick.ended:
@@ -316,13 +307,13 @@ class Game:
                 self.phase,
                 self.__kitty_pid,
                 self._kitty,
-                self.next_lead_pid,
+                self.next_pid,
                 self._score,
-                [(player.id, player.level) for player in self.__players],
+                self.__players.updates(),
             ),
         )
 
     def ready(self, pid: int) -> bool:
-        if self.__player_for_pid(pid).level < BOSS_LEVELS[-1]:
+        if self.__players[pid].level < BOSS_LEVELS[-1]:
             self.__ready_players.add(pid)
         return len(self.__ready_players) == len(self.__players)

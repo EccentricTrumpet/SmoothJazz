@@ -242,8 +242,8 @@ export default function MatchPage() {
         setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.level, player.seat)));
       });
 
-      socket.on("phase", (response) => {
-        console.log(`raw phase response: ${JSON.stringify(response)}`);
+      socket.on("match", (response) => {
+        console.log(`raw match response: ${JSON.stringify(response)}`);
         const phaseResponse = new MatchUpdate(response);
 
         setStatusState(pState => new StatusState(pState).withMatchPhase(phaseResponse.matchPhase));
@@ -409,7 +409,7 @@ export default function MatchPage() {
         socket.off("kitty");
         socket.off("bid");
         socket.off("draw");
-        socket.off("phase");
+        socket.off("match");
         socket.off("start");
         socket.off("join");
         socket.off("leave");

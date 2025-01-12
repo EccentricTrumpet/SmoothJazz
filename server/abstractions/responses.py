@@ -1,51 +1,21 @@
-from typing import Sequence, Tuple
-
 from abstractions import Cards, GamePhase, HttpResponse, MatchPhase, Suit, Update
 
 
-class MatchResponse(HttpResponse):
-    def __init__(
-        self,
-        id: int,
-        debug: bool,
-        num_players: int,
-        phase: MatchPhase,
-        players: Sequence[Tuple[int, str, int]],
-    ):
-        self.__id = id
-        self.__debug = debug
-        self.__num_players = num_players
-        self.__phase = phase
-        self.__players = players
-
-    def json(self) -> dict:
-        return {
-            "id": self.__id,
-            "debug": self.__debug,
-            "numPlayers": self.__num_players,
-            "phase": self.__phase,
-            "players": [
-                {"id": player[0], "name": player[1], "level": [2]}
-                for player in self.__players
-            ],
-        }
-
-
 class PlayerUpdate(Update):
-    def __init__(self, id: int, name: str = "", level: int = -1):
-        self.__id = id
+    def __init__(self, pid: int, name: str = "", level: int = -1):
+        self.__pid = pid
         self.__name = name
         self.__level = level
 
-    def json(self, _: bool) -> dict:
-        return {"id": self.__id, "name": self.__name, "level": self.__level}
+    def json(self, _: bool = False) -> dict:
+        return {"id": self.__pid, "name": self.__name, "level": self.__level}
 
 
 class MatchUpdate(Update):
     def __init__(self, phase: MatchPhase):
         self.__phase = phase
 
-    def json(self, _: bool) -> dict:
+    def json(self, _: bool = False) -> dict:
         return {"phase": self.__phase}
 
 
@@ -54,8 +24,8 @@ class StartUpdate(Update):
         self,
         active_pid: int,
         kitty_pid: int,
-        attackers: Sequence[int],
-        defenders: Sequence[int],
+        attackers: list[int],
+        defenders: list[int],
         deck_size: int,
         game_rank: int,
         phase: GamePhase,
@@ -68,7 +38,7 @@ class StartUpdate(Update):
         self.__game_rank = game_rank
         self.__phase = phase
 
-    def json(self, _: bool) -> dict:
+    def json(self, _: bool = False) -> dict:
         return {
             "activePlayerId": self.__active_pid,
             "kittyPlayerId": self.__kitty_pid,
@@ -87,7 +57,7 @@ class DrawUpdate(Update):
         self.activePlayerId = activePlayerId
         self.cards = cards
 
-    def json(self, secret: bool) -> dict:
+    def json(self, secret: bool = False) -> dict:
         return {
             "id": self.id,
             "phase": self.phase,
@@ -109,8 +79,8 @@ class BidUpdate(Update):
         pid: int,
         trumps: Cards,
         kitty_pid: int,
-        attackers: Sequence[int],
-        defenders: Sequence[int],
+        attackers: list[int],
+        defenders: list[int],
     ):
         self.pid = pid
         self.trumps = trumps
@@ -118,7 +88,7 @@ class BidUpdate(Update):
         self.__attackers = attackers
         self.__defenders = defenders
 
-    def json(self, _: bool) -> dict:
+    def json(self, _: bool = False) -> dict:
         return {
             "playerId": self.pid,
             "trumps": [
@@ -137,7 +107,7 @@ class KittyUpdate(Update):
         self.phase = phase
         self.cards = cards
 
-    def json(self, secret: bool) -> dict:
+    def json(self, secret: bool = False) -> dict:
         return {
             "playerId": self.pid,
             "phase": self.phase,
@@ -159,7 +129,7 @@ class PlayUpdate(Update):
         self.winner_pid = winner_pid
         self.cards = cards
 
-    def json(self, _: bool) -> dict:
+    def json(self, _: bool = False) -> dict:
         return {
             "playerId": self.pid,
             "activePlayerId": self.active_pid,
@@ -177,7 +147,7 @@ class TrickUpdate(Update):
         self.active_pid = active_pid
         self.play = play
 
-    def json(self, secret: bool) -> dict:
+    def json(self, secret: bool = False) -> dict:
         return {
             "score": self.score,
             "activePlayerId": self.active_pid,
@@ -194,7 +164,7 @@ class EndUpdate(Update):
         kitty: Cards,
         lead_pid: int,
         score: int,
-        players: Sequence[Tuple[int, int]],
+        players: list[PlayerUpdate],
     ):
         self.trick = trick
         self.phase = phase
@@ -204,7 +174,7 @@ class EndUpdate(Update):
         self.score = score
         self.players = players
 
-    def json(self, secret: bool) -> dict:
+    def json(self, secret: bool = False) -> dict:
         return {
             "trick": self.trick.json(secret),
             "phase": self.phase,
@@ -215,7 +185,30 @@ class EndUpdate(Update):
             ],
             "leadId": self.lead_pid,
             "score": self.score,
-            "players": [
-                {"id": player[0], "level": player[1]} for player in self.players
-            ],
+            "players": [player.json() for player in self.players],
+        }
+
+
+class MatchResponse(HttpResponse):
+    def __init__(
+        self,
+        id: int,
+        debug: bool,
+        num_players: int,
+        phase: MatchPhase,
+        players: list[PlayerUpdate],
+    ):
+        self.__id = id
+        self.__debug = debug
+        self.__num_players = num_players
+        self.__phase = phase
+        self.__players = players
+
+    def json(self) -> dict:
+        return {
+            "id": self.__id,
+            "debug": self.__debug,
+            "numPlayers": self.__num_players,
+            "phase": self.__phase,
+            "players": [player.json() for player in self.__players],
         }

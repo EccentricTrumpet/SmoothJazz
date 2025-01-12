@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Self, Sequence, Tuple
+from typing import Self
 
 from abstractions import Cards, Room, Suit
 from core import Order
@@ -23,23 +23,21 @@ class Format:
         )
         self.suited = self.trumps or (no_trumps and self.suit != Suit.UNKNOWN)
 
-        self.singles: Sequence[Single]
-        self.pairs: Sequence[Pair]
-        self.tractors: Sequence[Tractor]
+        self.singles: list[Single]
+        self.pairs: list[Pair]
+        self.tractors: list[Tractor]
         self.singles, self.pairs, self.tractors = (
             self.__create(cards) if self.suited else ([], [], [])
         )
         self.units = list(chain(self.tractors, self.pairs, self.singles))
         self.is_toss = len(self.tractors) + len(self.pairs) + len(self.singles) != 1
 
-    def __create(
-        self, cards: Cards
-    ) -> Tuple[Sequence[Single], Sequence[Pair], Sequence[Tractor]]:
+    def __create(self, cards: Cards) -> tuple[list[Single], list[Pair], list[Tractor]]:
         order = self.__order
         cards = sorted(cards, key=lambda card: (order.of(card), card.suit))
-        singles: Sequence[Single] = []
-        pairs: Sequence[Pair] = []
-        tractors: Sequence[Tractor] = []
+        singles: list[Single] = []
+        pairs: list[Pair] = []
+        tractors: list[Tractor] = []
 
         # Resolve singles and pairs
         i = 0
@@ -53,8 +51,8 @@ class Format:
 
         # Resolve tractors
         i = 0
-        all: Sequence[Pair] = []
-        unique: Sequence[Pair] = []
+        all: list[Pair] = []
+        unique: list[Pair] = []
 
         # Separate duplicate non-trump pairs when resolving tractors
         for pair in pairs:

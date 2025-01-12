@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import IntEnum, StrEnum
-from typing import Iterator, Optional, Self, Sequence
+from typing import Iterator, Optional, Self
 
 
 class TrumpType(IntEnum):
@@ -64,21 +64,16 @@ class Card:
         return f"[ Card ({self.id}) - {self.suit} {self.rank} ]"
 
 
-Cards = Sequence[Card]
-
-
 # HTTP responses
 class HttpResponse(ABC):
     @abstractmethod
-    def json(self) -> dict:
-        pass
+    def json(self) -> dict: ...
 
 
 # Socket responses
 class Update(ABC):
     @abstractmethod
-    def json(self, secret: bool) -> dict:
-        pass
+    def json(self, secret: bool = False) -> dict: ...
 
 
 class SocketUpdate:
@@ -132,6 +127,8 @@ class Room(ABC):
         self.__updates.append(SocketUpdate(name, self.__room_id, update, True))
 
 
+Cards = list[Card]
+Cards_ = Optional[Cards]
 Room_ = Optional[Room]
 
 
@@ -141,7 +138,7 @@ class PlayerError(Update, Exception):
         self._message = message
         self._hint_cards = hint_cards
 
-    def json(self, _: bool) -> dict:
+    def json(self, _: bool = False) -> dict:
         return {
             "title": self._title,
             "message": self._message,

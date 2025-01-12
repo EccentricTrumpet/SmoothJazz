@@ -1,6 +1,5 @@
-from typing import Sequence, Tuple
-
-from abstractions import Card, Cards, Suit
+from abstractions import Card, Cards, Cards_, Suit
+from abstractions.responses import PlayerUpdate
 
 
 class Order:
@@ -10,7 +9,7 @@ class Order:
 
         # Private
         self.__trump_suit = Suit.JOKER
-        self.__order: dict[Tuple[Suit, int], int] = {}
+        self.__order: dict[tuple[Suit, int], int] = {}
         # Rank order 1, 13, ..., 2, except trump rank
         self.__all_ranks = [1, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]
         self.__all_ranks.remove(self.__trump_rank)
@@ -78,22 +77,25 @@ class Order:
 
 
 class Player:
-    def __init__(self, id: int, name: str, sid: str, hand: Cards) -> None:
+    def __init__(self, pid: int, name: str, sid: str, hand: Cards_ = None) -> None:
         # Inputs
-        self.__hand = hand
-        self.id = id
+        self.__hand = hand or []
+        self.pid = pid
         self.name = name
         self.sid = sid
 
         # Public
         self.level = 2
 
+    def update(self) -> PlayerUpdate:
+        return PlayerUpdate(self.pid, self.name, self.level)
+
     def draw(self, cards: Cards) -> None:
         self.__hand.extend(cards)
 
     # If non-empty cards is passed in, checks if the player has the specified cards.
     # If cards is empty, checks if the player has any cards in hand.
-    def has_cards(self, cards: Cards | None = None) -> bool:
+    def has_cards(self, cards: Cards_ = None) -> bool:
         if cards is None:
             return len(self.__hand) > 0
 
@@ -116,6 +118,3 @@ class Player:
     def play(self, cards: Cards) -> None:
         card_ids = set([card.id for card in cards])
         self.__hand = [card for card in self.__hand if card.id not in card_ids]
-
-
-Players = Sequence[Player]

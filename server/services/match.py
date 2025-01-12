@@ -1,9 +1,8 @@
 from itertools import count
 from typing import Callable, Dict, Iterator
 
-from abstractions import PlayerError, Room, Room_
+from abstractions import HttpResponse, PlayerError, Room, Room_
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
-from abstractions.responses import MatchResponse
 from core.match import Match
 
 
@@ -27,18 +26,16 @@ class MatchService:
             return None
 
         match = self.__matches[event.match_id]
-        player = next((p for p in match.players if p.id == event.pid), None)
-
-        if player is not None:
+        if event.pid in match.players:
             return self.__try(event, Room(event.match_id, event.sid), func(match))
 
-    def create(self, debug: bool) -> MatchResponse:
+    def create(self, debug: bool) -> HttpResponse:
         match_id = next(self.__match_id)
         new_match = Match(match_id, debug)
         self.__matches[match_id] = new_match
         return new_match.response()
 
-    def get(self, match_id: int) -> MatchResponse | None:
+    def get(self, match_id: int) -> HttpResponse | None:
         if match_id in self.__matches:
             return self.__matches[match_id].response()
 
@@ -48,7 +45,7 @@ class MatchService:
             return self.__try(event, room, self.__matches[event.match_id].join)
 
     def leave(self, event: PlayerEvent) -> Room_:
-        return self.__invoke(event, lambda match: match.join)
+        return self.__invoke(event, lambda match: match.leave)
 
     def draw(self, event: PlayerEvent) -> Room_:
         return self.__invoke(event, lambda match: match.draw)

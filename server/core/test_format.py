@@ -1,6 +1,5 @@
 from itertools import batched, combinations
 from random import shuffle
-from typing import Sequence
 from unittest import TestCase
 
 from abstractions import Card, Cards, PlayerError, Room, Suit

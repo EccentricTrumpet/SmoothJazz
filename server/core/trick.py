@@ -1,7 +1,5 @@
-from typing import Sequence
-
-from abstractions import Card, Cards, PlayerError, Room, Suit
-from core import Order, Player, Players
+from abstractions import Cards, PlayerError, Room, Suit
+from core import Order, Player
 from core.format import Format
 
 
@@ -30,9 +28,7 @@ class Trick:
     def winning_play(self) -> Format:
         return self._plays[self.winner_pid]
 
-    def __resolve_format(
-        self, others: Players, player: Player, cards: Cards, room: Room
-    ) -> Format | None:
+    def __infer_format(self, player: Player, cards: Cards, room: Room) -> Format | None:
         # Must contain at least one card
         if len(cards) == 0:
             raise PlayerError("Invalid play", "Must play at least 1 card.")
@@ -91,27 +87,27 @@ class Trick:
             lead.reset()
             raise
 
-        # Resolution successful
+        # Inference successful
         format.reform(lead)
         lead.reset()
         return format
 
     # Checks legality and update trick states
-    def play(self, others: Players, player: Player, cards: Cards, room: Room) -> None:
+    def play(self, player: Player, cards: Cards, room: Room) -> None:
         # Resolve format
-        format = self.__resolve_format(others, player, cards, room)
+        format = self.__infer_format(player, cards, room)
 
         # Remove cards from player's hand
         player.play(cards)
 
         # Update states
         self.score += sum([c.points for c in cards])
-        self._plays[player.id] = format
+        self._plays[player.pid] = format
 
         # Update lead player id, if needed
         if self.__lead_pid == -1:
-            self.__lead_pid = player.id
-            self.winner_pid = player.id
+            self.__lead_pid = player.pid
+            self.winner_pid = player.pid
             print("Leading play")
         else:
             # Resolve winning hand
@@ -124,4 +120,4 @@ class Trick:
                 print("Losing play: did not follow non trump suit")
             elif format.beats(winner):
                 print("Winning play")
-                self.winner_pid = player.id
+                self.winner_pid = player.pid
