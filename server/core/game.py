@@ -13,11 +13,14 @@ from core.updates import (
     KittyUpdate,
     PlayUpdate,
     StartUpdate,
+    TeamUpdate,
 )
 
 
 class Game:
-    def __init__(self, decks: int, players: Players, lead: int = -1, bid_team=False):
+    def __init__(
+        self, decks: int, players: Players, room: Room, lead: int = -1, bid_team=False
+    ):
         # Inputs
         self.__decks = decks
         self.__players = players
@@ -38,9 +41,6 @@ class Game:
         self._score = 0
         self._kitty: list[Card] = []
         self._tricks: list[Trick] = []
-        self._attackers: set[int] = set()
-        self._defenders: set[int] = set()
-        self.__assign_teams()
 
         # Public
         self.phase = GamePhase.DRAW
@@ -63,34 +63,19 @@ class Game:
             self.__deck.append(Card(indices[i], suits[suit_index], rank_index))
         random.shuffle(self.__deck)
 
-    def __assign_teams(self) -> None:
-        # Assign teams (fixed teams)
-        pid = self.__kitty_pid
-        self._defenders.clear()
-        self._attackers.clear()
-        for i in range(len(self.__players)):
-            if i % 2 == 0:
-                self._defenders.add(pid)
-            else:
-                self._attackers.add(pid)
-            pid = self.__players.next(pid)
+        # Send updates to match room
+        self.__players.assign_fixed_team(self.__kitty_pid)
+        room.public(
+            "start",
+            StartUpdate(self.__active_pid, len(self.__deck), self.__rank),
+        )
+        room.public("team", TeamUpdate(self.__kitty_pid, self.__players.defenders()))
 
     def __ensure_valid_event(self, phase: GamePhase, pid: int | None = None) -> None:
         if phase != self.phase:
             raise PlayerError("Invalid action", "You can't do that right now.")
         if pid is not None and pid != self.__active_pid:
             raise PlayerError("Invalid action", "It's not your turn.")
-
-    def start(self) -> StartUpdate:
-        return StartUpdate(
-            self.__active_pid,
-            self.__kitty_pid,
-            self._attackers,
-            self._defenders,
-            len(self.__deck),
-            self.__rank,
-            self.phase,
-        )
 
     def draw(self, event: PlayerEvent, room: Room) -> None:
         self.__ensure_valid_event(GamePhase.DRAW, event.pid)
@@ -156,14 +141,12 @@ class Game:
         self.__bidder_pid = pid
 
         if self.__bid_team:
-            self.__kitty_pid = self.__bidder_pid
-            self.__assign_teams()
+            self.__kitty_pid = pid
+            self.__players.assign_fixed_team(pid)
+            room.public("team", TeamUpdate(pid, self.__players.defenders()))
 
         kitty_pid = self.__kitty_pid
-        room.public(
-            "bid",
-            BidUpdate(pid, event.cards, kitty_pid, self._attackers, self._defenders),
-        )
+        room.public("bid", BidUpdate(pid, event.cards, kitty_pid))
 
     def kitty(self, event: CardsEvent, room: Room) -> None:
         self.__ensure_valid_event(GamePhase.KITTY, event.pid)
@@ -188,7 +171,7 @@ class Game:
         kitty_pid = self.__kitty_pid
 
         # Add kitty score
-        if (trick := self._tricks[-1]).winner_pid in self._attackers:
+        if (trick := self._tricks[-1]).winner_pid in self.__players.attackers():
             multiple = 2
             winner = trick.winning_play
             if len(winner.tractors) > 0:
@@ -202,7 +185,7 @@ class Game:
             # Attackers win
             levels = (self._score - 2 * threshold) // threshold
             self.next_pid = self.__players.next(kitty_pid)
-            for attacker in self._attackers:
+            for attacker in self.__players.attackers():
                 player = self.__players[attacker]
                 # Bisect left: lowest level >= player's level
                 max_level = BOSS_LEVELS[bisect_left(BOSS_LEVELS, player.level)]
@@ -215,7 +198,7 @@ class Game:
                 else 2 if self._score < threshold else 1
             )
             self.next_pid = self.__players.next(kitty_pid, 2)
-            for defender in self._defenders:
+            for defender in self.__players.defenders():
                 player = self.__players[defender]
                 # Bisect right: lowest level > player's level
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
@@ -243,7 +226,7 @@ class Game:
             return room.public("play", update)
 
         # Update play states if trick ended
-        if trick.winner_pid in self._attackers:
+        if trick.winner_pid in self.__players.attackers():
             self._score += trick.score
         update.score = self._score
         update.active_pid = self.__active_pid = trick.winner_pid
@@ -252,11 +235,10 @@ class Game:
             return room.public("play", update)
 
         # Update game states on end
-        room.public(
-            "end", EndUpdate(update, self._end(), self.phase, self.__players.infos())
-        )
+        room.public("end", EndUpdate(update, self._end(), self.__players.infos()))
 
     def ready(self, pid: int) -> bool:
+        self.__ensure_valid_event(GamePhase.END)
         if self.__players[pid].level < BOSS_LEVELS[-1]:
             self.__ready_players.add(pid)
         return len(self.__ready_players) == len(self.__players)

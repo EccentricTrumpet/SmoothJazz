@@ -92,6 +92,7 @@ class Player:
 
         # Public
         self.level = 2
+        self.defender = False
 
     def info(self) -> PlayerInfo:
         return PlayerInfo(self.pid, self.name, self.level)

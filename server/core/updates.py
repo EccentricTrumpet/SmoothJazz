@@ -1,8 +1,8 @@
-from abstractions import Cards, GamePhase, MatchPhase, PlayerInfo, Suit, Update
+from abstractions import Cards, GamePhase, MatchPhase, PInfos, PlayerInfo, Suit, Update
 
 
 class PlayerUpdate(Update):
-    def __init__(self, player_info: PlayerInfo):
+    def __init__(self, player_info: PlayerInfo) -> None:
         self.player_info = player_info
 
     def json(self, _: bool = False) -> dict:
@@ -10,56 +10,46 @@ class PlayerUpdate(Update):
 
 
 class StartUpdate(Update):
-    def __init__(
-        self,
-        active_pid: int,
-        kitty_pid: int,
-        attackers: list[int],
-        defenders: list[int],
-        deck_size: int,
-        game_rank: int,
-        phase: GamePhase,
-    ):
-        self.__active_pid = active_pid
-        self.__kitty_pid = kitty_pid
-        self.__attackers = attackers
-        self.__defenders = defenders
-        self.__deck_size = deck_size
-        self.__game_rank = game_rank
-        self.__phase = phase
+    def __init__(self, active_pid: int, cards: int, rank: int) -> None:
+        self.active_pid = active_pid
+        self.cards = cards
+        self.rank = rank
 
     def json(self, _: bool = False) -> dict:
-        return {
-            "activePlayerId": self.__active_pid,
-            "kittyPlayerId": self.__kitty_pid,
-            "attackers": [attacker for attacker in self.__attackers],
-            "defenders": [defender for defender in self.__defenders],
-            "deckSize": self.__deck_size,
-            "gameRank": self.__game_rank,
-            "phase": self.__phase,
-        }
+        return {"activePid": self.active_pid, "cards": self.cards, "rank": self.rank}
+
+
+class TeamUpdate(Update):
+    def __init__(self, kitty_pid: int, defenders: list[int]) -> None:
+        self.kitty_pid = kitty_pid
+        self.defenders = defenders
+
+    def json(self, _: bool = False) -> dict:
+        return {"kittyPid": self.kitty_pid, "defenders": self.defenders}
 
 
 class MatchUpdate(Update):
-    def __init__(self, phase: MatchPhase):
-        self.__phase = phase
+    def __init__(self, phase: MatchPhase) -> None:
+        self.phase = phase
 
     def json(self, _: bool = False) -> dict:
-        return {"phase": self.__phase}
+        return {"phase": self.phase}
 
 
 class DrawUpdate(Update):
-    def __init__(self, id: int, phase: GamePhase, activePlayerId: int, cards: Cards):
+    def __init__(
+        self, id: int, phase: GamePhase, active_pid: int, cards: Cards
+    ) -> None:
         self.id = id
         self.phase = phase
-        self.activePlayerId = activePlayerId
+        self.active_pid = active_pid
         self.cards = cards
 
     def json(self, secret: bool = False) -> dict:
         return {
             "id": self.id,
             "phase": self.phase,
-            "activePlayerId": self.activePlayerId,
+            "activePlayerId": self.active_pid,
             "cards": [
                 {
                     "id": card.id,
@@ -72,19 +62,10 @@ class DrawUpdate(Update):
 
 
 class BidUpdate(Update):
-    def __init__(
-        self,
-        pid: int,
-        trumps: Cards,
-        kitty_pid: int,
-        attackers: list[int],
-        defenders: list[int],
-    ):
+    def __init__(self, pid: int, trumps: Cards, kitty_pid: int) -> None:
         self.pid = pid
         self.trumps = trumps
         self.__kitty_pid = kitty_pid
-        self.__attackers = attackers
-        self.__defenders = defenders
 
     def json(self, _: bool = False) -> dict:
         return {
@@ -94,13 +75,11 @@ class BidUpdate(Update):
                 for trump in self.trumps
             ],
             "kittyPlayerId": self.__kitty_pid,
-            "attackers": [attacker for attacker in self.__attackers],
-            "defenders": [defender for defender in self.__defenders],
         }
 
 
 class KittyUpdate(Update):
-    def __init__(self, pid: int, phase: GamePhase, cards: Cards):
+    def __init__(self, pid: int, phase: GamePhase, cards: Cards) -> None:
         self.pid = pid
         self.phase = phase
         self.cards = cards
@@ -128,7 +107,7 @@ class PlayUpdate(Update):
         cards: Cards,
         winner_pid: int | None = None,
         score: int | None = None,
-    ):
+    ) -> None:
         self.pid = pid
         self.active_pid = active_pid
         self.winner_pid = winner_pid
@@ -149,15 +128,8 @@ class PlayUpdate(Update):
 
 
 class EndUpdate(Update):
-    def __init__(
-        self,
-        play: PlayUpdate,
-        kitty: PlayUpdate,
-        phase: GamePhase,
-        players: list[PlayerInfo],
-    ):
+    def __init__(self, play: PlayUpdate, kitty: PlayUpdate, players: PInfos) -> None:
         self.play = play
-        self.phase = phase
         self.kitty = kitty
         self.players = players
 
@@ -165,6 +137,5 @@ class EndUpdate(Update):
         return {
             "play": self.play.json(secret),
             "kitty": self.kitty.json(secret),
-            "phase": self.phase,
             "players": [player.json() for player in self.players],
         }

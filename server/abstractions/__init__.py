@@ -141,6 +141,7 @@ class Room(ABC):
 
 Cards = list[Card]
 Cards_ = Cards | None
+PInfos = list[PlayerInfo]
 Room_ = Room | None
 
 

@@ -19,7 +19,8 @@ import {
   PlayResponse,
   EndResponse,
   ErrorUpdate,
-  MatchUpdate
+  MatchUpdate,
+  TeamResponse
 } from "../abstractions/messages";
 import { ErrorState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { ErrorComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
@@ -236,16 +237,22 @@ export default function MatchPage() {
         });
       });
 
+      socket.on("team", (response) => {
+        console.log(`raw team response: ${JSON.stringify(response)}`);
+        const teamResponse = new TeamResponse(response);
+
+        setStatusState(pState => new StatusState(pState).withTeamInfo(teamResponse.kittyPid, teamResponse.defenders));
+      });
+
       socket.on("start", (response) => {
         console.log(`raw start response: ${JSON.stringify(response)}`);
         const startResponse = new StartResponse(response);
 
         setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(startResponse.activePlayerId)
-          .withGamePhase(startResponse.phase)
-          .withTeamInfo(startResponse.kittyPlayerId, startResponse.attackers, startResponse.defenders));
-        setTrumpState(new TrumpState(startResponse.deckSize, startResponse.gameRank));
-        setBoardState(new BoardState(Array.from({length: startResponse.deckSize}, (_, i) => new CardState(-(1 + i)))));
+          .withActivePlayer(startResponse.activePid)
+          .withGamePhase(GamePhase.Draw));
+        setTrumpState(new TrumpState(startResponse.cards, startResponse.rank));
+        setBoardState(new BoardState(Array.from({length: startResponse.cards}, (_, i) => new CardState(-(1 + i)))));
         setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.level, player.seat)));
       });
 
@@ -296,8 +303,6 @@ export default function MatchPage() {
         playCards(bidResponse.trumps, bidResponse.playerId);
         withdrawPlaying(bidResponse.playerId);
         setTrumpState(pState => new TrumpState(pState.numCards, pState.trumpRank, bidResponse.trumps[0].suit));
-        setStatusState(pState => new StatusState(pState)
-          .withTeamInfo(bidResponse.kittyPlayerId, bidResponse.attackers, bidResponse.defenders));
       });
 
       socket.on("kitty", (response) => {
@@ -352,16 +357,14 @@ export default function MatchPage() {
         playCards(endResponse.play.cards, endResponse.play.pid, endResponse.play.winnerPid);
 
         // Cleanup trick
-        await cleanupTrickAsync(endResponse.play.score!, endResponse.play.activePid);
+        await cleanupTrickAsync(endResponse.play.score!);
 
         await new Promise(f => setTimeout(f, 1000));
 
         // Display kitty
         const kittyCards = createCardDict(endResponse.kitty.cards);
         setBoardState(pState => {
-          for (const card of pState.kitty) {
-            card.updateInfo(kittyCards.get(card.id)!);
-          }
+          pState.kitty.forEach(card => card.updateInfo(kittyCards.get(card.id)!));
 
           setPlayers(prevPlayers => {
             return prevPlayers.map(player => new PlayerState(
@@ -379,7 +382,7 @@ export default function MatchPage() {
 
         setStatusState(pState => new StatusState(pState)
           .withActivePlayer(endResponse.kitty.activePid)
-          .withGamePhase(endResponse.phase));
+          .withGamePhase(GamePhase.End));
       });
 
       // Join match

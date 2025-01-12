@@ -1,4 +1,4 @@
-from abstractions import GamePhase, MatchPhase, PlayerError, PlayerInfo, Response, Room
+from abstractions import GamePhase, MatchPhase, PInfos, PlayerError, Response, Room
 from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from core import BOSS_LEVELS
 from core.game import Game
@@ -8,13 +8,8 @@ from core.updates import MatchUpdate, PlayerUpdate
 
 class MatchResponse(Response):
     def __init__(
-        self,
-        id: int,
-        debug: bool,
-        num_players: int,
-        phase: MatchPhase,
-        players: list[PlayerInfo],
-    ):
+        self, id: int, debug: bool, num_players: int, phase: MatchPhase, players: PInfos
+    ) -> None:
         self.__id = id
         self.__debug = debug
         self.__num_players = num_players
@@ -79,10 +74,9 @@ class Match:
         # Start the game if all players have joined
         if len(self.players) == self.__num_players:
             # In the first game, the bidder is the kitty player
-            new_game = Game(self.__num_decks, self.players, bid_team=True)
+            new_game = Game(self.__num_decks, self.players, room, bid_team=True)
             self.__games.append(new_game)
             self.__phase = MatchPhase.STARTED
-            room.public("start", new_game.start())
             room.public("match", MatchUpdate(self.__phase))
 
     def leave(self, event: PlayerEvent, room: Room) -> None:
@@ -118,6 +112,5 @@ class Match:
     def next(self, event: PlayerEvent, room: Room) -> None:
         game = self.__games[-1]
         if self.__debug or game.ready(event.pid):
-            new_game = Game(self.__num_decks, self.players, game.next_pid)
+            new_game = Game(self.__num_decks, self.players, room, game.next_pid)
             self.__games.append(new_game)
-            return room.public("start", new_game.start())

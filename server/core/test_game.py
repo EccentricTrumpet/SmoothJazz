@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from abstractions import Room
 from core import Order, Player
 from core.format import Format
 from core.game import Game
@@ -55,16 +56,11 @@ class GameTests(TestCase):
                 players = Players()
                 for level in start_levels:
                     players.add("", "").level = level
-                game = Game(2, players)
+                game = Game(2, players, Room(0, ""))
                 game._tricks.append(Trick(4, Order(2)))
 
                 # Set protected fields
                 game._score = score
-                game._defenders.add(0)
-                game._attackers.add(1)
-                game._defenders.add(2)
-                game._attackers.add(3)
-
                 game._end()
 
                 self.assertEqual(next_lead, game.next_pid)
@@ -91,7 +87,7 @@ class GameTests(TestCase):
 
                 order = Order(2)
                 players = Players([Player(i, "", "") for i in range(2)])
-                game = Game(2, players)
+                game = Game(2, players, Room(0, ""))
                 trick = Trick(2, order)
                 trick.winner_pid = player
                 trick._plays[player] = Format(order, play)
@@ -99,9 +95,6 @@ class GameTests(TestCase):
 
                 # Set protected fields
                 game._kitty = kitty
-                game._defenders.add(0)
-                game._attackers.add(1)
-
                 game._end()
 
                 self.assertEqual(expected, game._score)

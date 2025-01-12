@@ -278,8 +278,7 @@ export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusSt
         backgroundColor: Constants.backgroundColor,
       }}>
         {player.id === statusState.kittyPlayerId && (createStatus('Kitty'))}
-        {statusState.attackers.includes(player.id) && (createStatus('Attacker'))}
-        {statusState.defenders.includes(player.id) && (createStatus('Defender'))}
+        {statusState.defenders.includes(player.id) ? (createStatus('Defender')) : (createStatus('Attacker'))}
         {createStatus(`${player.level}`)}
       </div>
     </>

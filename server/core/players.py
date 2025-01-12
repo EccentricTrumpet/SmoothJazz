@@ -1,7 +1,7 @@
 from itertools import count
 from typing import Iterator
 
-from abstractions import PlayerInfo
+from abstractions import PInfos
 from core import Player
 
 
@@ -20,7 +20,7 @@ class Players:
     def __getitem__(self, pid: int) -> Player:
         return self.__players[pid]
 
-    def infos(self) -> list[PlayerInfo]:
+    def infos(self) -> PInfos:
         return [player.info() for player in self.__players.values()]
 
     def add(self, name: str, sid: str) -> Player:
@@ -39,3 +39,14 @@ class Players:
             raise KeyError(f"No player found for pid: {pid}.")
         pids = list(self.__players.keys())
         return pids[(pids.index(pid) + increment) % len(self.__players)]
+
+    def assign_fixed_team(self, pid: int):
+        for i in range(len(self.__players)):
+            self[pid].defender = i % 2 == 0
+            pid = self.next(pid)
+
+    def attackers(self) -> list[int]:
+        return [player.pid for player in self.__players.values() if not player.defender]
+
+    def defenders(self) -> list[int]:
+        return [player.pid for player in self.__players.values() if player.defender]

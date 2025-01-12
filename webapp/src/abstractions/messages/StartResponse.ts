@@ -1,21 +1,11 @@
-import { GamePhase } from "../enums";
-
 export class StartResponse {
-    activePlayerId: number;
-    kittyPlayerId: number;
-    attackers: number[];
-    defenders: number[];
-    deckSize: number;
-    gameRank: number;
-    phase: GamePhase;
+    activePid: number;
+    cards: number;
+    rank: number;
 
     constructor(jsonObj: any) {
-        this.activePlayerId = Number(jsonObj['activePlayerId']);
-        this.kittyPlayerId = Number(jsonObj['kittyPlayerId']);
-        this.attackers = jsonObj['attackers'].map(Number);
-        this.defenders = jsonObj['defenders'].map(Number);
-        this.deckSize = Number(jsonObj['deckSize']);
-        this.gameRank = Number(jsonObj['gameRank']);
-        this.phase = jsonObj['phase'] as GamePhase;
+        this.activePid = Number(jsonObj['activePid']);
+        this.cards = Number(jsonObj['cards']);
+        this.rank = Number(jsonObj['rank']);
     }
 }
