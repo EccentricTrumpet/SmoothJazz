@@ -49,3 +49,12 @@ Run the docker image
 ```cmd
 > docker run -it <image>
 ```
+
+## Glossary
+
+Here are some helpful contractions and conventions used in the code.
+
+1. PID - shorthand for player id. These are unique IDs associated with a player
+2. Type_ - shorthand for `Type | None` in python
+3. events - websocket messages sent from webapp to web server
+4. updates - websocket messages sent from web server to webapp

@@ -1,6 +1,6 @@
 from unittest import TestCase
-from typing import Sequence, Tuple
-from core.unit import Unit, Single, Pair, Tractor
+
+from core.unit import Pair, Single, Tractor, Unit
 from testing import initialize
 from testing.spades import S3, S4, S5, S6, S7
 
@@ -10,7 +10,7 @@ class UnitTests(TestCase):
         [S3Card, S4Card, S5Card] = initialize([S3, S4, S5])
         unit = Single(S3Card)
 
-        cases: Sequence[Tuple[Unit, Sequence[Unit]]] = [
+        cases: list[tuple[Unit, list[Unit]]] = [
             # Single
             (Single(S4Card), [Single(S3Card)]),
             # Pair
@@ -30,7 +30,7 @@ class UnitTests(TestCase):
         [S3Card, S4Card, S5Card] = initialize([S3, S4, S5])
         unit = Pair([S3Card, S3Card])
 
-        cases: Sequence[Tuple[Unit, Sequence[Unit]]] = [
+        cases: list[tuple[Unit, list[Unit]]] = [
             # Single
             (Single(S4Card), [Single(S3Card), Single(S3Card)]),
             # Pair
@@ -52,7 +52,7 @@ class UnitTests(TestCase):
             [Pair([S5Card, S5Card]), Pair([S6Card, S6Card]), Pair([S7Card, S7Card])]
         )
 
-        cases: Sequence[Tuple[Unit, Sequence[Unit]]] = [
+        cases: list[tuple[Unit, list[Unit]]] = [
             # Single
             (
                 Single(S4Card),

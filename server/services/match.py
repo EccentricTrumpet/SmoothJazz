@@ -1,15 +1,8 @@
 from itertools import count
-from typing import Dict, Iterator, Sequence
-from abstractions.responses import MatchResponse, SocketResponse
-from abstractions.requests import (
-    DrawRequest,
-    JoinRequest,
-    KittyRequest,
-    LeaveRequest,
-    NextRequest,
-    PlayRequest,
-    BidRequest,
-)
+from typing import Callable, Dict, Iterator
+
+from abstractions import PlayerError, Response, Room, Room_
+from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
 from core.match import Match
 
 
@@ -19,40 +12,52 @@ class MatchService:
         self.__match_id: Iterator[int] = count()
         self.__matches: Dict[int, Match] = dict()
 
-    def create(self, debug: bool) -> MatchResponse:
+    def __try[T](self, event: T, room: Room, func: Callable[[T, Room], None]) -> Room_:
+        try:
+            func(event, room)
+        except PlayerError as error:
+            room.reply("error", error)
+        return room
+
+    def __invoke[
+        T: (PlayerEvent, CardsEvent)
+    ](self, event: T, func: Callable[[Match], Callable[[T, Room], None]]) -> Room_:
+        if event.match_id not in self.__matches:
+            return None
+
+        match = self.__matches[event.match_id]
+        if event.pid in match.players:
+            return self.__try(event, Room(event.match_id, event.sid), func(match))
+
+    def create(self, debug: bool) -> Response:
         match_id = next(self.__match_id)
         new_match = Match(match_id, debug)
         self.__matches[match_id] = new_match
         return new_match.response()
 
-    def get(self, match_id: int) -> MatchResponse | None:
+    def get(self, match_id: int) -> Response | None:
         if match_id in self.__matches:
             return self.__matches[match_id].response()
 
-    def join(self, request: JoinRequest) -> Sequence[SocketResponse]:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].join(request)
+    def join(self, event: JoinEvent) -> Room_:
+        if event.match_id in self.__matches:
+            room = Room(event.match_id, event.sid)
+            return self.__try(event, room, self.__matches[event.match_id].join)
 
-    def leave(self, request: LeaveRequest, sid: str) -> SocketResponse | None:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].leave(request, sid)
+    def leave(self, event: PlayerEvent) -> Room_:
+        return self.__invoke(event, lambda match: match.leave)
 
-    def draw(self, request: DrawRequest) -> Sequence[SocketResponse] | SocketResponse:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].draw(request)
+    def draw(self, event: PlayerEvent) -> Room_:
+        return self.__invoke(event, lambda match: match.draw)
 
-    def bid(self, request: BidRequest) -> SocketResponse | None:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].bid(request)
+    def bid(self, event: CardsEvent) -> Room_:
+        return self.__invoke(event, lambda match: match.bid)
 
-    def kitty(self, request: KittyRequest) -> Sequence[SocketResponse]:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].kitty(request)
+    def kitty(self, event: CardsEvent) -> Room_:
+        return self.__invoke(event, lambda match: match.kitty)
 
-    def play(self, request: PlayRequest) -> Sequence[SocketResponse]:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].play(request)
+    def play(self, event: CardsEvent) -> Room_:
+        return self.__invoke(event, lambda match: match.play)
 
-    def next(self, request: NextRequest) -> SocketResponse | None:
-        if request.match_id in self.__matches:
-            return self.__matches[request.match_id].next(request)
+    def next(self, event: PlayerEvent) -> Room_:
+        return self.__invoke(event, lambda match: match.next)

@@ -7,14 +7,14 @@ import { OptionsState, PlayerState, StatusState, TrumpState } from "../abstracti
 import { Constants } from "../Constants";
 import { CardsZone } from ".";
 import { Tooltip } from "react-tooltip";
-import { ReactNode } from "react";
+import { FC, ReactNode } from "react";
 
 const createStatus = (status: string): ReactNode => {
   const {codepoint, description} = Constants.statusDetails[status];
   return (
     <>
       <h3  style={{
-        margin: "0px 6px 0px 6px",
+        margin: "-6px 0px -6px 0px",
       }}>
         <a data-tooltip-id={`${status}-tooltip`} data-tooltip-content={description}>
         {String.fromCodePoint(codepoint)}
@@ -34,7 +34,7 @@ interface PlayerZoneArgument {
   controller: ControllerInterface;
 }
 
-export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, statusState, parentZone, options, controller}) => {
+export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusState, parentZone, options, controller}) => {
 
   let handZone: Zone, nameZone: Zone, playingZone: Zone, trickStatusZone: Zone, playerStatusZone: Zone;
   let nameRotate: number = 0;
@@ -278,8 +278,7 @@ export const PlayerZone: React.FC<PlayerZoneArgument> = ({player, trumpState, st
         backgroundColor: Constants.backgroundColor,
       }}>
         {player.id === statusState.kittyPlayerId && (createStatus('Kitty'))}
-        {statusState.attackers.includes(player.id) && (createStatus('Attacker'))}
-        {statusState.defenders.includes(player.id) && (createStatus('Defender'))}
+        {statusState.defenders.includes(player.id) ? (createStatus('Defender')) : (createStatus('Attacker'))}
         {createStatus(`${player.level}`)}
       </div>
     </>

@@ -1,3 +1,4 @@
+import { seatOf } from "..";
 import { PlayerState } from "../states";
 
 export class MatchResponse {
@@ -9,7 +10,7 @@ export class MatchResponse {
 
     constructor(jsonText: string) {
         console.log(`raw match response: ${jsonText}`);
-        var jsonObj = JSON.parse(jsonText);
+        const jsonObj = JSON.parse(jsonText);
         this.matchId = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
         this.numPlayers = Number(jsonObj["numPlayers"]);
@@ -17,10 +18,10 @@ export class MatchResponse {
         for (let i = 0; i < this.seatOffset; i++) {
             const player = jsonObj.players[i];
             this.players.push(new PlayerState(
-                Number(player.id),
+                Number(player.pid),
                 player.name,
                 Number(player.level),
-                PlayerState.getSeat(i, this.seatOffset, this.numPlayers)
+                seatOf(i, this.seatOffset, this.numPlayers)
             ));
         }
     }

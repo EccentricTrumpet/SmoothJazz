@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FC, useState } from "react";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
 import { BoardState, OptionsState, TrumpState } from "../abstractions/states";
@@ -12,7 +12,7 @@ interface KittyZoneInputs {
   deckZone: Zone;
 }
 
-export const KittyZone: React.FC<KittyZoneInputs> = ({board, trumpState, options, deckZone}) => {
+export const KittyZone: FC<KittyZoneInputs> = ({board, trumpState, options, deckZone}) => {
   const [displayKitty, setDisplayKitty] = useState(false);
   const toggleDisplayKitty = () => {
     board.kitty.forEach(card => card.resetState());

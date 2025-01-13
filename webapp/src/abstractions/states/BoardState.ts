@@ -1,11 +1,11 @@
-import { Card } from "../Card";
+import { CardState } from "./CardState";
 
 // Similar to StatusState but this contains visible states
 export class BoardState {
     constructor(
-        public deck: Card[] = [],
-        public kitty: Card[] = [],
-        public discard: Card[] = [],
+        public deck: CardState[] = [],
+        public kitty: CardState[] = [],
+        public discard: CardState[] = [],
         public score: number = 0,
     ) {}
 }

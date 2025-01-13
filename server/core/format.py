@@ -1,19 +1,15 @@
 from itertools import chain
-from typing import Self, Sequence, Tuple
-from abstractions import Suit, Card
-from abstractions.responses import AlertResponse
+from typing import Self
+
+from abstractions import Cards, Suit
 from core import Order
-from core.unit import Single, Pair, Tractor
+from core.unit import Pair, Single, Tractor
 
 
 # Container class for format of set of cards in a play
 # Assume non-zero number of cards
 class Format:
-    def __init__(
-        self,
-        order: Order,
-        cards: Sequence[Card],
-    ) -> None:
+    def __init__(self, order: Order, cards: Cards) -> None:
         self.__order = order
         self.__cards = cards
 
@@ -26,21 +22,18 @@ class Format:
             else next(iter(suits))
         )
         self.suited = self.trumps or (no_trumps and self.suit != Suit.UNKNOWN)
-
-        (self.singles, self.pairs, self.tractors) = (
+        self.singles, self.pairs, self.tractors = (
             self.__create(cards) if self.suited else ([], [], [])
         )
         self.units = list(chain(self.tractors, self.pairs, self.singles))
         self.is_toss = len(self.tractors) + len(self.pairs) + len(self.singles) != 1
 
-    def __create(
-        self, cards: Sequence[Card]
-    ) -> Tuple[Sequence[Single], Sequence[Pair], Sequence[Tractor]]:
+    def __create(self, cards: Cards) -> tuple[list[Single], list[Pair], list[Tractor]]:
         order = self.__order
         cards = sorted(cards, key=lambda card: (order.of(card), card.suit))
-        singles: Sequence[Single] = []
-        pairs: Sequence[Pair] = []
-        tractors: Sequence[Tractor] = []
+        singles: list[Single] = []
+        pairs: list[Pair] = []
+        tractors: list[Tractor] = []
 
         # Resolve singles and pairs
         i = 0
@@ -54,8 +47,8 @@ class Format:
 
         # Resolve tractors
         i = 0
-        all: Sequence[Pair] = []
-        unique: Sequence[Pair] = []
+        all: list[Pair] = []
+        unique: list[Pair] = []
 
         # Separate duplicate non-trump pairs when resolving tractors
         for pair in pairs:
@@ -100,19 +93,19 @@ class Format:
         for single in self.singles:
             single.reset()
 
-    def try_reform(self, format: Self):
+    # Recreate this format using the given format as a template
+    def reform(self, format: Self) -> None:
         if all(unit.complement is not None for unit in format.units):
             self.tractors = [tractor.complement for tractor in format.tractors]
             self.pairs = [pair.complement for pair in format.pairs]
             self.singles = [single.complement for single in format.singles]
             self.units = list(chain(self.tractors, self.pairs, self.singles))
 
-    def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Sequence[Card]:
+    def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Cards:
         return self.__order.cards_in_suit(self.__cards, suit, include_trumps)
 
-    def resolve_play(
-        self, played_cards: Sequence[Card], hand_cards: Sequence[Card]
-    ) -> AlertResponse | None:
+    # Ensure the following play follows the lead format
+    def validate_follow(self, played_cards: Cards, hand_cards: Cards) -> None:
         played_dict = {card.id: card for card in played_cards}
         hand_dict = {card.id: card for card in hand_cards}
         stack = [unit for unit in reversed(self.units)]
@@ -121,16 +114,12 @@ class Format:
             unit = stack.pop()
             hand_format = Format(self.__order, hand_dict.values())
             result = unit.resolve(played_dict, hand_format.units, self.__order)
-            if isinstance(result, AlertResponse):
-                return result
             if result is None:
                 stack.extend(reversed(unit.decompose()))
                 continue
             for id in result:
                 del played_dict[id]
                 del hand_dict[id]
-
-        return None
 
     def beats(self, other: Self) -> bool:
         # This check will be obsolete once format matching is completed

@@ -1,5 +1,4 @@
-import { Constants } from "../../Constants";
-import { Card } from "../Card";
+import { CardState } from "./CardState";
 import { Seat } from "../enums";
 
 export class PlayerState {
@@ -8,12 +7,7 @@ export class PlayerState {
         public name: string,
         public level: number,
         public seat: Seat,
-        public hand: Card[] = [],
-        public playing: Card[] = []
+        public hand: CardState[] = [],
+        public playing: CardState[] = []
     ) {}
-
-    public static getSeat(playerIndex: number, seatOffset: number, numPlayers: number): Seat {
-        const seatingArrangement = Constants.seatingArrangement[numPlayers];
-        return seatingArrangement[(playerIndex + numPlayers - seatOffset) % numPlayers];
-    }
 }

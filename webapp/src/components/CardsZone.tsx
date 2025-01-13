@@ -1,13 +1,13 @@
 import { ControllerInterface } from "../abstractions/ControllerInterface";
 import { Position, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
-import { OptionsState, TrumpState } from "../abstractions/states";
+import { CardState, OptionsState, TrumpState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardComponent } from ".";
-import { Card } from "../abstractions";
+import { FC } from "react";
 
 interface CardsZoneInputs {
-  cards: Card[];
+  cards: CardState[];
   seat: Seat;
   trumpState: TrumpState;
   zone: Zone;
@@ -15,7 +15,7 @@ interface CardsZoneInputs {
   controller?: ControllerInterface | undefined;
 }
 
-export const CardsZone: React.FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, options, controller = undefined}) => {
+export const CardsZone: FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, options, controller = undefined}) => {
   // Sort cards for display
   cards.sort((a, b) => trumpState.getDisplayOrder(a) - trumpState.getDisplayOrder(b));
 

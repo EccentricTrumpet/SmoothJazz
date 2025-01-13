@@ -3,6 +3,7 @@ import { Position, Size, Zone } from "../abstractions/bounds";
 import { BoardState, OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardComponent } from ".";
+import { FC } from "react";
 
 interface CenterZoneInputs {
   board: BoardState;
@@ -11,7 +12,7 @@ interface CenterZoneInputs {
   controller: ControllerInterface;
 }
 
-export const CenterZone: React.FC<CenterZoneInputs> = ({board, deckZone, options, controller}) => {
+export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, controller}) => {
   const cardSize = new Size(Constants.cardWidth, Constants.cardHeight);
   const discardZone = new Zone(
     new Position(

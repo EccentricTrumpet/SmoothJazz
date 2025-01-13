@@ -5,34 +5,31 @@ export class StatusState {
     public activePlayerId: number;
     public kittyPlayerId: number;
     public trickWinnerId: number;
-    public attackers: number[];
     public defenders: number[];
     public gamePhase: GamePhase;
     public matchPhase: MatchPhase;
 
     constructor(statusState?: StatusState) {
         this.activePlayerId = statusState?.activePlayerId ?? -1;
-        this.kittyPlayerId = statusState?.kittyPlayerId ??-1;
-        this.trickWinnerId = statusState?.trickWinnerId ??-1;
-        this.attackers = statusState?.attackers ?? [];
+        this.kittyPlayerId = statusState?.kittyPlayerId ?? -1;
+        this.trickWinnerId = statusState?.trickWinnerId ?? -1;
         this.defenders = statusState?.defenders ?? [];
         this.gamePhase = statusState?.gamePhase ?? GamePhase.Draw;
         this.matchPhase = statusState?.matchPhase ?? MatchPhase.CREATED;
     }
 
-    public withActivePlayer(activePlayerId: number): StatusState {
-        this.activePlayerId = activePlayerId;
+    public withActivePlayer(activePlayerId?: number): StatusState {
+        this.activePlayerId = activePlayerId ?? this.activePlayerId;
         return this;
     }
 
-    public withTeamInfo(kittyPlayerId: number, attackers: number[], defenders: number[]): StatusState {
+    public withTeamInfo(kittyPlayerId: number, defenders: number[]): StatusState {
         this.kittyPlayerId = kittyPlayerId;
-        this.attackers = attackers;
         this.defenders = defenders;
         return this;
     }
 
-    public withTrickWinner(trickWinnerId: number): StatusState {
+    public withWinner(trickWinnerId: number): StatusState {
         this.trickWinnerId = trickWinnerId;
         return this;
     }

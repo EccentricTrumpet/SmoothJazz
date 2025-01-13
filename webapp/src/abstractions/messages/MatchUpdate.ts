@@ -1,6 +1,6 @@
 import { MatchPhase } from "../enums";
 
-export class MatchPhaseResponse {
+export class MatchUpdate {
     matchPhase: MatchPhase;
 
     constructor(jsonObj: any) {

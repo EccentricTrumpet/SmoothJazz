@@ -1,3 +1,4 @@
+import { FC } from "react";
 import { Constants } from "../Constants";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { Suit } from "../abstractions/enums";
@@ -8,7 +9,7 @@ interface TrumpZoneInputs {
   trumpState: TrumpState;
 }
 
-export const TrumpZone: React.FC<TrumpZoneInputs> = ({parentZone, trumpState}) => {
+export const TrumpZone: FC<TrumpZoneInputs> = ({parentZone, trumpState}) => {
   const zone = new Zone(
     new Position(
       parentZone.left() + Constants.margin,

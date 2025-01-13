@@ -1,25 +1,30 @@
-from typing import Sequence, Tuple
-from abstractions import Card, Suit
+from abstractions import Card, Cards, Cards_, PlayerInfo, Suit, Trump
+
+# Level 14 is Aces, Level 15 is the end level
+BOSS_LEVELS = [2, 5, 10, 13, 14, 15]
+DECK_SIZE = 54
+SUIT_SIZE = 13
+KITTY_SIZE = 8
+DECK_THRESHOLD = 20
 
 
 class Order:
-    def __init__(
-        self,
-        trump_rank: int,
-    ) -> None:
+    def __init__(self, trump_rank: int) -> None:
         # Inputs
         self.__trump_rank = trump_rank
 
         # Private
-        self.__trump_suit = Suit.JOKER
-        self.__order: dict[Tuple[Suit, int], int] = {}
+        self.__order: dict[tuple[Suit, int], int] = {}
         # Rank order 1, 13, ..., 2, except trump rank
         self.__all_ranks = [1, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]
         self.__all_ranks.remove(self.__trump_rank)
         self.reset(Suit.JOKER)
 
-    def reset(self, trump_suit: Suit):
-        self.__trump_suit = trump_suit
+        # Pubic
+        self.trump_suit = Suit.JOKER
+
+    def reset(self, trump_suit: Suit) -> None:
+        self.trump_suit = trump_suit
         non_trump_suits = [
             suit
             for suit in [Suit.SPADE, Suit.HEART, Suit.CLUB, Suit.DIAMOND]
@@ -63,11 +68,11 @@ class Order:
     def is_trump(self, card: Card) -> bool:
         return (
             card.suit == Suit.JOKER
-            or card.suit == self.__trump_suit
+            or card.suit == self.trump_suit
             or card.rank == self.__trump_rank
         )
 
-    def cards_in_suit(self, cards: Sequence[Card], suit: Suit, trump_suit: bool):
+    def cards_in_suit(self, cards: Cards, suit: Suit, trump_suit: bool) -> Cards:
         return [
             card
             for card in cards
@@ -78,30 +83,42 @@ class Order:
     def same(self, one: Card, two: Card) -> bool:
         return self.of(one) == self.of(two)
 
+    def trump_type(self, cards: Cards) -> Trump:
+        if len(cards) == 0 or len(cards) > 2:
+            return Trump.NONE
+        rank, suit, level = cards[0].rank, cards[0].suit, self.__trump_rank
+        if len(cards) == 1:
+            return Trump.SINGLE if rank == level and suit != Suit.JOKER else Trump.NONE
+        # Must be pairs
+        if suit != cards[1].suit or rank != cards[1].rank:
+            return Trump.NONE
+        if suit == Suit.JOKER:
+            return Trump.BIG_JOKER if rank == 2 else Trump.SMALL_JOKER
+        if rank == level:
+            return Trump.PAIR
+
 
 class Player:
-    def __init__(
-        self,
-        id: int,
-        name: str,
-        socket_id: str,
-        hand: Sequence[Card],
-    ) -> None:
+    def __init__(self, pid: int, name: str, sid: str, hand: Cards_ = None) -> None:
         # Inputs
-        self.__hand = hand
-        self.id = id
+        self.__hand = hand or []
+        self.pid = pid
         self.name = name
-        self.socket_id = socket_id
+        self.sid = sid
 
         # Public
         self.level = 2
+        self.defender = False
 
-    def draw(self, cards: Sequence[Card]) -> None:
+    def info(self) -> PlayerInfo:
+        return PlayerInfo(self.pid, self.name, self.level)
+
+    def draw(self, cards: Cards) -> None:
         self.__hand.extend(cards)
 
     # If non-empty cards is passed in, checks if the player has the specified cards.
     # If cards is empty, checks if the player has any cards in hand.
-    def has_cards(self, cards: Sequence[Card] | None = None) -> bool:
+    def has_cards(self, cards: Cards_ = None) -> bool:
         if cards is None:
             return len(self.__hand) > 0
 
@@ -117,12 +134,10 @@ class Player:
 
         return True
 
-    def cards_in_suit(
-        self, order: Order, suit: Suit, include_trumps: bool
-    ) -> Sequence[Card]:
+    def cards_in_suit(self, order: Order, suit: Suit, include_trumps: bool) -> Cards:
         return order.cards_in_suit(self.__hand, suit, include_trumps)
 
     # Always call has_cards before calling play
-    def play(self, cards: Sequence[Card]) -> None:
+    def play(self, cards: Cards) -> None:
         card_ids = set([card.id for card in cards])
         self.__hand = [card for card in self.__hand if card.id not in card_ids]

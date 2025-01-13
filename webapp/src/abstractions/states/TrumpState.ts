@@ -1,4 +1,4 @@
-import { Card } from "../Card";
+import { CardState } from ".";
 import { Suit } from "../enums";
 
 export class TrumpState {
@@ -63,7 +63,7 @@ export class TrumpState {
         }
     }
 
-    getDisplayOrder(card: Card): number {
+    getDisplayOrder(card: CardState): number {
         const orderKey = `${card.suit}${card.rank}`;
         if (this.sortOrder.has(orderKey)) {
             return this.sortOrder.get(orderKey)! * this.numCards + card.id;

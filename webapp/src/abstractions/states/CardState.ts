@@ -1,31 +1,37 @@
-import { Position } from "../bounds";
+import { CardUIState } from ".";
+import { Suit } from "../enums";
+import { Card } from "..";
 
 export class CardState {
     constructor(
-        public facedown: boolean = true,
-        public selected: boolean = false,
-        public highlighted: boolean = false,
-        public rotate: number = 0,
-        public position: Position = new Position(0, 0),
-        public offset: Position = new Position(0, 0),
+        public id: number,
+        public suit: Suit = Suit.Unknown,
+        public rank: number = 0,
+
+        // UI controls
+        public state: CardUIState = new CardUIState(),
+        public prevState: CardUIState | undefined = undefined
     ) {}
 
-    x(): number {
-        return this.position.x + this.offset.x;
+    public resetState() {
+        this.prevState = this.state;
+        this.state = this.state.clone();
     }
 
-    y(): number {
-        return this.position.y + this.offset.y;
+    public updateInfo(card: Card) {
+        this.resetState();
+        this.id = card.id;
+        this.suit = card.suit;
+        this.rank = card.rank;
+        this.state.facedown = card.suit === Suit.Unknown;
+        this.state.selected = false;
     }
 
-    clone(): CardState {
-        return new CardState(
-            this.facedown,
-            this.selected,
-            this.highlighted,
-            this.rotate,
-            this.position.clone(),
-            this.offset.clone()
-        )
+    public toInfo(): Card {
+        return new Card(this.id, this.suit, this.rank);
+    }
+
+    public toString(): string {
+        return `[${this.state.selected ? '*' : ''}Card id: ${this.id} suit: ${this.suit} rank: ${this.rank} state: ${!!this.state} prevState: ${!!this.prevState}]`;
     }
 }
