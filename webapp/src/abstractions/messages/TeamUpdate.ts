@@ -1,4 +1,4 @@
-export class TeamResponse {
+export class TeamUpdate {
     kittyPid: number;
     defenders: number[];
 

@@ -8,19 +8,16 @@ import { Position, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
 import {
   PlayerEvent,
-  DrawResponse,
-  StartResponse,
+  StartUpdate,
   JoinEvent,
   PlayerUpdate,
   MatchResponse,
   CardsEvent,
-  BidResponse,
-  KittyResponse,
-  PlayResponse,
-  EndResponse,
+  CardsUpdate,
+  EndUpdate,
   ErrorUpdate,
   MatchUpdate,
-  TeamResponse
+  TeamUpdate
 } from "../abstractions/messages";
 import { ErrorState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
 import { ErrorComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
@@ -180,13 +177,13 @@ export default function MatchPage() {
       }
 
       // Messages
-      socket.on("error", (response) => {
-        console.log(`raw error response: ${JSON.stringify(response)}`);
-        const errorResponse = new ErrorUpdate(response);
+      socket.on("error", (obj) => {
+        console.log(`raw error update: ${JSON.stringify(obj)}`);
+        const update = new ErrorUpdate(obj);
 
-        setError(new ErrorState(true, errorResponse.title, errorResponse.message));
-        if (errorResponse.hintCards.length > 0) {
-          const hintCards = createCardDict(errorResponse.hintCards);
+        setError(new ErrorState(true, update.title, update.message));
+        if (update.hintCards.length > 0) {
+          const hintCards = createCardDict(update.hintCards);
           setPlayers(prevPlayers => prevPlayers.map((player) => {
             for (const card of player.hand) {
               if (hintCards.has(card.id)) {
@@ -199,16 +196,16 @@ export default function MatchPage() {
         }
       });
 
-      socket.on("leave", (response) => {
-        console.log(`raw leave response: ${JSON.stringify(response)}`);
-        const update = new PlayerUpdate(response);
+      socket.on("leave", (obj) => {
+        console.log(`raw leave update: ${JSON.stringify(obj)}`);
+        const update = new PlayerUpdate(obj);
 
-        if (update.id === thisPlayerId) {
+        if (update.pid === thisPlayerId) {
           navigate('/');
         }
         else {
           setPlayers(prevPlayers => {
-            const newPlayers = prevPlayers.filter(player => player.id !== update.id);
+            const newPlayers = prevPlayers.filter(player => player.id !== update.pid);
             const seatOffset = newPlayers.findIndex(player => player.id === thisPlayerId);
             for (let i = 0; i < newPlayers.length; i++) {
               newPlayers[i].seat = seatOf(i, seatOffset, matchResponse.numPlayers);
@@ -218,63 +215,63 @@ export default function MatchPage() {
         }
       });
 
-      socket.on("join", (response) => {
-        console.log(`raw join response: ${JSON.stringify(response)}`);
-        const update = new PlayerUpdate(response);
+      socket.on("join", (obj) => {
+        console.log(`raw join update: ${JSON.stringify(obj)}`);
+        const update = new PlayerUpdate(obj);
 
         if (update.name === name) {
-          thisPlayerId = update.id;
-          setPlayerId(update.id);
+          thisPlayerId = update.pid;
+          setPlayerId(update.pid);
         }
 
         // Need to use callback to ensure atomicity
         setPlayers(prevPlayers => {
-          const seatOffset = update.id === thisPlayerId
+          const seatOffset = update.pid === thisPlayerId
             ? matchResponse.seatOffset
             : prevPlayers.findIndex(player => player.id === thisPlayerId);
           const seat = seatOf(prevPlayers.length, seatOffset, matchResponse.numPlayers);
-          return [...prevPlayers, new PlayerState(update.id, update.name, update.level, seat)];
+          return [...prevPlayers, new PlayerState(update.pid, update.name, update.level, seat)];
         });
       });
 
-      socket.on("team", (response) => {
-        console.log(`raw team response: ${JSON.stringify(response)}`);
-        const teamResponse = new TeamResponse(response);
+      socket.on("team", (obj) => {
+        console.log(`raw team update: ${JSON.stringify(obj)}`);
+        const update = new TeamUpdate(obj);
 
-        setStatusState(pState => new StatusState(pState).withTeamInfo(teamResponse.kittyPid, teamResponse.defenders));
+        setStatusState(pState => new StatusState(pState).withTeamInfo(update.kittyPid, update.defenders));
       });
 
-      socket.on("start", (response) => {
-        console.log(`raw start response: ${JSON.stringify(response)}`);
-        const startResponse = new StartResponse(response);
+      socket.on("start", (obj) => {
+        console.log(`raw start update: ${JSON.stringify(obj)}`);
+        const update = new StartUpdate(obj);
 
         setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(startResponse.activePid)
+          .withActivePlayer(update.activePid)
           .withGamePhase(GamePhase.Draw));
-        setTrumpState(new TrumpState(startResponse.cards, startResponse.rank));
-        setBoardState(new BoardState(Array.from({length: startResponse.cards}, (_, i) => new CardState(-(1 + i)))));
+        setTrumpState(new TrumpState(update.cards, update.rank));
+        setBoardState(new BoardState(Array.from({length: update.cards}, (_, i) => new CardState(-(1 + i)))));
         setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player.id, player.name, player.level, player.seat)));
       });
 
-      socket.on("match", (response) => {
-        console.log(`raw match response: ${JSON.stringify(response)}`);
-        const phaseResponse = new MatchUpdate(response);
+      socket.on("match", (obj) => {
+        console.log(`raw match update: ${JSON.stringify(obj)}`);
+        const update = new MatchUpdate(obj);
 
-        setStatusState(pState => new StatusState(pState).withMatchPhase(phaseResponse.matchPhase));
+        setStatusState(pState => new StatusState(pState).withMatchPhase(update.matchPhase));
       });
 
-      socket.on("draw", (response) => {
-        console.log(`raw draw response: ${JSON.stringify(response)}`);
-        const drawResponse = new DrawResponse(response);
+      socket.on("draw", (obj) => {
+        console.log(`raw draw update: ${JSON.stringify(obj)}`);
+        const update = new CardsUpdate(obj);
 
         setBoardState(pState => {
-          const drawnCards = pState.deck.splice(-drawResponse.cards.length, drawResponse.cards.length);
+          const drawnCards = pState.deck.splice(-update.cards.length, update.cards.length);
 
           // Add new cards to player's hand
           setPlayers(prevPlayers => prevPlayers.map((player) => {
-            if (player.id === drawResponse.id) {
+            if (player.id === update.pid) {
               for (let i = 0; i < drawnCards.length; i++) {
-                drawnCards[i].updateInfo(drawResponse.cards[i]);
+                drawnCards[i].updateInfo(update.cards[i]);
               }
 
               return new PlayerState(player.id, player.name, player.level, player.seat, [...player.hand, ...drawnCards], player.playing);
@@ -283,7 +280,7 @@ export default function MatchPage() {
           }));
 
           // Withdraw bids as game starts
-          if (drawResponse.phase === GamePhase.Kitty) {
+          if (update.phase === GamePhase.Kitty) {
             withdrawPlaying();
           }
 
@@ -292,27 +289,27 @@ export default function MatchPage() {
 
         // Set new game state
         setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(drawResponse.activePlayerId)
-          .withGamePhase(drawResponse.phase));
+          .withActivePlayer(update.nextPID)
+          .withGamePhase(update.phase!));
       });
 
-      socket.on("bid", (response) => {
-        console.log(`raw bid response: ${JSON.stringify(response)}`);
-        const bidResponse = new BidResponse(response);
+      socket.on("bid", (obj) => {
+        console.log(`raw bid update: ${JSON.stringify(obj)}`);
+        const update = new CardsUpdate(obj);
 
-        playCards(bidResponse.trumps, bidResponse.playerId);
-        withdrawPlaying(bidResponse.playerId);
-        setTrumpState(pState => new TrumpState(pState.numCards, pState.trumpRank, bidResponse.trumps[0].suit));
+        playCards(update.cards, update.pid);
+        withdrawPlaying(update.pid);
+        setTrumpState(pState => new TrumpState(pState.numCards, pState.trumpRank, update.cards[0].suit));
       });
 
-      socket.on("kitty", (response) => {
-        console.log(`raw kitty response: ${JSON.stringify(response)}`);
-        const kittyResponse = new KittyResponse(response);
-        const kittyCards = createCardDict(kittyResponse.cards);
+      socket.on("kitty", (obj) => {
+        console.log(`raw kitty update: ${JSON.stringify(obj)}`);
+        const update = new CardsUpdate(obj);
+        const kittyCards = createCardDict(update.cards);
 
         // Add kitty cards to board state
         setPlayers(prevPlayers => prevPlayers.map((player) => {
-          if (player.id === kittyResponse.playerId) {
+          if (player.id === update.pid) {
             const [kitty, newHand] = partition(player.hand, card => kittyCards.has(card.id));
 
             for (const card of kitty) {
@@ -328,41 +325,39 @@ export default function MatchPage() {
         }));
 
         // Set new game state
-        setStatusState(pState => new StatusState(pState).withGamePhase(kittyResponse.phase));
+        setStatusState(pState => new StatusState(pState).withGamePhase(update.phase!));
       });
 
-      socket.on("play", async (response) => {
-        console.log(`raw play response: ${JSON.stringify(response)}`);
-        const playResponse = new PlayResponse(response);
+      socket.on("play", async (obj) => {
+        console.log(`raw play update: ${JSON.stringify(obj)}`);
+        const update = new CardsUpdate(obj);
 
         // Play cards
-        playCards(playResponse.cards, playResponse.pid, playResponse.winnerPid);
+        playCards(update.cards, update.pid, update.hintPID);
 
-        // Set new game state
-        if (playResponse.score === undefined) {
+        if (update.score === undefined) {
           // Trick not complete
-          setStatusState(pState => new StatusState(pState).withActivePlayer(playResponse.activePid));
+          setStatusState(pState => new StatusState(pState).withActivePlayer(update.nextPID));
         }
         else {
           // Trick complete
-          await cleanupTrickAsync(playResponse.score, playResponse.activePid);
+          await cleanupTrickAsync(update.score, update.nextPID);
         }
       });
 
-      socket.on("end", async (response) => {
-        console.log(`raw end response: ${JSON.stringify(response)}`);
-        const endResponse = new EndResponse(response);
+      socket.on("end", async (obj) => {
+        console.log(`raw end update: ${JSON.stringify(obj)}`);
+        const update = new EndUpdate(obj);
 
         // Play cards
-        playCards(endResponse.play.cards, endResponse.play.pid, endResponse.play.winnerPid);
+        playCards(update.play.cards, update.play.pid, update.play.hintPID);
 
         // Cleanup trick
-        await cleanupTrickAsync(endResponse.play.score!);
-
+        await cleanupTrickAsync(update.play.score!);
         await new Promise(f => setTimeout(f, 1000));
 
         // Display kitty
-        const kittyCards = createCardDict(endResponse.kitty.cards);
+        const kittyCards = createCardDict(update.kitty.cards);
         setBoardState(pState => {
           pState.kitty.forEach(card => card.updateInfo(kittyCards.get(card.id)!));
 
@@ -370,18 +365,18 @@ export default function MatchPage() {
             return prevPlayers.map(player => new PlayerState(
               player.id,
               player.name,
-              endResponse.players.get(player.id)!,
+              update.players.get(player.id)!,
               player.seat,
               player.hand,
-              player.id === endResponse.kitty.pid ? pState.kitty : player.playing
+              player.id === update.kitty.pid ? pState.kitty : player.playing
             ));
           });
 
-          return new BoardState([], [], pState.discard, endResponse.kitty.score);
+          return new BoardState([], [], pState.discard, update.kitty.score);
         });
 
         setStatusState(pState => new StatusState(pState)
-          .withActivePlayer(endResponse.kitty.activePid)
+          .withActivePlayer(update.kitty.nextPID)
           .withGamePhase(GamePhase.End));
       });
 

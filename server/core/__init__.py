@@ -1,4 +1,4 @@
-from abstractions import Card, Cards, Cards_, PlayerInfo, Suit
+from abstractions import Card, Cards, Cards_, PlayerInfo, Suit, Trump
 
 # Level 14 is Aces, Level 15 is the end level
 BOSS_LEVELS = [2, 5, 10, 13, 14, 15]
@@ -14,15 +14,17 @@ class Order:
         self.__trump_rank = trump_rank
 
         # Private
-        self.__trump_suit = Suit.JOKER
         self.__order: dict[tuple[Suit, int], int] = {}
         # Rank order 1, 13, ..., 2, except trump rank
         self.__all_ranks = [1, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]
         self.__all_ranks.remove(self.__trump_rank)
         self.reset(Suit.JOKER)
 
+        # Pubic
+        self.trump_suit = Suit.JOKER
+
     def reset(self, trump_suit: Suit) -> None:
-        self.__trump_suit = trump_suit
+        self.trump_suit = trump_suit
         non_trump_suits = [
             suit
             for suit in [Suit.SPADE, Suit.HEART, Suit.CLUB, Suit.DIAMOND]
@@ -66,7 +68,7 @@ class Order:
     def is_trump(self, card: Card) -> bool:
         return (
             card.suit == Suit.JOKER
-            or card.suit == self.__trump_suit
+            or card.suit == self.trump_suit
             or card.rank == self.__trump_rank
         )
 
@@ -80,6 +82,20 @@ class Order:
 
     def same(self, one: Card, two: Card) -> bool:
         return self.of(one) == self.of(two)
+
+    def trump_type(self, cards: Cards) -> Trump:
+        if len(cards) == 0 or len(cards) > 2:
+            return Trump.NONE
+        rank, suit, level = cards[0].rank, cards[0].suit, self.__trump_rank
+        if len(cards) == 1:
+            return Trump.SINGLE if rank == level and suit != Suit.JOKER else Trump.NONE
+        # Must be pairs
+        if suit != cards[1].suit or rank != cards[1].rank:
+            return Trump.NONE
+        if suit == Suit.JOKER:
+            return Trump.BIG_JOKER if rank == 2 else Trump.SMALL_JOKER
+        if rank == level:
+            return Trump.PAIR
 
 
 class Player:

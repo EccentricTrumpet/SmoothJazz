@@ -1,4 +1,4 @@
-export class StartResponse {
+export class StartUpdate {
     activePid: number;
     cards: number;
     rank: number;

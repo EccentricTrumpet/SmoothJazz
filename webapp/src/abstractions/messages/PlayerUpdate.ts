@@ -1,16 +1,16 @@
 export interface PlayerJsonInterface {
-    id: string,
+    pid: string,
     name: string,
     level: string,
 }
 
 export class PlayerUpdate {
-    id: number;
+    pid: number;
     name: string;
     level: number;
 
     constructor(jsonObj: PlayerJsonInterface) {
-        this.id = Number(jsonObj.id);
+        this.pid = Number(jsonObj.pid);
         this.name = jsonObj.name;
         this.level = Number(jsonObj.level);
     }

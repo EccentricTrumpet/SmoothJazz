@@ -59,8 +59,12 @@ class Card:
             return 10
         return 0
 
-    def json(self) -> dict:
-        return {"id": self.id, "suit": self.suit, "rank": self.rank}
+    def json(self, secret=False) -> dict:
+        return {
+            "id": self.id,
+            "suit": Suit.UNKNOWN if secret else self.suit,
+            "rank": 0 if secret else self.rank,
+        }
 
     def matches(self, card: Self) -> bool:
         return self.suit == card.suit and self.rank == card.rank
@@ -73,7 +77,7 @@ class PlayerInfo:
         self.__level = level
 
     def json(self) -> dict:
-        return {"id": self.__pid, "name": self.__name, "level": self.__level}
+        return {"pid": self.__pid, "name": self.__name, "level": self.__level}
 
 
 # HTTP responses

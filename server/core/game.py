@@ -1,46 +1,37 @@
 import random
 from bisect import bisect_left, bisect_right
 
-from abstractions import Card, Cards, GamePhase, PlayerError, Room, Suit, Trump
+from abstractions import Card, GamePhase, PlayerError, Room, Suit, Trump
 from abstractions.events import CardsEvent, PlayerEvent
 from core import BOSS_LEVELS, DECK_SIZE, DECK_THRESHOLD, KITTY_SIZE, SUIT_SIZE, Order
 from core.players import Players
 from core.trick import Trick
-from core.updates import (
-    BidUpdate,
-    DrawUpdate,
-    EndUpdate,
-    KittyUpdate,
-    PlayUpdate,
-    StartUpdate,
-    TeamUpdate,
-)
+from core.updates import CardsUpdate, EndUpdate, StartUpdate, TeamUpdate
 
 
 class Game:
     def __init__(
         self, decks: int, players: Players, room: Room, lead: int = -1, bid_team=False
-    ):
+    ) -> None:
         # Inputs
         self.__decks = decks
         self.__players = players
         self.__bid_team = bid_team
 
-        # Private
-        self.__deck: list[Card] = []
-        self.__bidder_pid = -1
-        self.__trump_suit = Suit.UNKNOWN
-        self.__trump = Trump.NONE
-        self.__kitty_pid = lead if lead != -1 else players.first().pid
-        self.__active_pid = self.__kitty_pid
-        self.__rank = self.__players[self.__kitty_pid].level
-        self.__order = Order(self.__rank)
-        self.__ready_players: set[int] = set()
-
         # Protected for testing
+        self._kitty_pid = lead if lead != -1 else players.first().pid
+        self._active_pid = self._kitty_pid
         self._score = 0
         self._kitty: list[Card] = []
         self._tricks: list[Trick] = []
+        self._deck: list[Card] = []
+
+        # Private
+        self.__bidder_pid = -1
+        self.__trump = Trump.NONE
+        self.__rank = self.__players[self._kitty_pid].level
+        self.__order = Order(self.__rank)
+        self.__ready_players: set[int] = set()
 
         # Public
         self.phase = GamePhase.DRAW
@@ -60,21 +51,18 @@ class Game:
             card_index = i % DECK_SIZE
             suit_index = card_index // SUIT_SIZE
             rank_index = card_index % SUIT_SIZE + 1
-            self.__deck.append(Card(indices[i], suits[suit_index], rank_index))
-        random.shuffle(self.__deck)
+            self._deck.append(Card(indices[i], suits[suit_index], rank_index))
+        random.shuffle(self._deck)
 
         # Send updates to match room
-        self.__players.assign_fixed_team(self.__kitty_pid)
-        room.public(
-            "start",
-            StartUpdate(self.__active_pid, len(self.__deck), self.__rank),
-        )
-        room.public("team", TeamUpdate(self.__kitty_pid, self.__players.defenders()))
+        self.__players.assign_fixed_team(self._kitty_pid)
+        room.public("start", StartUpdate(self._kitty_pid, len(self._deck), self.__rank))
+        room.public("team", TeamUpdate(self._kitty_pid, self.__players.defenders()))
 
     def __ensure_valid_event(self, phase: GamePhase, pid: int | None = None) -> None:
         if phase != self.phase:
             raise PlayerError("Invalid action", "You can't do that right now.")
-        if pid is not None and pid != self.__active_pid:
+        if pid is not None and pid != self._active_pid:
             raise PlayerError("Invalid action", "It's not your turn.")
 
     def draw(self, event: PlayerEvent, room: Room) -> None:
@@ -82,39 +70,25 @@ class Game:
 
         # Draw cards
         player = self.__players[event.pid]
-        count = 1 if len(self.__deck) > KITTY_SIZE else KITTY_SIZE
-        cards = [self.__deck.pop() for _ in range(count)]
+        count = 1 if len(self._deck) > KITTY_SIZE else KITTY_SIZE
+        cards = [self._deck.pop() for _ in range(count)]
         player.draw(cards)
 
         # Update states
-        if len(self.__deck) == 0:
+        if len(self._deck) == 0:
             self.phase = GamePhase.KITTY
-        elif len(self.__deck) == KITTY_SIZE:
-            self.__active_pid = self.__kitty_pid
+        elif len(self._deck) == KITTY_SIZE:
+            self._active_pid = self._kitty_pid
         else:
-            self.__active_pid = self.__players.next(self.__active_pid)
+            self._active_pid = self.__players.next(self._active_pid)
 
         room.secret(
-            "draw", DrawUpdate(player.pid, self.phase, self.__active_pid, cards)
+            "draw", CardsUpdate(player.pid, cards, self._active_pid, phase=self.phase)
         )
-
-    def __resolve_trump(self, cards: Cards) -> Trump:
-        if len(cards) == 0 or len(cards) > 2:
-            return Trump.NONE
-        rank, suit, level = cards[0].rank, cards[0].suit, self.__rank
-        if len(cards) == 1:
-            return Trump.SINGLE if rank == level and suit != Suit.JOKER else Trump.NONE
-        # Must be pairs
-        if suit != cards[1].suit or rank != cards[1].rank:
-            return Trump.NONE
-        if suit == Suit.JOKER:
-            return Trump.BIG_JOKER if rank == 2 else Trump.SMALL_JOKER
-        if rank == level:
-            return Trump.PAIR
 
     def bid(self, event: CardsEvent, room: Room) -> None:
         self.__ensure_valid_event(GamePhase.DRAW)
-        trump = self.__resolve_trump(event.cards)
+        trump = self.__order.trump_type(event.cards)
 
         # Player must possess the cards
         if trump == Trump.NONE:
@@ -130,23 +104,21 @@ class Game:
             if (
                 self.__trump != Trump.SINGLE
                 or trump != Trump.SINGLE
-                or self.__trump_suit != event.cards[0].suit
+                or self.__order.trump_suit != event.cards[0].suit
             ):
                 raise PlayerError("Invalid bid", "You can only fortify your bid.")
             trump = Trump.PAIR
 
         # Update states
-        self.__trump_suit = event.cards[0].suit
-        self.__trump = trump
-        self.__bidder_pid = pid
+        self.__order.reset(event.cards[0].suit)
+        self.__trump, self.__bidder_pid = trump, pid
 
         if self.__bid_team:
-            self.__kitty_pid = pid
+            self._kitty_pid = pid
             self.__players.assign_fixed_team(pid)
             room.public("team", TeamUpdate(pid, self.__players.defenders()))
 
-        kitty_pid = self.__kitty_pid
-        room.public("bid", BidUpdate(pid, event.cards, kitty_pid))
+        room.public("bid", CardsUpdate(pid, event.cards))
 
     def kitty(self, event: CardsEvent, room: Room) -> None:
         self.__ensure_valid_event(GamePhase.KITTY, event.pid)
@@ -161,14 +133,12 @@ class Game:
 
         # Update states
         self.phase = GamePhase.PLAY
-        self.__order.reset(self.__trump_suit)
-
-        room.secret("kitty", KittyUpdate(event.pid, self.phase, event.cards))
+        room.secret("kitty", CardsUpdate(event.pid, event.cards, phase=self.phase))
 
     # Return final kitty play update
-    def _end(self) -> PlayUpdate:
+    def _end(self) -> CardsUpdate:
         self.phase = GamePhase.END
-        kitty_pid = self.__kitty_pid
+        kitty_pid = self._kitty_pid
 
         # Add kitty score
         if (trick := self._tricks[-1]).winner_pid in self.__players.attackers():
@@ -204,7 +174,7 @@ class Game:
                 max_level = BOSS_LEVELS[bisect_right(BOSS_LEVELS, player.level)]
                 player.level = min(max_level, player.level + levels)
 
-        return PlayUpdate(kitty_pid, self.next_pid, self._kitty, score=self._score)
+        return CardsUpdate(kitty_pid, self._kitty, self.next_pid, score=self._score)
 
     def play(self, event: CardsEvent, room: Room) -> None:
         self.__ensure_valid_event(GamePhase.PLAY, event.pid)
@@ -219,8 +189,8 @@ class Game:
         trick.play(player, event.cards)
 
         # Update play states
-        self.__active_pid = self.__players.next(self.__active_pid)
-        update = PlayUpdate(event.pid, self.__active_pid, event.cards, trick.winner_pid)
+        self._active_pid = self.__players.next(self._active_pid)
+        update = CardsUpdate(event.pid, event.cards, self._active_pid, trick.winner_pid)
 
         if not trick.ended:
             return room.public("play", update)
@@ -229,7 +199,7 @@ class Game:
         if trick.winner_pid in self.__players.attackers():
             self._score += trick.score
         update.score = self._score
-        update.active_pid = self.__active_pid = trick.winner_pid
+        update.next_pid = self._active_pid = trick.winner_pid
 
         if player.has_cards():
             return room.public("play", update)
