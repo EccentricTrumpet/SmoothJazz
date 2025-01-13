@@ -32,6 +32,6 @@ export class CardState {
     }
 
     public toString(): string {
-        return `[${this.state.selected ? '*' : ''}Card id: ${this.id} suit: ${this.suit} rank: ${this.rank} state: ${!!this.state} prevState: ${!!this.prevState}]`;
+        return `[${this.state.selected ? '*' : ''}Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
     }
 }

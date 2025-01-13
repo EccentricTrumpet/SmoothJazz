@@ -1,26 +1,19 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { debounce } from "lodash";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
-import { debounce } from "lodash";
 import { Card, ControllerInterface, seatOf } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
+import { CardsEvent, JoinEvent, MatchResponse, PlayerEvent } from "../abstractions/messages";
 import {
-  PlayerEvent,
-  StartUpdate,
-  JoinEvent,
-  PlayerUpdate,
-  MatchResponse,
-  CardsEvent,
-  CardsUpdate,
-  EndUpdate,
-  ErrorUpdate,
-  MatchUpdate,
-  TeamUpdate
-} from "../abstractions/messages";
-import { ErrorState, BoardState, CardState, StatusState, OptionsState, PlayerState, TrumpState } from "../abstractions/states";
-import { ErrorComponent, CenterZone, ControlZone, KittyZone, PlayerZone, TrumpZone } from "../components";
+  BoardState, CardState, ErrorState, OptionsState, PlayerState, StatusState, TrumpState
+} from "../abstractions/states";
+import {
+  CardsUpdate, EndUpdate, ErrorUpdate, MatchUpdate, PlayerUpdate, StartUpdate, TeamUpdate
+} from "../abstractions/updates";
+import { CenterZone, ControlZone, ErrorComponent, KittyZone, PlayerZone, TrumpZone } from "../components";
 import { Constants } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
@@ -237,7 +230,6 @@ export default function MatchPage() {
       socket.on("team", (obj) => {
         console.log(`raw team update: ${JSON.stringify(obj)}`);
         const update = new TeamUpdate(obj);
-
         setStatusState(pState => new StatusState(pState).withTeamInfo(update.kittyPid, update.defenders));
       });
 
@@ -256,7 +248,6 @@ export default function MatchPage() {
       socket.on("match", (obj) => {
         console.log(`raw match update: ${JSON.stringify(obj)}`);
         const update = new MatchUpdate(obj);
-
         setStatusState(pState => new StatusState(pState).withMatchPhase(update.matchPhase));
       });
 
