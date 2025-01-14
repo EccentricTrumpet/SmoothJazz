@@ -201,7 +201,7 @@ export default function MatchPage() {
             const newPlayers = prevPlayers.filter(player => player.id !== update.pid);
             const seatOffset = newPlayers.findIndex(player => player.id === thisPlayerId);
             for (let i = 0; i < newPlayers.length; i++) {
-              newPlayers[i].seat = seatOf(i, seatOffset, matchResponse.numPlayers);
+              newPlayers[i].seat = seatOf(i, seatOffset, matchResponse.seats);
             }
             return newPlayers;
           });
@@ -222,7 +222,7 @@ export default function MatchPage() {
           const seatOffset = update.pid === thisPlayerId
             ? matchResponse.seatOffset
             : prevPlayers.findIndex(player => player.id === thisPlayerId);
-          const seat = seatOf(prevPlayers.length, seatOffset, matchResponse.numPlayers);
+          const seat = seatOf(prevPlayers.length, seatOffset, matchResponse.seats);
           return [...prevPlayers, new PlayerState(update.pid, update.name, update.level, seat)];
         });
       });

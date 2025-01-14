@@ -7,7 +7,7 @@ from services.match import MatchService
 class MatchPost(MethodView):
     init_every_request = False
 
-    def __init__(self, match_service: MatchService):
+    def __init__(self, match_service: MatchService) -> None:
         self.__match_service = match_service
 
     def post(self):
@@ -18,12 +18,11 @@ class MatchPost(MethodView):
 class MatchGet(MethodView):
     init_every_request = False
 
-    def __init__(self, match_service: MatchService):
+    def __init__(self, match_service: MatchService) -> None:
         self.__match_service = match_service
 
     def get(self, id: int):
-        response = self.__match_service.get(id)
-        if response is None:
+        if (response := self.__match_service.get(id)) is None:
             abort(404)
         else:
             return (

@@ -1,63 +1,62 @@
 from itertools import count
-from typing import Callable, Dict, Iterator
+from typing import Callable, Iterator
 
-from abstractions import PlayerError, Response, Room, Room_
-from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
-from core.match import Match
+from abstractions import CardsEvent, Event, JoinEvent, PlayerError, PlayerEvent, Room
+from core.match import Match, MatchResponse
 
 
 class MatchService:
+    type EventCall[T: Event] = Callable[[T, Room], None]
+    type Room_ = Room | None
+
     def __init__(self) -> None:
         # Monotonically increasing ids
         self.__match_id: Iterator[int] = count()
-        self.__matches: Dict[int, Match] = dict()
+        self.__matches: dict[int, Match] = dict()
 
-    def __try[T](self, event: T, room: Room, func: Callable[[T, Room], None]) -> Room_:
+    def _try[T: Event](self, event: T, room: Room, call: EventCall[T]) -> Room_:
         try:
-            func(event, room)
+            call(event, room)
         except PlayerError as error:
             room.reply("error", error)
         return room
 
-    def __invoke[
-        T: (PlayerEvent, CardsEvent)
-    ](self, event: T, func: Callable[[Match], Callable[[T, Room], None]]) -> Room_:
+    def _call[T: Event](self, event: T, call: Callable[[Match], EventCall[T]]) -> Room_:
         if event.match_id not in self.__matches:
             return None
 
         match = self.__matches[event.match_id]
         if event.pid in match.players:
-            return self.__try(event, Room(event.match_id, event.sid), func(match))
+            return self._try(event, Room(event), call(match))
 
-    def create(self, debug: bool) -> Response:
+    def create(self, debug: bool) -> MatchResponse:
         match_id = next(self.__match_id)
         new_match = Match(match_id, debug)
         self.__matches[match_id] = new_match
         return new_match.response()
 
-    def get(self, match_id: int) -> Response | None:
+    def get(self, match_id: int) -> MatchResponse | None:
         if match_id in self.__matches:
             return self.__matches[match_id].response()
 
     def join(self, event: JoinEvent) -> Room_:
         if event.match_id in self.__matches:
-            room = Room(event.match_id, event.sid)
-            return self.__try(event, room, self.__matches[event.match_id].join)
+            return self._try(event, Room(event), self.__matches[event.match_id].join)
 
     def leave(self, event: PlayerEvent) -> Room_:
-        return self.__invoke(event, lambda match: match.leave)
+        return self._call(event, lambda match: match.leave)
 
     def draw(self, event: PlayerEvent) -> Room_:
-        return self.__invoke(event, lambda match: match.draw)
+        return self._call(event, lambda match: match.draw)
 
     def bid(self, event: CardsEvent) -> Room_:
-        return self.__invoke(event, lambda match: match.bid)
+        return self._call(event, lambda match: match.bid)
 
     def kitty(self, event: CardsEvent) -> Room_:
-        return self.__invoke(event, lambda match: match.kitty)
+        return self._call(event, lambda match: match.kitty)
 
     def play(self, event: CardsEvent) -> Room_:
-        return self.__invoke(event, lambda match: match.play)
+        return self._call(event, lambda match: match.play)
 
     def next(self, event: PlayerEvent) -> Room_:
-        return self.__invoke(event, lambda match: match.next)
+        return self._call(event, lambda match: match.next)

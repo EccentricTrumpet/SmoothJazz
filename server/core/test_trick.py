@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from abstractions import PlayerError, Suit
+from abstractions import Card, Cards, PlayerError, Suit
 from core import Order, Player
 from core.trick import Trick
 from testing import JB, initialize
@@ -10,11 +10,15 @@ from testing.spades import S2, S3, S4, S5, S6, S7, S8, S9, SA, SJ, SK, SQ, ST
 
 
 class TrickPlayTests(TestCase):
+    def player(self, id: int, cards: Cards) -> Player:
+        player = Player(id, "", "")
+        player._hand = cards
+        return player
 
     def test_trick_play_enforce_non_empty(self) -> None:
         trick = Trick(4, Order(2))
         with self.assertRaises(PlayerError):
-            trick.play(Player(0, "", ""), [])
+            trick.play(self.player(0, []), [])
 
     def test_trick_play_enforce_lead_suited(self) -> None:
         cases = [
@@ -29,13 +33,13 @@ class TrickPlayTests(TestCase):
                 trick = Trick(4, Order(2))
                 cards = initialize(raw_cards)
                 with self.assertRaises(PlayerError):
-                    trick.play(Player(0, "", "", cards), cards)
+                    trick.play(self.player(0, cards), cards)
 
     def test_trick_play_enforce_follow_length(self) -> None:
         trick = Trick(4, Order(2))
         cards = initialize([S3, S4, S5])
-        player_0 = Player(0, "", "", cards)
-        player_1 = Player(1, "", "", cards)
+        player_0 = self.player(0, cards)
+        player_1 = self.player(1, cards)
         self.assertIsNone(trick.play(player_0, cards[0:2]))
         with self.assertRaises(PlayerError):
             trick.play(player_1, cards[0:1])
@@ -67,12 +71,12 @@ class TrickPlayTests(TestCase):
             with self.subTest(setup=setup, expected=expected):
                 (lead, player, play) = tuple(map(initialize, setup))
                 trick = Trick(4, Order(2))
-                self.assertIsNone(trick.play(Player(0, "", "", lead), lead))
+                self.assertIsNone(trick.play(self.player(0, lead), lead))
                 if expected:
-                    self.assertIsNone(trick.play(Player(1, "", "", player), play))
+                    self.assertIsNone(trick.play(self.player(1, player), play))
                 else:
                     with self.assertRaises(PlayerError):
-                        trick.play(Player(1, "", "", player), play)
+                        trick.play(self.player(1, player), play)
 
     def test_trick_play_enforce_format_for_matching_suits(self) -> None:
         order = Order(2)
@@ -92,12 +96,12 @@ class TrickPlayTests(TestCase):
                 player = initialize(player)
                 play = [player[i] for i in play]
                 trick = Trick(4, order)
-                self.assertIsNone(trick.play(Player(0, "", "", lead), lead))
+                self.assertIsNone(trick.play(self.player(0, lead), lead))
                 if expected:
-                    self.assertIsNone(trick.play(Player(1, "", "", player), play))
+                    self.assertIsNone(trick.play(self.player(1, player), play))
                 else:
                     with self.assertRaises(PlayerError):
-                        trick.play(Player(1, "", "", player), play)
+                        trick.play(self.player(1, player), play)
 
     def test_trick_winner_resolution(self) -> None:
         order = Order(2)
@@ -127,11 +131,11 @@ class TrickPlayTests(TestCase):
                 trick = Trick(4, order)
                 for player, (raw_play, winner) in enumerate(steps):
                     play = initialize(raw_play)
-                    self.assertIsNone(trick.play(Player(player, "", "", play), play))
+                    self.assertIsNone(trick.play(self.player(player, play), play))
                     self.assertEqual(winner, trick.winner_pid)
 
     def test_trick_play_accumulates_score(self) -> None:
         trick = Trick(4, Order(2))
         cards = initialize([SA, S3, S4, S5, S6, S7, S8, S9, ST, SJ, SQ, SK])
-        self.assertIsNone(trick.play(Player(0, "", "", cards), cards))
+        self.assertIsNone(trick.play(self.player(0, cards), cards))
         self.assertEqual(25, trick.score)

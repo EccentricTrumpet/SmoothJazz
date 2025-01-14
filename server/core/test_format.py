@@ -467,8 +467,8 @@ class FormatResolvePlayTests(TestCase):
             self.assertIsNone(lead.validate_follow([card], hand))
             self.assertEqual(1, len(lead.units))
             single = lead.units[0]
-            self.assertIsInstance(single.complement, Single)
-            self.assertListEqual([card], single.complement.cards)
+            self.assertIsInstance(single.match, Single)
+            self.assertListEqual([card], single.match.cards)
 
     def test_format_validate_follow_pair_with_complement(self) -> None:
         order = Order(2)
@@ -491,8 +491,8 @@ class FormatResolvePlayTests(TestCase):
                 self.assertIsNone(lead.validate_follow(play, hand))
                 self.assertEqual(1, len(lead.units))
                 pair = lead.units[0]
-                self.assertIsInstance(pair.complement, Pair)
-                self.assertListEqual(play, pair.complement.cards)
+                self.assertIsInstance(pair.match, Pair)
+                self.assertListEqual(play, pair.match.cards)
 
     def test_format_validate_follow_pair_no_complement(self) -> None:
         order = Order(2)
@@ -503,7 +503,7 @@ class FormatResolvePlayTests(TestCase):
             self.assertIsNone(lead.validate_follow(play, hand))
             self.assertEqual(1, len(lead.units))
             pair = lead.units[0]
-            self.assertIsNone(pair.complement)
+            self.assertIsNone(pair.match)
 
     def test_format_validate_follow_pair_invalid(self) -> None:
         order = Order(2)
@@ -551,9 +551,9 @@ class FormatResolvePlayTests(TestCase):
                 self.assertIsNone(lead.validate_follow(play, hand))
                 self.assertEqual(1, len(lead.units))
                 tractor = lead.units[0]
-                self.assertIsInstance(tractor.complement, Tractor)
-                self.assertEqual(play[0], tractor.complement.highest)
-                self.assertListEqual(play, tractor.complement.cards)
+                self.assertIsInstance(tractor.match, Tractor)
+                self.assertEqual(play[0], tractor.match.highest)
+                self.assertListEqual(play, tractor.match.cards)
 
     def test_format_validate_follow_tractor_no_complement(self) -> None:
         order = Order(2)
@@ -574,7 +574,7 @@ class FormatResolvePlayTests(TestCase):
                 self.assertIsNone(lead.validate_follow(play, hand))
                 self.assertEqual(1, len(lead.units))
                 tractor = lead.units[0]
-                self.assertIsNone(tractor.complement)
+                self.assertIsNone(tractor.match)
 
     def test_format_validate_follow_tractor_invalid(self) -> None:
         order = Order(2)

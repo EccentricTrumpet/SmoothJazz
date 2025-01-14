@@ -1,37 +1,32 @@
-from abstractions import GamePhase, MatchPhase, PInfos, PlayerError, Response, Room
-from abstractions.events import CardsEvent, JoinEvent, PlayerEvent
-from core import BOSS_LEVELS
+from abstractions import CardsEvent, JoinEvent, PlayerError, PlayerEvent, Response, Room
+from core import LEVELS
 from core.game import Game
 from core.players import Players
-from core.updates import MatchUpdate, PlayerUpdate
+from core.updates import MatchPhase, MatchUpdate, PlayerUpdate
 
 
 class MatchResponse(Response):
-    def __init__(
-        self, id: int, debug: bool, num_players: int, phase: MatchPhase, players: PInfos
-    ) -> None:
+    def __init__(self, id: int, debug: bool, seats: int, players: Players) -> None:
         self.__id = id
         self.__debug = debug
-        self.__num_players = num_players
-        self.__phase = phase
+        self.__seats = seats
         self.__players = players
 
     def json(self) -> dict:
         return {
             "id": self.__id,
             "debug": self.__debug,
-            "numPlayers": self.__num_players,
-            "phase": self.__phase,
-            "players": [player.json() for player in self.__players],
+            "seats": self.__seats,
+            "players": self.__players.json(),
         }
 
 
 class Match:
-    def __init__(self, id: int, debug: bool, num_players: int = 4) -> None:
+    def __init__(self, id: int, debug: bool, seats=4) -> None:
         # Inputs
         self.__id = id
         self.__debug = debug
-        self.__num_players = num_players
+        self.__seats = seats
 
         # Private
         self.__phase = MatchPhase.CREATED
@@ -40,24 +35,15 @@ class Match:
         # Public
         self.players = Players()
 
-        # 1 deck for every 2 players, rounded down
-        self.__num_decks = self.__num_players // 2
-
     def __add_player(self, name: str, sid: str, room: Room) -> None:
-        room.public("join", PlayerUpdate(self.players.add(name, sid).info()))
+        room.public("join", PlayerUpdate(self.players.add(name, sid)))
 
     def __ensure_cards(self, event: CardsEvent) -> None:
         if not self.players[event.pid].has_cards(event.cards):
             raise PlayerError("Invalid cards", "You don't have those cards.")
 
     def response(self) -> MatchResponse:
-        return MatchResponse(
-            self.__id,
-            self.__debug,
-            self.__num_players,
-            self.__phase,
-            self.players.infos(),
-        )
+        return MatchResponse(self.__id, self.__debug, self.__seats, self.players)
 
     def join(self, event: JoinEvent, room: Room) -> None:
         # Do not process join event if match if full or ended
@@ -68,13 +54,13 @@ class Match:
 
         # Add mock players for debug mode
         if self.__debug and len(self.players) == 1:
-            for i in range(len(self.players), self.__num_players):
+            for i in range(len(self.players), self.__seats):
                 self.__add_player(f"Mock{i}", event.sid, room)
 
         # Start the game if all players have joined
-        if len(self.players) == self.__num_players:
+        if len(self.players) == self.__seats:
             # In the first game, the bidder is the kitty player
-            new_game = Game(self.__num_decks, self.players, room, bid_team=True)
+            new_game = Game(self.players, room, self.players.first().pid, True)
             self.__games.append(new_game)
             self.__phase = MatchPhase.STARTED
             room.public("match", MatchUpdate(self.__phase))
@@ -85,7 +71,7 @@ class Match:
             raise PlayerError("Cannot leave", "You can't leave after starting a match.")
 
         if event.pid in self.players:
-            room.public("leave", PlayerUpdate(self.players.remove(event.pid).info()))
+            room.public("leave", PlayerUpdate(self.players.remove(event.pid)))
 
     def draw(self, event: PlayerEvent, room: Room) -> None:
         self.__games[-1].draw(event, room)
@@ -102,15 +88,12 @@ class Match:
         self.__ensure_cards(event)
         game = self.__games[-1]
         game.play(event, room)
-        if (
-            game.phase == GamePhase.END
-            and self.players[game.next_pid].level == BOSS_LEVELS[-1]
-        ):
+        if (next := game.next_pid) != -1 and self.players[next].level == LEVELS[-1]:
             self.__phase = MatchPhase.ENDED
             room.public("match", MatchUpdate(self.__phase))
 
     def next(self, event: PlayerEvent, room: Room) -> None:
         game = self.__games[-1]
         if self.__debug or game.ready(event.pid):
-            new_game = Game(self.__num_decks, self.players, room, game.next_pid)
+            new_game = Game(self.players, room, game.next_pid)
             self.__games.append(new_game)

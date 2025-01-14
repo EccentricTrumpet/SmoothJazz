@@ -4,7 +4,7 @@ import { PlayerState } from "../states";
 export class MatchResponse {
     matchId: number;
     debug: boolean;
-    numPlayers: number;
+    seats: number;
     seatOffset: number;
     players: PlayerState[] = [];
 
@@ -13,7 +13,7 @@ export class MatchResponse {
         const jsonObj = JSON.parse(jsonText);
         this.matchId = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
-        this.numPlayers = Number(jsonObj["numPlayers"]);
+        this.seats = Number(jsonObj["seats"]);
         this.seatOffset = jsonObj.players.length;
         for (let i = 0; i < this.seatOffset; i++) {
             const player = jsonObj.players[i];
@@ -21,7 +21,7 @@ export class MatchResponse {
                 Number(player.pid),
                 player.name,
                 Number(player.level),
-                seatOf(i, this.seatOffset, this.numPlayers)
+                seatOf(i, this.seatOffset, this.seats)
             ));
         }
     }

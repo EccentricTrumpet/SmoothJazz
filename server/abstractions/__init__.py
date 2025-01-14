@@ -1,14 +1,8 @@
 from abc import ABC, abstractmethod
-from enum import IntEnum, StrEnum
+from enum import StrEnum
 from typing import Iterator, Self
 
-
-class Trump(IntEnum):
-    NONE = 0
-    SINGLE = 1
-    PAIR = 2
-    SMALL_JOKER = 3
-    BIG_JOKER = 4
+type Cards = list[Card]
 
 
 class Suit(StrEnum):
@@ -20,22 +14,8 @@ class Suit(StrEnum):
     UNKNOWN = "U"
 
 
-class MatchPhase(IntEnum):
-    CREATED = 0
-    STARTED = 1
-    PAUSED = 2
-    ENDED = 3
-
-
-class GamePhase(IntEnum):
-    DRAW = 0
-    KITTY = 1  # 埋底牌
-    PLAY = 2
-    END = 3
-
-
 class Card:
-    def __init__(self, id: int, suit: Suit, rank: int):
+    def __init__(self, id: int, suit: Suit, rank: int) -> None:
         self.id = id
         self.suit = suit
         self.rank = rank
@@ -60,70 +40,74 @@ class Card:
         return 0
 
     def json(self, secret=False) -> dict:
-        return {
-            "id": self.id,
-            "suit": Suit.UNKNOWN if secret else self.suit,
-            "rank": 0 if secret else self.rank,
-        }
+        if secret:
+            return {"id": self.id, "suit": Suit.UNKNOWN, "rank": 0}
+        return {"id": self.id, "suit": self.suit, "rank": self.rank}
 
     def matches(self, card: Self) -> bool:
         return self.suit == card.suit and self.rank == card.rank
 
 
-class PlayerInfo:
-    def __init__(self, pid: int, name: str = "", level: int = -1):
-        self.__pid = pid
-        self.__name = name
-        self.__level = level
-
-    def json(self) -> dict:
-        return {"pid": self.__pid, "name": self.__name, "level": self.__level}
-
-
-# HTTP responses
+# HTTP
 class Response(ABC):
     @abstractmethod
     def json(self) -> dict: ...
 
 
-# Socket responses
+# Socket
+class Event:
+    def __init__(self, sid: str, payload: dict) -> None:
+        self.sid = sid
+        self.match_id = int(payload["matchId"])
+
+
+class JoinEvent(Event):
+    def __init__(self, sid: str, payload: dict) -> None:
+        super().__init__(sid, payload)
+        self.player_name: str = payload["playerName"]
+
+
+class PlayerEvent(Event):
+    def __init__(self, sid: str, payload: dict) -> None:
+        super().__init__(sid, payload)
+        self.pid = int(payload["playerId"])
+
+
+class CardsEvent(PlayerEvent):
+    def __init__(self, sid: str, payload: dict) -> None:
+        super().__init__(sid, payload)
+        self.cards = [
+            Card(int(card["id"]), Suit(card["suit"]), int(card["rank"]))
+            for card in payload["cards"]
+        ]
+
+
 class Update(ABC):
     @abstractmethod
     def json(self, secret: bool = False) -> dict: ...
 
 
 class SocketUpdate:
-    def __init__(
-        self, name: str, to: str, update: Update, cast: bool = False, echo: bool = True
-    ):
+    def __init__(self, name: str, to: str, info: Update, cast=False, echo=True) -> None:
         self.name = name
         self.to = to
-        self._update = update
+        self.info = info
         self.cast = cast
         self.echo = echo
 
     def json(self) -> dict:
-        return self._update.json(self.cast and not self.echo)
+        return self.info.json(self.cast and not self.echo)
 
 
 class Room(ABC):
-    def __init__(self, room_id: int, sid: str):
-        self.__room_id = room_id
-        self.__sid = sid
+    def __init__(self, event: Event) -> None:
+        self.__room_id = event.match_id
+        self.__sid = event.sid
         self.__updates: list[SocketUpdate] = []
-        self.__index = 0
 
     def __iter__(self) -> Iterator[SocketUpdate]:
-        self.__index = 0
-        return self
-
-    def __next__(self) -> SocketUpdate:
-        if self.__index < len(self.__updates):
-            value = self.__updates[self.__index]
-            self.__index += 1
-            return value
-        else:
-            raise StopIteration
+        for update in self.__updates:
+            yield update
 
     @property
     def has_updates(self) -> bool:
@@ -143,24 +127,15 @@ class Room(ABC):
         self.__updates.append(SocketUpdate(name, self.__room_id, update, True))
 
 
-Cards = list[Card]
-Cards_ = Cards | None
-PInfos = list[PlayerInfo]
-Room_ = Room | None
-
-
 class PlayerError(Update, Exception):
-    def __init__(self, title: str, message: str, hint_cards: Cards = []):
+    def __init__(self, title: str, message: str, hint_cards: Cards = []) -> None:
         self._title = title
         self._message = message
         self._hint_cards = hint_cards
 
-    def json(self, _: bool = False) -> dict:
+    def json(self, _=False) -> dict:
         return {
             "title": self._title,
             "message": self._message,
-            "hintCards": [
-                {"id": card.id, "suit": card.suit, "rank": card.rank}
-                for card in self._hint_cards
-            ],
+            "hintCards": [card.json() for card in self._hint_cards],
         }
