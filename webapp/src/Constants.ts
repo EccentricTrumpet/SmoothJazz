@@ -6,7 +6,7 @@ export class Constants {
     public static readonly cardRadius: number = 5;
     public static readonly cardOverlap: number = 25;
     public static readonly margin: number = 10;
-    public static readonly seatingArrangement: {[id: number]: Seat[]} = {
+    public static readonly seating: {[id: number]: Seat[]} = {
         4: [Seat.South, Seat.East, Seat.North, Seat.West]
     }
     public static readonly statusDetails: { [id: string]: { codepoint: number, description: string } } = {
@@ -28,7 +28,6 @@ export class Constants {
         13: { codepoint: 0x1F15A, description: "Level King" },
         14: { codepoint: 0x1F150, description: "Level Ace" },
     }
-
     // Debugging
     public static readonly backgroundColor: string = "rgba(255, 0, 0, 0.0)";
 

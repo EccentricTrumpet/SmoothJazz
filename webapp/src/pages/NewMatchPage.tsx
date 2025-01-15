@@ -26,16 +26,13 @@ export default function NewMatchPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCookie('shengji', cookieState, { path: '/'});
-    const name = cookieState.name
     const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/match`, {
       method: 'POST',
-      headers:new Headers({
-        'Content-type': 'application/json'
-      }),
+      headers: new Headers({ 'Content-type': 'application/json' }),
       body: JSON.stringify(cookieState)
     });
     const matchResponse = new MatchResponse(await response.text());
-    navigate(`/${matchResponse.matchId}`, { state: { name: name, matchResponse: matchResponse } });
+    navigate(`/${matchResponse.id}`, { state: { name: cookieState.name, matchResponse: matchResponse } });
   }
 
   return (

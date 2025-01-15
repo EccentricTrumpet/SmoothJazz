@@ -1,6 +1,6 @@
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { BoardState, OptionsState } from "../abstractions/states";
+import { OptionsState, BoardState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardComponent } from ".";
 import { FC } from "react";
@@ -11,7 +11,6 @@ interface CenterZoneInputs {
   options: OptionsState;
   controller: ControllerInterface;
 }
-
 export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, controller}) => {
   const cardSize = new Size(Constants.cardWidth, Constants.cardHeight);
   const discardZone = new Zone(
@@ -22,13 +21,13 @@ export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, cont
     cardSize
   );
 
-  board.deck.forEach((card, i) => {
+  board.cards.deck.forEach((card, i) => {
     card.state.position.x = deckZone.position.x;
     card.state.position.y = deckZone.position.y;
     card.state.offset.x = i / 3;
   });
 
-  board.discard.forEach(card => {
+  board.cards.discard.forEach(card => {
     card.state.position.x = discardZone.position.x;
     card.state.position.y = discardZone.position.y;
     card.state.offset.x = 0;
@@ -38,7 +37,7 @@ export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, cont
   return (
     <>
       {/* Deck count UI */}
-      { board.deck.length > 0 && (
+      { board.cards.deck.length > 0 && (
         <>
           <div className="container" style={{
             position: "fixed",
@@ -64,7 +63,7 @@ export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, cont
             height: 3*Constants.margin,
             backgroundColor: Constants.backgroundColor,
           }}>
-            <h4 style={{ margin: 0 }}>{board.deck.length}</h4>
+            <h4 style={{ margin: 0 }}>{board.cards.deck.length}</h4>
           </div>
         </>
       )}
@@ -104,7 +103,7 @@ export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, cont
         height: deckZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
-        { board.deck.map((card, idx) => {
+        { board.cards.deck.map((card, idx) => {
           return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => controller.onDraw()}/>
         })}
       </div>
@@ -117,7 +116,7 @@ export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, cont
         height: discardZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
-        { board.discard.map((card, idx) => {
+        { board.cards.discard.map((card, idx) => {
           return <CardComponent key={card.id} idx={idx} card={card} options={options} />
         })}
       </div>

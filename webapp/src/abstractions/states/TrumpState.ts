@@ -1,16 +1,22 @@
 import { CardState } from ".";
 import { Suit } from "../enums";
 
+// Board sub-state
 export class TrumpState {
-    public sortOrder = new Map<string, number>();
+    public order = new Map<string, number>();
+    public cards: number;
+    public rank: number;
+    public suit: Suit;
 
     constructor(
-        public numCards: number,
-        public trumpRank: number,
-        public trumpSuit = Suit.Unknown
+        prev?: TrumpState,
+        next?: { numCards?: number; trumpRank?: number; trumpSuit?: Suit; }
     ) {
+        this.cards = next?.numCards ?? prev?.cards ?? 0;
+        this.rank = next?.trumpRank ?? prev?.rank ?? 0;
+        this.suit = next?.trumpSuit ?? prev?.suit ?? Suit.Unknown;
         let nonTrumpSuits: Suit[];
-        switch(trumpSuit) {
+        switch(this.suit) {
             case Suit.Spade:
                 nonTrumpSuits = [Suit.Heart, Suit.Club, Suit.Diamond];
                 break;
@@ -29,44 +35,44 @@ export class TrumpState {
         }
 
         // Jokers
-        this.sortOrder.set(`${Suit.Joker}${2}`, this.sortOrder.size);
-        this.sortOrder.set(`${Suit.Joker}${1}`, this.sortOrder.size);
+        this.order.set(`${Suit.Joker}${2}`, this.order.size);
+        this.order.set(`${Suit.Joker}${1}`, this.order.size);
 
         // Trump suit + Trump rank
-        if (trumpSuit !== Suit.Unknown && trumpSuit !== Suit.Joker) {
-            this.sortOrder.set(`${trumpSuit}${trumpRank}`, this.sortOrder.size);
+        if (this.suit !== Suit.Unknown && this.suit !== Suit.Joker) {
+            this.order.set(`${this.suit}${this.rank}`, this.order.size);
         }
 
         // Trump rank
         for (const suit of nonTrumpSuits) {
-            this.sortOrder.set(`${suit}${trumpRank}`, this.sortOrder.size);
+            this.order.set(`${suit}${this.rank}`, this.order.size);
         }
 
         // Trump suit
-        if (trumpSuit !== Suit.Unknown && trumpSuit !== Suit.Joker) {
-            this.sortOrder.set(`${trumpSuit}${1}`, this.sortOrder.size);
+        if (this.suit !== Suit.Unknown && this.suit !== Suit.Joker) {
+            this.order.set(`${this.suit}${1}`, this.order.size);
             for (let rank = 13; rank > 1; rank--) {
-                if (rank !== this.trumpRank) {
-                    this.sortOrder.set(`${trumpSuit}${rank}`, this.sortOrder.size);
+                if (rank !== this.rank) {
+                    this.order.set(`${this.suit}${rank}`, this.order.size);
                 }
             }
         }
 
         // Others
         for (const suit of nonTrumpSuits) {
-            this.sortOrder.set(`${suit}${1}`, this.sortOrder.size);
+            this.order.set(`${suit}${1}`, this.order.size);
             for (let rank = 13; rank > 1; rank--) {
-                if (rank !== this.trumpRank) {
-                    this.sortOrder.set(`${suit}${rank}`, this.sortOrder.size);
+                if (rank !== this.rank) {
+                    this.order.set(`${suit}${rank}`, this.order.size);
                 }
             }
         }
     }
 
-    getDisplayOrder(card: CardState): number {
+    orderOf(card: CardState): number {
         const orderKey = `${card.suit}${card.rank}`;
-        if (this.sortOrder.has(orderKey)) {
-            return this.sortOrder.get(orderKey)! * this.numCards + card.id;
+        if (this.order.has(orderKey)) {
+            return this.order.get(orderKey)! * this.cards + card.id;
         }
         return -1
     }

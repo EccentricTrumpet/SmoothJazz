@@ -1,23 +1,21 @@
 // React tooltip require anchor tags without href
 /* eslint-disable jsx-a11y/anchor-is-valid */
+import { FC, ReactNode } from "react";
+import { Tooltip } from "react-tooltip";
+import { CardsZone } from ".";
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
-import { Seat } from "../abstractions/enums";
-import { OptionsState, PlayerState, StatusState, TrumpState } from "../abstractions/states";
+import { MatchPhase, Seat } from "../abstractions/enums";
+import { BoardState, OptionsState, PlayerState } from "../abstractions/states";
 import { Constants } from "../Constants";
-import { CardsZone } from ".";
-import { Tooltip } from "react-tooltip";
-import { FC, ReactNode } from "react";
 
-const createStatus = (status: string): ReactNode => {
+const status = (status: string): ReactNode => {
   const {codepoint, description} = Constants.statusDetails[status];
   return (
     <>
-      <h3  style={{
-        margin: "-6px 0px -6px 0px",
-      }}>
+      <h3  style={{ margin: "-6px 0px -6px 0px" }}>
         <a data-tooltip-id={`${status}-tooltip`} data-tooltip-content={description}>
-        {String.fromCodePoint(codepoint)}
+          {String.fromCodePoint(codepoint)}
         </a>
       </h3>
       <Tooltip id={`${status}-tooltip`} />
@@ -25,16 +23,14 @@ const createStatus = (status: string): ReactNode => {
   )
 }
 
-interface PlayerZoneArgument {
+interface PlayerZoneInputs {
   player: PlayerState;
-  trumpState: TrumpState;
-  statusState: StatusState;
+  board: BoardState;
   parentZone: Zone;
   options: OptionsState;
   controller: ControllerInterface;
 }
-
-export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusState, parentZone, options, controller}) => {
+export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, options, controller}) => {
 
   let handZone: Zone, nameZone: Zone, playingZone: Zone, trickStatusZone: Zone, playerStatusZone: Zone;
   let nameRotate: number = 0;
@@ -220,9 +216,9 @@ export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusSt
   return (
     <>
       <CardsZone
-        cards={player.playing}
+        cards={player.play}
         seat={player.seat}
-        trumpState={trumpState}
+        trumpState={board.trump}
         zone={playingZone}
         options={options}
         controller={controller} />
@@ -236,7 +232,7 @@ export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusSt
         width: nameZone.size.width,
         height: nameZone.size.height,
         rotate: `${nameRotate}deg`,
-        backgroundColor: statusState.activePlayerId === player.id ?
+        backgroundColor: board.activePID === player.pid ?
           "rgba(0, 255, 0, 0.5)" : Constants.backgroundColor,
         borderRadius: Constants.margin
       }}>
@@ -245,7 +241,7 @@ export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusSt
       <CardsZone
         cards={player.hand}
         seat={player.seat}
-        trumpState={trumpState}
+        trumpState={board.trump}
         zone={handZone}
         options={options}
         controller={controller}
@@ -262,14 +258,14 @@ export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusSt
           height: trickStatusZone.size.height,
           backgroundColor: Constants.backgroundColor,
         }}>
-          {player.id === statusState.trickWinnerId && (createStatus('Winner'))}
+          {player.pid === board.winnerPID && (status('Winner'))}
       </div>
       <div className="container" style={{
         position: "fixed",
         marginLeft: "auto",
         marginRight: "auto",
         alignItems: "center",
-        display: "flex",
+        display: board.matchPhase === MatchPhase.STARTED ? "flex" : "none",
         flexDirection: player.seat === Seat.North || player.seat === Seat.South ? "row" : "column",
         left: playerStatusZone.left(),
         top: playerStatusZone.top(),
@@ -277,9 +273,9 @@ export const PlayerZone: FC<PlayerZoneArgument> = ({player, trumpState, statusSt
         height: playerStatusZone.size.height,
         backgroundColor: Constants.backgroundColor,
       }}>
-        {player.id === statusState.kittyPlayerId && (createStatus('Kitty'))}
-        {statusState.defenders.includes(player.id) ? (createStatus('Defender')) : (createStatus('Attacker'))}
-        {createStatus(`${player.level}`)}
+        {player.pid === board.kittyPID && (status('Kitty'))}
+        {board.defenders.includes(player.pid) ? status('Defender') : status('Attacker')}
+        {status(`${player.level}`)}
       </div>
     </>
   );

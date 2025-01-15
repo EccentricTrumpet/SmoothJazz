@@ -12,12 +12,11 @@ interface CardsZoneInputs {
   trumpState: TrumpState;
   zone: Zone;
   options: OptionsState;
-  controller?: ControllerInterface | undefined;
+  controller?: ControllerInterface;
 }
-
 export const CardsZone: FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, options, controller = undefined}) => {
   // Sort cards for display
-  cards.sort((a, b) => trumpState.getDisplayOrder(a) - trumpState.getDisplayOrder(b));
+  cards.sort((a, b) => trumpState.orderOf(a) - trumpState.orderOf(b));
 
   let [xStart, yStart, dx, dy, xSelected, ySelected, rotate] = [0, 0, 0, 0, 0, 0, 0]
 

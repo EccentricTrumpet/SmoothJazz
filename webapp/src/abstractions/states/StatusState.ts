@@ -1,46 +1,40 @@
 import { GamePhase, MatchPhase } from "../enums";
+import { CardsState } from "./CardsState";
+import { TrumpState } from "./TrumpState";
 
-// Similar to BoardState but this contains non-visible states
-export class StatusState {
-    public activePlayerId: number;
-    public kittyPlayerId: number;
-    public trickWinnerId: number;
+export class BoardState {
+    public cards: CardsState;
+    public trump: TrumpState;
+    public score: number;
+    public activePID: number;
+    public kittyPID: number;
+    public winnerPID: number;
     public defenders: number[];
     public gamePhase: GamePhase;
     public matchPhase: MatchPhase;
 
-    constructor(statusState?: StatusState) {
-        this.activePlayerId = statusState?.activePlayerId ?? -1;
-        this.kittyPlayerId = statusState?.kittyPlayerId ?? -1;
-        this.trickWinnerId = statusState?.trickWinnerId ?? -1;
-        this.defenders = statusState?.defenders ?? [];
-        this.gamePhase = statusState?.gamePhase ?? GamePhase.Draw;
-        this.matchPhase = statusState?.matchPhase ?? MatchPhase.CREATED;
-    }
-
-    public withActivePlayer(activePlayerId?: number): StatusState {
-        this.activePlayerId = activePlayerId ?? this.activePlayerId;
-        return this;
-    }
-
-    public withTeamInfo(kittyPlayerId: number, defenders: number[]): StatusState {
-        this.kittyPlayerId = kittyPlayerId;
-        this.defenders = defenders;
-        return this;
-    }
-
-    public withWinner(trickWinnerId: number): StatusState {
-        this.trickWinnerId = trickWinnerId;
-        return this;
-    }
-
-    public withGamePhase(gamePhase: GamePhase): StatusState {
-        this.gamePhase = gamePhase;
-        return this;
-    }
-
-    public withMatchPhase(matchPhase: MatchPhase): StatusState {
-        this.matchPhase = matchPhase;
-        return this;
+    constructor(
+        prev?: BoardState,
+        next?: {
+            cards?: CardsState
+            trump?: TrumpState
+            score?: number;
+            activePID?: number;
+            kittyPID?: number;
+            winnerPID?: number;
+            defenders?: number[];
+            game?: GamePhase;
+            match?: MatchPhase;
+        }
+    ) {
+        this.cards = next?.cards ?? prev?.cards ?? new CardsState();
+        this.trump = next?.trump ?? prev?.trump ?? new TrumpState();
+        this.score = next?.score ?? prev?.score ?? 0
+        this.activePID = next?.activePID ?? prev?.activePID ?? -1;
+        this.kittyPID = next?.kittyPID ?? prev?.kittyPID ?? -1;
+        this.winnerPID = next?.winnerPID ?? prev?.winnerPID ?? -1;
+        this.defenders = next?.defenders ?? prev?.defenders ?? [];
+        this.gamePhase = next?.game ?? prev?.gamePhase ?? GamePhase.Draw;
+        this.matchPhase = next?.match ?? prev?.matchPhase ?? MatchPhase.CREATED;
     }
 }

@@ -1,9 +1,9 @@
 export class TeamUpdate {
-    kittyPid: number;
+    kittyPID: number;
     defenders: number[];
 
     constructor(jsonObj: any) {
-        this.kittyPid = Number(jsonObj['kittyPid']);
+        this.kittyPID = Number(jsonObj['kittyPid']);
         this.defenders = jsonObj['defenders'].map(Number);
     }
 }

@@ -3,13 +3,7 @@ import { CardState, OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { FC } from "react";
 
-interface CardComponentInputs {
-  idx: number;
-  card: CardState;
-  options: OptionsState;
-  onClick?: () => void;
-}
-
+interface CardComponentInputs { idx: number; card: CardState; options: OptionsState; onClick?: () => void; }
 export const CardComponent: FC<CardComponentInputs> = ({idx, card, options, onClick = () => {}}) => {
   const altText = card.state.facedown ? "unknown" : `${card.suit} ${card.rank}`
   const imgSource = card.state.facedown ? options.cardBack : `${card.suit}${card.rank}.png`

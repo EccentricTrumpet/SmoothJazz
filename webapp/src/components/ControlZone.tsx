@@ -3,14 +3,9 @@ import { Constants } from "../Constants";
 import { ControllerInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
-import { StatusState } from "../abstractions/states";
+import { BoardState } from "../abstractions/states";
 
-interface ControlZoneInputs {
-  parentZone: Zone;
-  statusState: StatusState;
-  controller: ControllerInterface;
-}
-
+interface ControlZoneInputs { parentZone: Zone; statusState: BoardState; controller: ControllerInterface; }
 export const ControlZone: FC<ControlZoneInputs> = ({parentZone, statusState, controller}) => {
   const zone = new Zone(
     new Position(
@@ -77,7 +72,7 @@ export const ControlZone: FC<ControlZoneInputs> = ({parentZone, statusState, con
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            opacity: (buttonDisabled) ? "0.4" : "1.0"
+            opacity: buttonDisabled ? "0.4" : "1.0"
           }}>
           {buttonText}
         </button>

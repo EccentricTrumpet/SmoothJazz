@@ -137,5 +137,5 @@ class PlayerError(Update, Exception):
         return {
             "title": self._title,
             "message": self._message,
-            "hintCards": [card.json() for card in self._hint_cards],
+            "cards": [card.json() for card in self._hint_cards],
         }

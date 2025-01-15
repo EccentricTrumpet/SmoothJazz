@@ -4,30 +4,12 @@ import { ErrorState } from "../abstractions/states";
 import { FC } from "react";
 
 const dropIn = {
-  hidden: {
-    y: "-100vh",
-    opacity: 0,
-  },
-  visible: {
-    y: "0",
-    opacity: 1,
-    transition: {
-      duration: 0.1,
-      type: "spring",
-      damping: 25,
-      stiffness: 500,
-    }
-  },
-  exit: {
-    y: "100vh",
-    opacity: 0,
-  },
+  hidden: { y: "-100vh", opacity: 0 },
+  visible: { y: "0", opacity: 1, transition: { duration: 0.1, type: "spring", damping: 25, stiffness: 500 } },
+  exit: { y: "100vh", opacity: 0 },
 }
 
-interface ErrorComponentInputs {
-  errorState: ErrorState;
-  onClose: () => void;
-}
+interface ErrorComponentInputs { errorState: ErrorState; onClose: () => void; }
 export const ErrorComponent: FC<ErrorComponentInputs> = ({ errorState, onClose = () => {} }) => {
   return (
     <BackdropComponent onClick={onClose}>

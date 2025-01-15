@@ -1,6 +1,3 @@
 export class JoinEvent {
-    constructor(
-        public matchId: number,
-        public playerName: string
-    ) {}
+    constructor(public matchId: number, public playerName: string) {}
 }

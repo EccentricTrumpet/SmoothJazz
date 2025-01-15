@@ -1,6 +1,3 @@
 export class CookieState {
-    constructor(
-        public name: string = "",
-        public debug: boolean = false,
-    ) {}
+    constructor(public name = "", public debug = false) {}
 }

@@ -8,7 +8,7 @@ export class CardState {
         public suit: Suit = Suit.Unknown,
         public rank: number = 0,
 
-        // UI controls
+        // UI states
         public state: CardUIState = new CardUIState(),
         public prevState: CardUIState | undefined = undefined
     ) {}
