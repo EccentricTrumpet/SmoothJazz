@@ -4,8 +4,8 @@ import { Position, Size, Zone } from "../abstractions/bounds";
 import { Suit } from "../abstractions/enums";
 import { TrumpState } from "../abstractions/states";
 
-interface TrumpZoneInputs { parentZone: Zone; trump: TrumpState; }
-export const TrumpZone: FC<TrumpZoneInputs> = ({parentZone, trump}) => {
+interface Inputs { parentZone: Zone; trump: TrumpState; }
+export const TrumpZone: FC<Inputs> = ({parentZone, trump}) => {
   const zone = new Zone(
     new Position(
       parentZone.left() + Constants.margin,
@@ -13,8 +13,7 @@ export const TrumpZone: FC<TrumpZoneInputs> = ({parentZone, trump}) => {
     ),
     new Size(Constants.cardHeight, Constants.cardHeight)
   );
-  const trumpCard = trump.suit === Suit.Joker || trump.suit === Suit.Unknown
-    ? 'J2' : `${trump.suit}${trump.rank}`
+  const card = trump.suit === Suit.Joker || trump.suit === Suit.Unknown ? 'J2' : `${trump.suit}${trump.rank}`
 
   return (
     <div className="container" style={{
@@ -37,8 +36,8 @@ export const TrumpZone: FC<TrumpZoneInputs> = ({parentZone, trump}) => {
           borderRadius: Constants.cardRadius,
           borderStyle: "solid",
         }}
-        src={require(`../assets/${trumpCard}.png`)}
-        alt={trumpCard}
+        src={require(`../assets/${card}.png`)}
+        alt={card}
       />
     </div>
   );

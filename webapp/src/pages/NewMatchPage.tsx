@@ -60,7 +60,7 @@ export default function NewMatchPage() {
                   role="switch"
                   id="debug"
                   name="debug"
-                  checked={cookieState.debug || false}
+                  checked={cookieState.debug}
                   onChange={handleChange}
                 />
                 Debug mode

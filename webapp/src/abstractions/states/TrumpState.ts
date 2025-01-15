@@ -4,17 +4,8 @@ import { Suit } from "../enums";
 // Board sub-state
 export class TrumpState {
     public order = new Map<string, number>();
-    public cards: number;
-    public rank: number;
-    public suit: Suit;
 
-    constructor(
-        prev?: TrumpState,
-        next?: { numCards?: number; trumpRank?: number; trumpSuit?: Suit; }
-    ) {
-        this.cards = next?.numCards ?? prev?.cards ?? 0;
-        this.rank = next?.trumpRank ?? prev?.rank ?? 0;
-        this.suit = next?.trumpSuit ?? prev?.suit ?? Suit.Unknown;
+    constructor(public cards = 0, public rank = 0, public suit = Suit.Unknown) {
         let nonTrumpSuits: Suit[];
         switch(this.suit) {
             case Suit.Spade:
@@ -69,11 +60,5 @@ export class TrumpState {
         }
     }
 
-    orderOf(card: CardState): number {
-        const orderKey = `${card.suit}${card.rank}`;
-        if (this.order.has(orderKey)) {
-            return this.order.get(orderKey)! * this.cards + card.id;
-        }
-        return -1
-    }
+    orderOf = (card: CardState) => (this.order.get(`${card.suit}${card.rank}`) ?? 0) * this.cards + card.id;
 }

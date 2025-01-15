@@ -9,8 +9,8 @@ const dropIn = {
   exit: { y: "100vh", opacity: 0 },
 }
 
-interface ErrorComponentInputs { errorState: ErrorState; onClose: () => void; }
-export const ErrorComponent: FC<ErrorComponentInputs> = ({ errorState, onClose = () => {} }) => {
+interface Inputs { errorState: ErrorState; onClose: () => void; }
+export const ErrorComponent: FC<Inputs> = ({ errorState, onClose = () => {} }) => {
   return (
     <BackdropComponent onClick={onClose}>
       <motion.div

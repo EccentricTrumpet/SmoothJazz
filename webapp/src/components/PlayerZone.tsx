@@ -3,10 +3,10 @@
 import { FC, ReactNode } from "react";
 import { Tooltip } from "react-tooltip";
 import { CardsZone } from ".";
-import { ControllerInterface } from "../abstractions";
+import { ControlInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { MatchPhase, Seat } from "../abstractions/enums";
-import { BoardState, OptionsState, PlayerState } from "../abstractions/states";
+import { BoardState, PlayerState } from "../abstractions/states";
 import { Constants } from "../Constants";
 
 const status = (status: string): ReactNode => {
@@ -23,14 +23,8 @@ const status = (status: string): ReactNode => {
   )
 }
 
-interface PlayerZoneInputs {
-  player: PlayerState;
-  board: BoardState;
-  parentZone: Zone;
-  options: OptionsState;
-  controller: ControllerInterface;
-}
-export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, options, controller}) => {
+interface Inputs { player: PlayerState; board: BoardState; parent: Zone; control: ControlInterface; }
+export const PlayerZone: FC<Inputs> = ({player, board, parent, control}) => {
 
   let handZone: Zone, nameZone: Zone, playingZone: Zone, trickStatusZone: Zone, playerStatusZone: Zone;
   let nameRotate: number = 0;
@@ -40,11 +34,11 @@ export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, opt
     case Seat.North:
       handZone = new Zone(
         new Position(
-          parentZone.left() + 2*Constants.margin + Constants.cardHeight,
-          parentZone.top() + Constants.margin
+          parent.left() + 2*Constants.margin + Constants.cardHeight,
+          parent.top() + Constants.margin
         ),
         new Size(
-          parentZone.size.width - 2*(2*Constants.margin + Constants.cardHeight),
+          parent.size.width - 2*(2*Constants.margin + Constants.cardHeight),
           Constants.cardHeight
         )
       );
@@ -74,21 +68,18 @@ export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, opt
           handZone.center().x - Constants.cardHeight,
           nameZone.bottom() + Constants.margin
         ),
-        new Size(
-          2*Constants.cardHeight,
-          Constants.cardHeight
-        )
+        new Size(2*Constants.cardHeight, Constants.cardHeight)
       );
       break;
     case Seat.East:
       handZone = new Zone(
         new Position(
-          parentZone.right() - Constants.margin - Constants.cardHeight,
-          parentZone.top() + 2*Constants.margin + Constants.cardHeight
+          parent.right() - Constants.margin - Constants.cardHeight,
+          parent.top() + 2*Constants.margin + Constants.cardHeight
         ),
         new Size(
           Constants.cardHeight,
-          parentZone.size.height - 2*(2*Constants.margin + Constants.cardHeight)
+          parent.size.height - 2*(2*Constants.margin + Constants.cardHeight)
         )
       );
       trickStatusZone = new Zone(
@@ -117,21 +108,18 @@ export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, opt
           handZone.left() - 2*Constants.margin - nameZone.size.height - Constants.cardHeight,
           nameZone.center().y - Constants.cardHeight
         ),
-        new Size(
-          Constants.cardHeight,
-          2*Constants.cardHeight,
-        )
+        new Size(Constants.cardHeight, 2*Constants.cardHeight)
       );
       nameRotate = -90;
       break;
     case Seat.South:
       handZone = new Zone(
         new Position(
-          parentZone.left() + 2*Constants.margin + Constants.cardHeight,
-          parentZone.bottom() - Constants.margin - Constants.cardHeight
+          parent.left() + 2*Constants.margin + Constants.cardHeight,
+          parent.bottom() - Constants.margin - Constants.cardHeight
         ),
         new Size(
-          parentZone.size.width - 2*(2*Constants.margin + Constants.cardHeight),
+          parent.size.width - 2*(2*Constants.margin + Constants.cardHeight),
           Constants.cardHeight
         )
       );
@@ -161,21 +149,18 @@ export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, opt
           handZone.center().x - Constants.cardHeight,
           nameZone.top() - Constants.margin - Constants.cardHeight
         ),
-        new Size(
-          2*Constants.cardHeight,
-          Constants.cardHeight
-        )
+        new Size(2*Constants.cardHeight, Constants.cardHeight)
       );
       break;
     case Seat.West:
       handZone = new Zone(
         new Position(
-          parentZone.left() + Constants.margin,
-          parentZone.top() + 2*Constants.margin + Constants.cardHeight
+          parent.left() + Constants.margin,
+          parent.top() + 2*Constants.margin + Constants.cardHeight
         ),
         new Size(
           Constants.cardHeight,
-          parentZone.size.height - 2*(2*Constants.margin + Constants.cardHeight)
+          parent.size.height - 2*(2*Constants.margin + Constants.cardHeight)
         )
       );
       trickStatusZone = new Zone(
@@ -204,10 +189,7 @@ export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, opt
           handZone.right() + 2*Constants.margin + nameZone.size.height,
           nameZone.center().y - Constants.cardHeight
         ),
-        new Size(
-          Constants.cardHeight,
-          2*Constants.cardHeight,
-        )
+        new Size(Constants.cardHeight, 2*Constants.cardHeight)
       );
       nameRotate = 90;
       break;
@@ -215,13 +197,7 @@ export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, opt
 
   return (
     <>
-      <CardsZone
-        cards={player.play}
-        seat={player.seat}
-        trumpState={board.trump}
-        zone={playingZone}
-        options={options}
-        controller={controller} />
+      <CardsZone cards={player.play} seat={player.seat} board={board} zone={playingZone} control={control} />
       <div className="container" style={{
         position: "fixed",
         display: "flex",
@@ -238,14 +214,7 @@ export const PlayerZone: FC<PlayerZoneInputs> = ({player, board, parentZone, opt
       }}>
         <h4 style={{ margin: 0 }}>{player.name}</h4>
       </div>
-      <CardsZone
-        cards={player.hand}
-        seat={player.seat}
-        trumpState={board.trump}
-        zone={handZone}
-        options={options}
-        controller={controller}
-      />
+      <CardsZone cards={player.hand} seat={player.seat} board={board} zone={handZone} control={control} />
       <div className="container"
         style={{
           position: "fixed",

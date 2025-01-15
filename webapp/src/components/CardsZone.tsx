@@ -1,22 +1,15 @@
-import { ControllerInterface } from "../abstractions/ControllerInterface";
+import { ControlInterface } from "../abstractions/ControlInterface";
 import { Position, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
-import { CardState, OptionsState, TrumpState } from "../abstractions/states";
+import { BoardState, CardState, } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { CardComponent } from ".";
 import { FC } from "react";
 
-interface CardsZoneInputs {
-  cards: CardState[];
-  seat: Seat;
-  trumpState: TrumpState;
-  zone: Zone;
-  options: OptionsState;
-  controller?: ControllerInterface;
-}
-export const CardsZone: FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, options, controller = undefined}) => {
+interface Inputs { cards: CardState[]; seat: Seat; board: BoardState; zone: Zone; control?: ControlInterface; }
+export const CardsZone: FC<Inputs> = ({cards, seat, board, zone, control = undefined}) => {
   // Sort cards for display
-  cards.sort((a, b) => trumpState.orderOf(a) - trumpState.orderOf(b));
+  cards.sort((a, b) => board.trump.orderOf(a) - board.trump.orderOf(b));
 
   let [xStart, yStart, dx, dy, xSelected, ySelected, rotate] = [0, 0, 0, 0, 0, 0, 0]
 
@@ -49,9 +42,9 @@ export const CardsZone: FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, o
   }
 
   for (let i = 0; i < cards.length; i++) {
-    cards[i].state.rotate = rotate;
-    cards[i].state.position = new Position(xStart + i*dx, yStart + i*dy);
-    cards[i].state.offset = cards[i].state.selected ? new Position(xSelected, ySelected) : new Position(0, 0);
+    cards[i].next.rotate = rotate;
+    cards[i].next.position = new Position(xStart + i*dx, yStart + i*dy);
+    cards[i].next.offset = cards[i].next.selected ? new Position(xSelected, ySelected) : new Position(0, 0);
   }
 
   return (
@@ -65,7 +58,7 @@ export const CardsZone: FC<CardsZoneInputs> = ({cards, seat, trumpState, zone, o
       backgroundColor: Constants.backgroundColor,
     }}>
       { cards.map((card, idx) => {
-        return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => controller?.onSelect(card)} />
+        return <CardComponent key={card.id} idx={idx} card={card} options={board.options} onClick={() => control?.onSelect(card)} />
       })}
     </div>
   );

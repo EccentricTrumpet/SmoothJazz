@@ -1,12 +1,12 @@
 import { FC } from "react";
 import { Constants } from "../Constants";
-import { ControllerInterface } from "../abstractions";
+import { ControlInterface } from "../abstractions";
 import { Position, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
 import { BoardState } from "../abstractions/states";
 
-interface ControlZoneInputs { parentZone: Zone; statusState: BoardState; controller: ControllerInterface; }
-export const ControlZone: FC<ControlZoneInputs> = ({parentZone, statusState, controller}) => {
+interface Inputs { parentZone: Zone; board: BoardState; control: ControlInterface; }
+export const ControlZone: FC<Inputs> = ({parentZone, board, control}) => {
   const zone = new Zone(
     new Position(
       parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,
@@ -19,28 +19,28 @@ export const ControlZone: FC<ControlZoneInputs> = ({parentZone, statusState, con
   let buttonAction = () => {};
   let buttonDisabled = false;
 
-  switch(statusState.matchPhase) {
+  switch(board.matchPhase) {
     case MatchPhase.CREATED:
       buttonText = "Leave";
-      buttonAction = () => controller.onLeave();
+      buttonAction = () => control.onLeave();
       break;
     case MatchPhase.STARTED:
-      switch(statusState.gamePhase) {
+      switch(board.gamePhase) {
         case GamePhase.Draw:
           buttonText = "Bid";
-          buttonAction = () => controller.onBid();
+          buttonAction = () => control.onBid();
           break;
         case GamePhase.Kitty:
           buttonText = "Hide";
-          buttonAction = () => controller.onHide();
+          buttonAction = () => control.onHide();
           break;
         case GamePhase.Play:
           buttonText = "Play";
-          buttonAction = () => controller.onPlay();
+          buttonAction = () => control.onPlay();
           break;
         case GamePhase.End:
           buttonText = "Next Game";
-          buttonAction = () => controller.onNext();
+          buttonAction = () => control.onNext();
           break;
         case GamePhase.Waiting:
           buttonText = "Waiting...";
@@ -49,8 +49,6 @@ export const ControlZone: FC<ControlZoneInputs> = ({parentZone, statusState, con
       }
       break;
   }
-
-
 
   return (
     <div className="container" style={{

@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { FC } from "react";
 
-interface BackdropComponentInputs { children: React.ReactNode; onClick: () => void; }
-export const BackdropComponent: FC<BackdropComponentInputs> = ({ children, onClick = () => {} }) => {
+interface Inputs { children: React.ReactNode; onClick: () => void; }
+export const BackdropComponent: FC<Inputs> = ({ children, onClick = () => {} }) => {
   return (
     <motion.div
       onClick={onClick}

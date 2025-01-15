@@ -3,10 +3,11 @@ import { CardState, OptionsState } from "../abstractions/states";
 import { Constants } from "../Constants";
 import { FC } from "react";
 
-interface CardComponentInputs { idx: number; card: CardState; options: OptionsState; onClick?: () => void; }
-export const CardComponent: FC<CardComponentInputs> = ({idx, card, options, onClick = () => {}}) => {
-  const altText = card.state.facedown ? "unknown" : `${card.suit} ${card.rank}`
-  const imgSource = card.state.facedown ? options.cardBack : `${card.suit}${card.rank}.png`
+interface Inputs { idx: number; card: CardState; options: OptionsState; onClick?: () => void; }
+export const CardComponent: FC<Inputs> = ({idx, card, options, onClick = () => {}}) => {
+  const altText = card.next.facedown ? "unknown" : `${card.suit} ${card.rank}`
+  const imgSource = card.next.facedown ? options.cardBack : `${card.suit}${card.rank}.png`
+  const initial = card.prev ?? card.next;
   return (
     <motion.img
       onClick={onClick}
@@ -19,31 +20,12 @@ export const CardComponent: FC<CardComponentInputs> = ({idx, card, options, onCl
         height: Constants.cardHeight,
         borderRadius: Constants.cardRadius,
         borderStyle: "solid",
-        boxShadow: card.state.highlighted ? "0 0 5px 5px var(--ins-color)" : ""
+        boxShadow: card.next.highlighted ? "0 0 5px 5px var(--ins-color)" : ""
       }}
+      initial={{ x: initial.x(), y: initial.y(), rotate: initial.rotate }}
+      animate={{ x: card.next.x(), y: card.next.y(), rotate: card.next.rotate }}
+      transition={{ x: { type: "linear" }, y: { type: "linear" } }}
       src={require(`../assets/${imgSource}`)}
-      alt={altText}
-      initial={
-        card.prevState
-          ? {
-              x: card.prevState.x(),
-              y: card.prevState.y(),
-              rotate: card.prevState.rotate,
-            }
-          : {
-              x: card.state.x(),
-              y: card.state.y(),
-              rotate: card.state.rotate,
-            }
-      }
-      animate={{
-        x: card.state.x(),
-        y: card.state.y(),
-        rotate: card.state.rotate,
-      }}
-      transition={{
-        x: { type: "linear" },
-        y: { type: "linear" }
-      }} />
+      alt={altText} />
   );
 }

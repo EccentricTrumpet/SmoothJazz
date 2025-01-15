@@ -9,29 +9,24 @@ export class CardState {
         public rank: number = 0,
 
         // UI states
-        public state: CardUIState = new CardUIState(),
-        public prevState: CardUIState | undefined = undefined
+        public next: CardUIState = new CardUIState(),
+        public prev: CardUIState | undefined = undefined
     ) {}
 
-    public resetState() {
-        this.prevState = this.state;
-        this.state = this.state.clone();
+    public reset() {
+        this.prev = this.next;
+        this.next = this.next.clone();
     }
 
     public updateInfo(card: Card) {
-        this.resetState();
+        this.reset();
         this.id = card.id;
         this.suit = card.suit;
         this.rank = card.rank;
-        this.state.facedown = card.suit === Suit.Unknown;
-        this.state.selected = false;
+        this.next.facedown = card.suit === Suit.Unknown;
+        this.next.selected = false;
     }
 
-    public toInfo(): Card {
-        return new Card(this.id, this.suit, this.rank);
-    }
-
-    public toString(): string {
-        return `[${this.state.selected ? '*' : ''}Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
-    }
+    public toInfo = () => new Card(this.id, this.suit, this.rank);
+    public toString = () => `[Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
 }
