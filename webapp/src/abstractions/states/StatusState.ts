@@ -1,19 +1,21 @@
-import { GamePhase, MatchPhase } from "../enums";
 import { CardsState, OptionsState, TrumpState } from ".";
+import { GamePhase, MatchPhase } from "../enums";
 
 export class BoardState {
-    public cards: CardsState;
-    public trump: TrumpState;
-    public options: OptionsState;
-    public score: number;
-    public activePID: number;
-    public kittyPID: number;
-    public winnerPID: number;
-    public defenders: number[];
-    public gamePhase: GamePhase;
-    public matchPhase: MatchPhase;
+    constructor(
+        public cards = new CardsState(),
+        public trump = new TrumpState(),
+        public options = new OptionsState(),
+        public score = 0,
+        public activePID = -1,
+        public kittyPID = -1,
+        public winnerPID = -1,
+        public defenders: number[] = [],
+        public gamePhase = GamePhase.Draw,
+        public matchPhase = MatchPhase.Created,
+    ) {}
 
-    constructor(prev?: BoardState, next?: {
+    public update = (next: {
         cards?: CardsState;
         trump?: TrumpState;
         options?: OptionsState;
@@ -24,16 +26,16 @@ export class BoardState {
         defenders?: number[];
         game?: GamePhase;
         match?: MatchPhase;
-    }) {
-        this.cards = next?.cards ?? prev?.cards ?? new CardsState();
-        this.trump = next?.trump ?? prev?.trump ?? new TrumpState();
-        this.options = next?.options ?? prev?.options ?? new OptionsState();
-        this.score = next?.score ?? prev?.score ?? 0
-        this.activePID = next?.activePID ?? prev?.activePID ?? -1;
-        this.kittyPID = next?.kittyPID ?? prev?.kittyPID ?? -1;
-        this.winnerPID = next?.winnerPID ?? prev?.winnerPID ?? -1;
-        this.defenders = next?.defenders ?? prev?.defenders ?? [];
-        this.gamePhase = next?.game ?? prev?.gamePhase ?? GamePhase.Draw;
-        this.matchPhase = next?.match ?? prev?.matchPhase ?? MatchPhase.CREATED;
-    }
+    }) => new BoardState(
+        next?.cards ?? this.cards,
+        next?.trump ?? this.trump,
+        next?.options ?? this.options,
+        next?.score ?? this.score,
+        next?.activePID ?? this.activePID,
+        next?.kittyPID ?? this.kittyPID,
+        next?.winnerPID ?? this.winnerPID,
+        next?.defenders ?? this.defenders,
+        next?.game ?? this.gamePhase,
+        next?.match ?? this.matchPhase,
+    );
 }

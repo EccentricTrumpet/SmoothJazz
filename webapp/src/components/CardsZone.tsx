@@ -1,12 +1,12 @@
-import { ControlInterface } from "../abstractions/ControlInterface";
-import { Position, Zone } from "../abstractions/bounds";
-import { Seat } from "../abstractions/enums";
-import { BoardState, CardState, } from "../abstractions/states";
-import { Constants } from "../Constants";
-import { CardComponent } from ".";
 import { FC } from "react";
+import { CardComponent } from ".";
+import { Point, Zone } from "../abstractions/bounds";
+import { Seat } from "../abstractions/enums";
+import { IControl } from "../abstractions/IControl";
+import { BoardState, CardState, } from "../abstractions/states";
+import { Constants, Styles } from "../Constants";
 
-interface Inputs { cards: CardState[]; seat: Seat; board: BoardState; zone: Zone; control?: ControlInterface; }
+interface Inputs { cards: CardState[]; seat: Seat; board: BoardState; zone: Zone; control?: IControl; }
 export const CardsZone: FC<Inputs> = ({cards, seat, board, zone, control = undefined}) => {
   // Sort cards for display
   cards.sort((a, b) => board.trump.orderOf(a) - board.trump.orderOf(b));
@@ -43,20 +43,12 @@ export const CardsZone: FC<Inputs> = ({cards, seat, board, zone, control = undef
 
   for (let i = 0; i < cards.length; i++) {
     cards[i].next.rotate = rotate;
-    cards[i].next.position = new Position(xStart + i*dx, yStart + i*dy);
-    cards[i].next.offset = cards[i].next.selected ? new Position(xSelected, ySelected) : new Position(0, 0);
+    cards[i].next.origin = new Point(xStart + i*dx, yStart + i*dy);
+    cards[i].next.delta = cards[i].next.selected ? new Point(xSelected, ySelected) : new Point(0, 0);
   }
 
   return (
-    <div className="container" style={{
-      position: "fixed",
-      left: zone.left(),
-      top: zone.top(),
-      width: zone.size.width,
-      maxWidth: "none",
-      height: zone.size.height,
-      backgroundColor: Constants.backgroundColor,
-    }}>
+    <div className="container" style={{ ...Styles.default, ...zone.css() }}>
       { cards.map((card, idx) => {
         return <CardComponent key={card.id} idx={idx} card={card} options={board.options} onClick={() => control?.onSelect(card)} />
       })}

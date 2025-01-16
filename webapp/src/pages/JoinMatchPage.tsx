@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CookiesProvider, useCookies } from 'react-cookie'
+import { CookiesProvider, useCookies } from 'react-cookie';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CookieState } from '../abstractions/states';
 import { MatchResponse } from '../abstractions/messages';
+import { CookieState } from '../abstractions/states';
 
 export default function JoinMatchPage() {
   const [searchParams] = useSearchParams()

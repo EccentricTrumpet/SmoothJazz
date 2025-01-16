@@ -1,11 +1,11 @@
-import { seatOf } from "..";
+import { seatOf } from "../../Constants";
 import { PlayerState } from "../states";
 
 export class MatchResponse {
     id: number;
     debug: boolean;
     seats: number;
-    offset: number;
+    southSeat: number;
     players: PlayerState[] = [];
 
     constructor(jsonText: string) {
@@ -14,15 +14,15 @@ export class MatchResponse {
         this.id = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
         this.seats = Number(jsonObj["seats"]);
-        this.offset = jsonObj.players.length;
-        for (let i = 0; i < this.offset; i++) {
+        this.southSeat = jsonObj.players.length;
+        for (let i = 0; i < this.southSeat; i++) {
             const player = jsonObj.players[i];
-            this.players.push(new PlayerState(undefined, {
-                pid: Number(player.pid),
-                name: player.name,
-                level: Number(player.level),
-                seat: seatOf(i, this.offset, this.seats)
-            }));
+            this.players.push(new PlayerState(
+                Number(player.pid),
+                player.name,
+                Number(player.level),
+                seatOf(i, this.southSeat, this.seats)
+            ));
         }
     }
 }

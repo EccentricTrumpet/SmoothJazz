@@ -3,20 +3,18 @@ import { debounce } from "lodash";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
-import { Card, ControlInterface, seatOf } from "../abstractions";
-import { Position, Size, Zone } from "../abstractions/bounds";
+import { Card, IControl } from "../abstractions";
+import { Point, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase, Suit } from "../abstractions/enums";
 import { CardsEvent, JoinEvent, MatchResponse, PlayerEvent } from "../abstractions/messages";
-import {
-  BoardState, CardsState, CardState, ErrorState, PlayerState, TrumpState
-} from "../abstractions/states";
+import { BoardState, CardState, ErrorState, PlayerState, TrumpState } from "../abstractions/states";
 import {
   CardsUpdate, EndUpdate, ErrorUpdate, MatchUpdate, PlayerUpdate, StartUpdate, TeamUpdate
 } from "../abstractions/updates";
 import {
   CenterZone, ControlZone, ErrorComponent, KittyZone, PlayerZone, TrumpZone
 } from "../components";
-import { Constants } from "../Constants";
+import { Constants, seatOf, Styles } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
   return array.reduce(([pass, fail], elem) => {
@@ -40,15 +38,14 @@ export default function MatchPage() {
 
   // UI states
   const [zone, setZone] = useState(new Zone(
-    new Position(0, 0),
-    new Size(window.innerWidth, window.innerHeight)
+    new Point(0, 0), new Size(window.innerWidth, window.innerHeight)
   ));
   const deckZone = new Zone(
-    new Position(
+    new Point(
       zone.center().x - Constants.cardWidth/2,
       zone.center().y - Constants.cardHeight/2
     ),
-    new Size(Constants.cardWidth, Constants.cardHeight)
+    Constants.cardSize
   );
   const [error, setError] = useState(new ErrorState());
 
@@ -61,7 +58,7 @@ export default function MatchPage() {
   // Establish window size
   useEffect(() => {
     const handleResize = debounce(() => setZone(new Zone(
-      new Position(0, 0), new Size(window.innerWidth, window.innerHeight)
+      new Point(0, 0), new Size(window.innerWidth, window.innerHeight)
     )), 1);
     window.addEventListener("resize", handleResize);
     return () => {
@@ -118,12 +115,12 @@ export default function MatchPage() {
           return player
         }
         const [newPlaying, newHand] = partition(player.hand, card => playCards.has(card.id));
-        newPlaying.forEach(card => card.updateInfo(playCards.get(card.id)!));
-        return new PlayerState(player, { hand: newHand, play: [...player.play, ...newPlaying] });
+        newPlaying.forEach(card => card.update(playCards.get(card.id)!));
+        return player.update({ hand: newHand, play: [...player.play, ...newPlaying] });
       }));
 
       if (winnerPID !== undefined) {
-        setBoard(prev => new BoardState(prev, { winnerPID: winnerPID }));
+        setBoard(prev => prev.update({ winnerPID: winnerPID }));
       }
     }
 
@@ -139,12 +136,12 @@ export default function MatchPage() {
             card.next.rotate = 0;
             discards.push(card);
           }
-          return new PlayerState(player, { play: [] });
+          return player.update({ play: [] });
         });
 
         // Update board states
-        setBoard(prev => new BoardState(prev, {
-          cards: new CardsState(prev.cards, {discard: [...prev.cards.discard, ...discards]}),
+        setBoard(prev => prev.update({
+          cards: prev.cards.update({discard: [...prev.cards.discard, ...discards]}),
           activePID: activePID,
           winnerPID: -1,
           score: score
@@ -163,7 +160,7 @@ export default function MatchPage() {
           card.reset();
           card.next.facedown = !matchResponse.debug && player.pid !== thisPID;
         }
-        return new PlayerState(player, { hand: [...player.hand, ...player.play], play: [] });
+        return player.update({ hand: [...player.hand, ...player.play], play: [] });
       }));
     }
 
@@ -178,11 +175,11 @@ export default function MatchPage() {
         setPlayers(prevPlayers => prevPlayers.map(player => {
           for (const card of player.hand) {
             if (hintCards.has(card.id)) {
-              card.next.highlighted = true;
+              card.next.highlight = true;
             }
           }
 
-          return new PlayerState(player, { hand: [...player.hand] });
+          return player.update({ hand: [...player.hand] });
         }));
       }
     });
@@ -191,19 +188,16 @@ export default function MatchPage() {
       console.log(`raw leave update: ${JSON.stringify(obj)}`);
       const update = new PlayerUpdate(obj);
 
-      if (update.PID === thisPID) {
-        navigate('/');
-      }
-      else {
-        setPlayers(prevPlayers => {
-          const newPlayers = prevPlayers.filter(player => player.pid !== update.PID);
-          const seatOffset = newPlayers.findIndex(player => player.pid === thisPID);
-          for (let i = 0; i < newPlayers.length; i++) {
-            newPlayers[i].seat = seatOf(i, seatOffset, matchResponse.seats);
-          }
-          return newPlayers;
-        });
-      }
+      if (update.PID === thisPID) navigate('/');
+
+      setPlayers(prevPlayers => {
+        const newPlayers = prevPlayers.filter(player => player.pid !== update.PID);
+        const southSeat = newPlayers.findIndex(player => player.pid === thisPID);
+        for (let i = 0; i < newPlayers.length; i++) {
+          newPlayers[i].seat = seatOf(i, southSeat, matchResponse.seats);
+        }
+        return newPlayers;
+      });
     });
 
     socket.on("join", (obj) => {
@@ -216,40 +210,38 @@ export default function MatchPage() {
       }
 
       setPlayers(prevPlayers => {
-        const seatOffset = update.PID === thisPID
-          ? matchResponse.offset
+        const southSeat = update.PID === thisPID
+          ? matchResponse.southSeat
           : prevPlayers.findIndex(player => player.pid === thisPID);
-        const seat = seatOf(prevPlayers.length, seatOffset, matchResponse.seats);
-        return [...prevPlayers, new PlayerState(undefined, {
-          pid: update.PID, name: update.name, level: update.level, seat: seat
-        })];
+        const seat = seatOf(prevPlayers.length, southSeat, matchResponse.seats);
+        return [...prevPlayers, new PlayerState(update.PID, update.name, update.level, seat)];
       });
     });
 
     socket.on("team", (obj) => {
       console.log(`raw team update: ${JSON.stringify(obj)}`);
       const update = new TeamUpdate(obj);
-      setBoard(prev => new BoardState(prev, {kittyPID: update.kittyPID, defenders: update.defenders}));
+      setBoard(prev => prev.update({ kittyPID: update.kittyPID, defenders: update.defenders }));
     });
 
     socket.on("start", (obj) => {
       console.log(`raw start update: ${JSON.stringify(obj)}`);
       const update = new StartUpdate(obj);
-      const deck = Array.from({length: update.cards}, (_, i) => new CardState(-(1 + i)));
+      const deck = Array.from({length: update.cards}, (_, i) => new CardState(-1 - i));
 
-      setBoard(prev => new BoardState(prev, {
-        cards: new CardsState(prev.cards, {deck: deck, kitty: [], discard: []}),
+      setBoard(prev => prev.update({
+        cards: prev.cards.update({deck: deck, kitty: [], discard: []}),
         trump: new TrumpState(update.cards, update.rank, Suit.Unknown),
         activePID: update.activePID,
         game: GamePhase.Draw
       }));
-      setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player, { play: [] })));
+      setPlayers(prevPlayers => prevPlayers.map(player => player.update({ play: [] })));
     });
 
     socket.on("match", (obj) => {
       console.log(`raw match update: ${JSON.stringify(obj)}`);
       const update = new MatchUpdate(obj);
-      setBoard(prev => new BoardState(prev, {match: update.phase}));
+      setBoard(prev => prev.update({match: update.phase}));
     });
 
     socket.on("draw", (obj) => {
@@ -263,17 +255,17 @@ export default function MatchPage() {
         setPlayers(prevPlayers => prevPlayers.map((player) => {
           if (player.pid === update.pid) {
             for (let i = 0; i < drawnCards.length; i++) {
-              drawnCards[i].updateInfo(update.cards[i]);
+              drawnCards[i].update(update.cards[i]);
             }
 
-            return new PlayerState(player, { hand: [...player.hand, ...drawnCards] });
+            return player.update({ hand: [...player.hand, ...drawnCards] });
           }
           return player;
         }));
 
         // Withdraw bids as game starts
         if (update.phase === GamePhase.Kitty) withdrawPlaying();
-        return new BoardState(prev, {activePID: update.nextPID, game: update.phase});
+        return prev.update({ activePID: update.nextPID, game: update.phase });
       });
     });
 
@@ -283,9 +275,7 @@ export default function MatchPage() {
 
       playCards(update.cards, update.pid);
       withdrawPlaying(update.pid);
-      setBoard(prev => new BoardState(prev, {
-        trump: new TrumpState(prev.trump.cards, prev.trump.rank, update.cards[0].suit)
-      }));
+      setBoard(prev => prev.update({ trump: prev.trump.update(update.cards[0].suit) }));
     });
 
     socket.on("kitty", (obj) => {
@@ -299,15 +289,15 @@ export default function MatchPage() {
           const [kitty, newHand] = partition(player.hand, card => kittyCards.has(card.id));
 
           for (const card of kitty) {
-            card.updateInfo(kittyCards.get(card.id)!);
+            card.update(kittyCards.get(card.id)!);
             card.next.rotate = 0;
           }
 
-          setBoard(prev => new BoardState(prev, {
-            cards: new CardsState(prev.cards, {kitty: kitty}), game: update.phase,
+          setBoard(prev => prev.update({
+            cards: prev.cards.update({kitty: kitty}), game: update.phase,
           }));
 
-          return new PlayerState(player, { hand: newHand });
+          return player.update({ hand: newHand });
         }
         return player;
       }));
@@ -322,7 +312,7 @@ export default function MatchPage() {
 
       if (update.score === undefined) {
         // Trick not complete
-        setBoard(prev => new BoardState(prev, {activePID: update.nextPID}));
+        setBoard(prev => prev.update({activePID: update.nextPID}));
       }
       else {
         // Trick complete
@@ -344,15 +334,15 @@ export default function MatchPage() {
       // Display kitty
       const kittyCards = createCardDict(update.kitty.cards);
       setBoard(prev => {
-        prev.cards.kitty.forEach(card => card.updateInfo(kittyCards.get(card.id)!));
+        prev.cards.kitty.forEach(card => card.update(kittyCards.get(card.id)!));
 
-        setPlayers(prevPlayers => prevPlayers.map(player => new PlayerState(player, {
+        setPlayers(prevPlayers => prevPlayers.map(player => player.update({
           level: update.levels.get(player.pid),
           play: player.pid === update.kitty.pid ? prev.cards.kitty : player.play
         })));
 
-        return new BoardState(prev, {
-          cards: new CardsState(prev.cards, { kitty: [] }),
+        return prev.update({
+          cards: prev.cards.update({ kitty: [] }),
           activePID: update.kitty.nextPID,
           game: GamePhase.End,
           score: update.kitty.score
@@ -379,14 +369,14 @@ export default function MatchPage() {
   // Must not depend on any mutable states
   }, [socket, name, matchId, matchResponse, navigate]);
 
-  class Control implements ControlInterface {
+  class Control implements IControl {
     private pid = () => matchResponse.debug ? board.activePID : PID;
     private selection = () => players.find(p => p.pid === this.pid())!.hand
-      .filter(c => c.next.selected).map(c => c.toInfo());
+      .filter(c => c.next.selected).map(c => c.toCard());
 
     onSelect(selectedCard: CardState) {
-      setPlayers(players.map(p => new PlayerState(p, { hand: p.hand.map(card => {
-        if (card.id === selectedCard.id && (matchResponse.debug || p.pid === PID)) {
+      setPlayers(players.map(player => player.update({ hand: player.hand.map(card => {
+        if (card.id === selectedCard.id && (matchResponse.debug || player.pid === PID)) {
           card.reset();
           card.next.selected = !card.next.selected;
         }
@@ -395,7 +385,7 @@ export default function MatchPage() {
     }
 
     onNext() {
-      setBoard(prev => new BoardState(prev, {game: GamePhase.Waiting}));
+      setBoard(prev => prev.update({game: GamePhase.Waiting}));
       socket?.emit("next", new PlayerEvent(matchId, this.pid()));
     };
 
@@ -406,8 +396,8 @@ export default function MatchPage() {
     onPlay() {
       // Reset highlights
       setPlayers(prevPlayers => prevPlayers.map(player => {
-        player.hand.forEach(card => card.next.highlighted = false);
-        return new PlayerState(player);
+        player.hand.forEach(card => card.next.highlight = false);
+        return player.update();
       }));
 
       socket?.emit("play", new CardsEvent(matchId, this.pid(), this.selection()));
@@ -417,14 +407,16 @@ export default function MatchPage() {
 
   return (!socket ?
     <p>Loading ...</p> :
-    <motion.div style={{ display: "grid", placeContent: "center", width: "100vw", height: "100vh" }}>
-      { players.map(p => <PlayerZone key={p.pid} player={p} board={board} parent={zone} control={control} />) }
-      { board.matchPhase === MatchPhase.STARTED && <TrumpZone parentZone={zone} trump={board.trump} /> }
+    <motion.div style={Styles.window}>
+      { players.map(p =>
+        <PlayerZone key={p.pid} player={p} board={board} parent={zone} control={control} />)
+      }
+      { board.matchPhase === MatchPhase.Started && <TrumpZone parent={zone} trump={board.trump} /> }
       <ControlZone parentZone={zone} board={board} control={control} />
-      <CenterZone board={board} deckZone={deckZone} control={control} />
-      <KittyZone board={board} deckZone={deckZone} />
+      <CenterZone board={board} deck={deckZone} control={control} />
+      <KittyZone board={board} deck={deckZone} />
       <AnimatePresence initial={false} mode="wait" onExitComplete={ () => null } >
-        { error.show && <ErrorComponent errorState={error} onClose={() => setError(new ErrorState())} /> }
+      { error.show && <ErrorComponent errorState={error} onClose={() => setError(new ErrorState())} /> }
       </AnimatePresence>
     </motion.div>
   );

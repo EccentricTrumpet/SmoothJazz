@@ -1,13 +1,15 @@
-import { Position, Size } from ".";
+import { Point, Size } from ".";
 
 export class Zone {
-    constructor(public position: Position, public size: Size) {}
-    top = () => this.position.y;
-    bottom = () => this.position.y + this.size.height;
-    left = () => this.position.x;
-    right = () => this.position.x + this.size.width;
-    center = () => new Position(
-        this.position.x + this.size.width/2,
-        this.position.y + this.size.height/2,
-    );
+    constructor(public origin: Point, public size: Size) {}
+    top = () => this.origin.y;
+    bottom = () => this.origin.y + this.size.height;
+    left = () => this.origin.x;
+    right = () => this.origin.x + this.size.width;
+    center = () => new Point((this.left() + this.right())/2, (this.top() + this.bottom())/2);
+    css() {
+        return {
+            left: this.origin.x, top: this.origin.y, width: this.size.width, height: this.size.height
+        }
+    }
 }

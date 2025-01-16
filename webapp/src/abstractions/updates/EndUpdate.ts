@@ -1,5 +1,4 @@
-import { PlayerUpdate } from "./PlayerUpdate";
-import { PlayJsonInterface, CardsUpdate } from "./CardsUpdate";
+import { CardsUpdate, PlayerUpdate, PlayJsonInterface } from ".";
 
 export class EndUpdate {
     play: CardsUpdate;

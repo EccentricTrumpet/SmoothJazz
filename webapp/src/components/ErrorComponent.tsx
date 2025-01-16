@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { BackdropComponent } from "./BackdropComponent";
-import { ErrorState } from "../abstractions/states";
 import { FC } from "react";
+import { ErrorState } from "../abstractions/states";
+import { Styles } from "../Constants";
+import { BackdropComponent } from "./BackdropComponent";
 
 const dropIn = {
   hidden: { y: "-100vh", opacity: 0 },
@@ -16,15 +17,13 @@ export const ErrorComponent: FC<Inputs> = ({ errorState, onClose = () => {} }) =
       <motion.div
         onClick={e => e.stopPropagation()}
         style={{
+          ...Styles.center,
           width: "clamp(50%, 700px, 90%)",
           height: "min(50%, 300px)",
           margin: "auto",
           flexDirection: "column",
           background: "linear-gradient(10deg, var(--primary), var(--primary-hover))",
           borderRadius: "12px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
         }}
         variants={dropIn}
         initial="hidden"

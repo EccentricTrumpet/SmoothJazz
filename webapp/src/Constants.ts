@@ -1,14 +1,19 @@
+import { Size } from "./abstractions/bounds";
 import { Seat } from "./abstractions/enums";
 
 export class Constants {
-    public static readonly cardWidth: number = 120;
-    public static readonly cardHeight: number = 168;
-    public static readonly cardRadius: number = 5;
-    public static readonly cardOverlap: number = 25;
-    public static readonly margin: number = 10;
+    // Sizes
+    public static readonly cardWidth = 120;
+    public static readonly cardHeight = 168;
+    public static readonly cardRadius = 5;
+    public static readonly cardOverlap = 25;
+    public static readonly cardSize = new Size(this.cardWidth, this.cardHeight);
+    public static readonly margin = 10;
     public static readonly seating: {[id: number]: Seat[]} = {
         4: [Seat.South, Seat.East, Seat.North, Seat.West]
     }
+
+    // Status
     public static readonly statusDetails: { [id: string]: { codepoint: number, description: string } } = {
         Attacker: { codepoint: 0x1F5E1, description: "Attacking player" },
         Defender: { codepoint: 0x1F6E1, description: "Defending player" },
@@ -28,7 +33,34 @@ export class Constants {
         13: { codepoint: 0x1F15A, description: "Level King" },
         14: { codepoint: 0x1F150, description: "Level Ace" },
     }
-    // Debugging
-    public static readonly backgroundColor: string = "rgba(255, 0, 0, 0.0)";
 
+    // Debugging
+    public static readonly backgroundColor = "rgba(255, 0, 0, 0.0)";
 }
+
+export class Styles {
+    public static readonly center = {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+    };
+    public static readonly card = {
+        width: Constants.cardWidth,
+        height: Constants.cardHeight,
+        borderRadius: Constants.cardRadius,
+        borderStyle: "solid",
+    };
+    public static readonly default = {
+        position: "fixed",
+        maxWidth: "none",
+        backgroundColor: Constants.backgroundColor
+    } as React.CSSProperties;
+    public static readonly window = {
+        position: "fixed",
+        width: "100vw",
+        height: "100vh"
+    } as React.CSSProperties;
+}
+
+export const seatOf = (seat: number, southSeat: number, seats: number) =>
+    Constants.seating[seats][(seat + seats - southSeat) % seats];

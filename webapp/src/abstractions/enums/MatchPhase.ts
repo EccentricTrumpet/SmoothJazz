@@ -1,6 +1,6 @@
 export enum MatchPhase {
-    CREATED = 0,
-    STARTED = 1,
-    PAUSED = 2,
-    ENDED = 3,
+    Created = 0,
+    Started = 1,
+    Paused = 2,
+    Ended = 3,
 }

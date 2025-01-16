@@ -1,6 +1,6 @@
 import { CardUIState } from ".";
-import { Suit } from "../enums";
 import { Card } from "..";
+import { Suit } from "../enums";
 
 export class CardState {
     constructor(
@@ -18,7 +18,7 @@ export class CardState {
         this.next = this.next.clone();
     }
 
-    public updateInfo(card: Card) {
+    public update(card: Card) {
         this.reset();
         this.id = card.id;
         this.suit = card.suit;
@@ -27,6 +27,7 @@ export class CardState {
         this.next.selected = false;
     }
 
-    public toInfo = () => new Card(this.id, this.suit, this.rank);
+    public toCard = () => new Card(this.id, this.suit, this.rank);
     public toString = () => `[Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
+    public toImg = () => `${this.suit}${this.rank}.png`;
 }

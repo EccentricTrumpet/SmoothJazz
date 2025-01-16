@@ -1,33 +1,30 @@
 import { FC, useState } from "react";
-import { Position, Size, Zone } from "../abstractions/bounds";
+import { BackdropComponent, CardComponent, CardsZone } from ".";
+import { Point, Size, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
 import { BoardState } from "../abstractions/states";
-import { Constants } from "../Constants";
-import { BackdropComponent, CardComponent, CardsZone } from ".";
+import { Constants, Styles } from "../Constants";
 
-interface Inputs { board: BoardState; deckZone: Zone; }
-export const KittyZone: FC<Inputs> = ({board, deckZone}) => {
+export const KittyZone: FC<{ board: BoardState; deck: Zone; }> = ({board, deck}) => {
   const [displayKitty, setDisplayKitty] = useState(false);
   const toggleDisplayKitty = () => {
     board.cards.kitty.forEach(card => card.reset());
     setDisplayKitty(prevDisplayKitty => !prevDisplayKitty);
   }
-
-  const cardSize = new Size(Constants.cardWidth, Constants.cardHeight);
-  const kittyZone = new Zone(
-    new Position(deckZone.left() - Constants.margin - Constants.cardWidth, deckZone.top()), cardSize
+  const kitty = new Zone(
+    new Point(deck.left() - Constants.margin - Constants.cardWidth, deck.top()), Constants.cardSize
   );
   const displaySize = new Size(Constants.cardWidth + 9 * Constants.cardOverlap, Constants.cardHeight);
   const displayZone = new Zone(
-    new Position(deckZone.center().x - displaySize.width/2, deckZone.top()), displaySize
+    new Point(deck.center().x - displaySize.width/2, deck.top()), displaySize
   );
 
   if (!displayKitty) {
     board.cards.kitty.forEach(card => {
-      card.next.position.x = kittyZone.position.x;
-      card.next.position.y = kittyZone.position.y;
-      card.next.offset.x = 0;
-      card.next.offset.y = 0;
+      card.next.origin.x = kitty.origin.x;
+      card.next.origin.y = kitty.origin.y;
+      card.next.delta.x = 0;
+      card.next.delta.y = 0;
     });
   }
 
@@ -37,14 +34,7 @@ export const KittyZone: FC<Inputs> = ({board, deckZone}) => {
           <CardsZone cards={board.cards.kitty} seat={Seat.South} board={board} zone={displayZone} />
         </BackdropComponent>
       ) : (
-        <div className="container" style={{
-          position: "fixed",
-          left: kittyZone.left(),
-          top: kittyZone.top(),
-          width: kittyZone.size.width,
-          height: kittyZone.size.height,
-          backgroundColor: Constants.backgroundColor,
-        }}>
+        <div className="container" style={{ ...Styles.default, ...kitty.css() }}>
           { board.cards.kitty.map((card, idx) => {
             return <CardComponent key={card.id} idx={idx} card={card} options={board.options} onClick={toggleDisplayKitty} />
           })}

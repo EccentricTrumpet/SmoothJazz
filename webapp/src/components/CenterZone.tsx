@@ -1,28 +1,28 @@
-import { ControlInterface } from "../abstractions";
-import { Position, Size, Zone } from "../abstractions/bounds";
-import { BoardState } from "../abstractions/states";
-import { Constants } from "../Constants";
-import { CardComponent } from ".";
 import { FC } from "react";
+import { CardComponent } from ".";
+import { IControl } from "../abstractions";
+import { Point, Zone } from "../abstractions/bounds";
+import { BoardState } from "../abstractions/states";
+import { Constants, Styles } from "../Constants";
 
-interface Inputs { board: BoardState; deckZone: Zone; control: ControlInterface; }
-export const CenterZone: FC<Inputs> = ({board, deckZone, control}) => {
+interface Inputs { board: BoardState; deck: Zone; control: IControl; }
+export const CenterZone: FC<Inputs> = ({board, deck, control}) => {
   const discardZone = new Zone(
-    new Position(deckZone.right() + Constants.margin, deckZone.top()),
-    new Size(Constants.cardWidth, Constants.cardHeight)
+    new Point(deck.right() + Constants.margin, deck.top()),
+    Constants.cardSize
   );
 
   board.cards.deck.forEach((card, i) => {
-    card.next.position.x = deckZone.position.x;
-    card.next.position.y = deckZone.position.y;
-    card.next.offset.x = i / 3;
+    card.next.origin.x = deck.origin.x;
+    card.next.origin.y = deck.origin.y;
+    card.next.delta.x = i / 3;
   });
 
   board.cards.discard.forEach(card => {
-    card.next.position.x = discardZone.position.x;
-    card.next.position.y = discardZone.position.y;
-    card.next.offset.x = 0;
-    card.next.offset.y = 0;
+    card.next.origin.x = discardZone.origin.x;
+    card.next.origin.y = discardZone.origin.y;
+    card.next.delta.x = 0;
+    card.next.delta.y = 0;
   });
 
   return <>
@@ -30,28 +30,22 @@ export const CenterZone: FC<Inputs> = ({board, deckZone, control}) => {
     { board.cards.deck.length > 0 && (
       <>
         <div className="container" style={{
-          position: "fixed",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          left: deckZone.left() - Constants.margin - Constants.cardWidth,
-          top: deckZone.center().y - 3*Constants.margin,
+          ...Styles.default,
+          ...Styles.center,
+          left: deck.left() - Constants.margin - Constants.cardWidth,
+          top: deck.center().y - 3*Constants.margin,
           width: Constants.cardWidth,
           height: 3*Constants.margin,
-          backgroundColor: Constants.backgroundColor,
         }}>
           <h4 style={{ margin: 0 }}>Deck:</h4>
         </div>
         <div className="container" style={{
-          position: "fixed",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          left: deckZone.left() - Constants.margin - Constants.cardWidth,
-          top: deckZone.center().y,
+          ...Styles.default,
+          ...Styles.center,
+          left: deck.left() - Constants.margin - Constants.cardWidth,
+          top: deck.center().y,
           width: Constants.cardWidth,
           height: 3*Constants.margin,
-          backgroundColor: Constants.backgroundColor,
         }}>
           <h4 style={{ margin: 0 }}>{board.cards.deck.length}</h4>
         </div>
@@ -59,53 +53,39 @@ export const CenterZone: FC<Inputs> = ({board, deckZone, control}) => {
     )}
     {/* Score UI */}
     <div className="container" style={{
-      position: "fixed",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      left: deckZone.left(),
-      top: deckZone.center().y - 3*Constants.margin,
+      ...Styles.default,
+      ...Styles.center,
+      left: deck.left(),
+      top: deck.center().y - 3*Constants.margin,
       width: Constants.cardWidth,
       height: 3*Constants.margin,
-      backgroundColor: Constants.backgroundColor,
     }}>
       <h4 style={{ margin: 0 }}>Score:</h4>
     </div>
     <div className="container" style={{
-      position: "fixed",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      left: deckZone.left(),
-      top: deckZone.center().y,
+      ...Styles.default,
+      ...Styles.center,
+      left: deck.left(),
+      top: deck.center().y,
       width: Constants.cardWidth,
       height: 3*Constants.margin,
-      backgroundColor: Constants.backgroundColor,
     }}>
       <h4 style={{ margin: 0 }}>{board.score}</h4>
     </div>
     {/* Deck */}
     <div className="container" style={{
-      position: "fixed",
-      left: deckZone.left(),
-      top: deckZone.top(),
-      width: deckZone.size.width,
-      height: deckZone.size.height,
-      backgroundColor: Constants.backgroundColor,
+      ...Styles.default,
+      left: deck.left(),
+      top: deck.top(),
+      width: deck.size.width,
+      height: deck.size.height,
     }}>
       { board.cards.deck.map((card, idx) =>
         <CardComponent key={card.id} idx={idx} card={card} options={board.options} onClick={() => control.onDraw()}/>
       )}
     </div>
     {/* Discard */}
-    <div className="container" style={{
-      position: "fixed",
-      left: discardZone.left(),
-      top: discardZone.top(),
-      width: discardZone.size.width,
-      height: discardZone.size.height,
-      backgroundColor: Constants.backgroundColor,
-    }}>
+    <div className="container" style={{ ...Styles.default, ...discardZone.css() }}>
       { board.cards.discard.map((card, idx) =>
         <CardComponent key={card.id} idx={idx} card={card} options={board.options} />
       )}

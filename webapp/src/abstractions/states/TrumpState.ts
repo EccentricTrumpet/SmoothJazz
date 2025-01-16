@@ -6,7 +6,8 @@ export class TrumpState {
     public order = new Map<string, number>();
 
     constructor(public cards = 0, public rank = 0, public suit = Suit.Unknown) {
-        let nonTrumpSuits: Suit[];
+        const ranks = [1, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].filter(r => r !== rank);
+        let nonTrumpSuits = [Suit.Spade, Suit.Heart, Suit.Club, Suit.Diamond];
         switch(this.suit) {
             case Suit.Spade:
                 nonTrumpSuits = [Suit.Heart, Suit.Club, Suit.Diamond];
@@ -20,9 +21,6 @@ export class TrumpState {
             case Suit.Diamond:
                 nonTrumpSuits = [Suit.Spade, Suit.Heart, Suit.Club];
                 break;
-            case Suit.Joker:
-            case Suit.Unknown:
-                nonTrumpSuits = [Suit.Spade, Suit.Heart, Suit.Club, Suit.Diamond];
         }
 
         // Jokers
@@ -41,24 +39,15 @@ export class TrumpState {
 
         // Trump suit
         if (this.suit !== Suit.Unknown && this.suit !== Suit.Joker) {
-            this.order.set(`${this.suit}${1}`, this.order.size);
-            for (let rank = 13; rank > 1; rank--) {
-                if (rank !== this.rank) {
-                    this.order.set(`${this.suit}${rank}`, this.order.size);
-                }
-            }
+            ranks.forEach(r => this.order.set(`${this.suit}${r}`, this.order.size));
         }
 
         // Others
         for (const suit of nonTrumpSuits) {
-            this.order.set(`${suit}${1}`, this.order.size);
-            for (let rank = 13; rank > 1; rank--) {
-                if (rank !== this.rank) {
-                    this.order.set(`${suit}${rank}`, this.order.size);
-                }
-            }
+            ranks.forEach(r => this.order.set(`${suit}${r}`, this.order.size));
         }
     }
 
     orderOf = (card: CardState) => (this.order.get(`${card.suit}${card.rank}`) ?? 0) * this.cards + card.id;
+    update = (suit?: Suit) => new TrumpState(this.cards, this.rank, suit ?? this.suit);
 }
