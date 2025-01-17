@@ -1,11 +1,17 @@
-import { seatOf } from "../../Constants";
+import { Seat } from "../enums";
 import { PlayerState } from "../states";
+
+const SEATING: {[id: number]: Seat[]} = {
+    4: [Seat.South, Seat.East, Seat.North, Seat.West]
+}
+
+export const seatOf = (seat: number, southSeat: number, seats: number) =>
+    SEATING[seats][(seat + seats - southSeat) % seats];
 
 export class MatchResponse {
     id: number;
     debug: boolean;
     seats: number;
-    southSeat: number;
     players: PlayerState[] = [];
 
     constructor(jsonText: string) {
@@ -14,14 +20,14 @@ export class MatchResponse {
         this.id = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
         this.seats = Number(jsonObj["seats"]);
-        this.southSeat = jsonObj.players.length;
-        for (let i = 0; i < this.southSeat; i++) {
+        const southSeat = jsonObj.players.length;
+        for (let i = 0; i < southSeat; i++) {
             const player = jsonObj.players[i];
             this.players.push(new PlayerState(
                 Number(player.pid),
                 player.name,
                 Number(player.level),
-                seatOf(i, this.southSeat, this.seats)
+                seatOf(i, southSeat, this.seats)
             ));
         }
     }

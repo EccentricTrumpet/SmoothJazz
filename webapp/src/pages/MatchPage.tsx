@@ -6,7 +6,7 @@ import { Manager, Socket } from "socket.io-client";
 import { Card, IControl } from "../abstractions";
 import { Point, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase, Suit } from "../abstractions/enums";
-import { CardsEvent, JoinEvent, MatchResponse, PlayerEvent } from "../abstractions/messages";
+import { CardsEvent, JoinEvent, MatchResponse, PlayerEvent, seatOf } from "../abstractions/messages";
 import { BoardState, CardState, ErrorState, PlayerState, TrumpState } from "../abstractions/states";
 import {
   CardsUpdate, EndUpdate, ErrorUpdate, MatchUpdate, PlayerUpdate, StartUpdate, TeamUpdate
@@ -14,7 +14,7 @@ import {
 import {
   CenterZone, ControlZone, ErrorComponent, KittyZone, PlayerZone, TrumpZone
 } from "../components";
-import { Constants, seatOf, Styles } from "../Constants";
+import { CARD_HEIGHT, CARD_WIDTH, Styles } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
   return array.reduce(([pass, fail], elem) => {
@@ -29,30 +29,24 @@ export default function MatchPage() {
   const matchId = Number(id);
   const { state } = useLocation();
   const [name] = useState<string>(state?.name);
-  const [matchResponse] = useState<MatchResponse>(state?.matchResponse);
+  const [match] = useState<MatchResponse>(state?.matchResponse);
 
   // Redirect to join match if missing required match data
   useEffect(() => {
-    if (!state || !name || !matchResponse) navigate(`/joinMatch?match_id=${matchId}`);
-  }, [name, matchResponse, navigate, matchId, state]);
+    if (!state || !name || !match) navigate(`/joinMatch?match_id=${matchId}`);
+  }, [name, match, navigate, matchId, state]);
 
   // UI states
   const [zone, setZone] = useState(new Zone(
-    new Point(0, 0), new Size(window.innerWidth, window.innerHeight)
+    Point.Origin, new Size(window.innerWidth, window.innerHeight)
   ));
-  const deckZone = new Zone(
-    new Point(
-      zone.center().x - Constants.cardWidth/2,
-      zone.center().y - Constants.cardHeight/2
-    ),
-    Constants.cardSize
-  );
+  const deck = zone.midSet(new Size(CARD_WIDTH, CARD_HEIGHT));
   const [error, setError] = useState(new ErrorState());
 
   // Game states
   const [PID, setPID] = useState(-1);
   const [board, setBoard] = useState(new BoardState());
-  const [players, setPlayers] = useState(matchResponse?.players);
+  const [players, setPlayers] = useState(match?.players);
   const [socket, setSocket] = useState<Socket>();
 
   // Establish window size
@@ -158,7 +152,7 @@ export default function MatchPage() {
         }
         for (const card of player.play) {
           card.reset();
-          card.next.facedown = !matchResponse.debug && player.pid !== thisPID;
+          card.next.facedown = !match.debug && player.pid !== thisPID;
         }
         return player.update({ hand: [...player.hand, ...player.play], play: [] });
       }));
@@ -194,7 +188,7 @@ export default function MatchPage() {
         const newPlayers = prevPlayers.filter(player => player.pid !== update.PID);
         const southSeat = newPlayers.findIndex(player => player.pid === thisPID);
         for (let i = 0; i < newPlayers.length; i++) {
-          newPlayers[i].seat = seatOf(i, southSeat, matchResponse.seats);
+          newPlayers[i].seat = seatOf(i, southSeat, match.seats);
         }
         return newPlayers;
       });
@@ -209,12 +203,10 @@ export default function MatchPage() {
         setPID(update.PID);
       }
 
-      setPlayers(prevPlayers => {
-        const southSeat = update.PID === thisPID
-          ? matchResponse.southSeat
-          : prevPlayers.findIndex(player => player.pid === thisPID);
-        const seat = seatOf(prevPlayers.length, southSeat, matchResponse.seats);
-        return [...prevPlayers, new PlayerState(update.PID, update.name, update.level, seat)];
+      setPlayers(prev => {
+        const south = update.PID === thisPID ? prev.length : prev.findIndex(p => p.pid === thisPID);
+        const seat = seatOf(prev.length, south, match.seats);
+        return [...prev, new PlayerState(update.PID, update.name, update.level, seat)];
       });
     });
 
@@ -367,16 +359,16 @@ export default function MatchPage() {
       socket.off("error");
     };
   // Must not depend on any mutable states
-  }, [socket, name, matchId, matchResponse, navigate]);
+  }, [socket, name, matchId, match, navigate]);
 
   class Control implements IControl {
-    private pid = () => matchResponse.debug ? board.activePID : PID;
+    private pid = () => match.debug ? board.activePID : PID;
     private selection = () => players.find(p => p.pid === this.pid())!.hand
       .filter(c => c.next.selected).map(c => c.toCard());
 
-    onSelect(selectedCard: CardState) {
+    select(selectedCard: CardState) {
       setPlayers(players.map(player => player.update({ hand: player.hand.map(card => {
-        if (card.id === selectedCard.id && (matchResponse.debug || player.pid === PID)) {
+        if (card.id === selectedCard.id && (match.debug || player.pid === PID)) {
           card.reset();
           card.next.selected = !card.next.selected;
         }
@@ -384,16 +376,16 @@ export default function MatchPage() {
       })})));
     }
 
-    onNext() {
+    next() {
       setBoard(prev => prev.update({game: GamePhase.Waiting}));
       socket?.emit("next", new PlayerEvent(matchId, this.pid()));
     };
 
-    onLeave() { socket?.emit("leave", new PlayerEvent(matchId, this.pid())); };
-    onDraw() { socket?.emit("draw", new PlayerEvent(matchId, this.pid())); }
-    onBid() { socket?.emit("bid", new CardsEvent(matchId, this.pid(), this.selection())); }
-    onHide() { socket?.emit("kitty", new CardsEvent(matchId, this.pid(), this.selection())); }
-    onPlay() {
+    leave() { socket?.emit("leave", new PlayerEvent(matchId, this.pid())); };
+    draw() { socket?.emit("draw", new PlayerEvent(matchId, this.pid())); }
+    bid() { socket?.emit("bid", new CardsEvent(matchId, this.pid(), this.selection())); }
+    hide() { socket?.emit("kitty", new CardsEvent(matchId, this.pid(), this.selection())); }
+    play() {
       // Reset highlights
       setPlayers(prevPlayers => prevPlayers.map(player => {
         player.hand.forEach(card => card.next.highlight = false);
@@ -412,11 +404,11 @@ export default function MatchPage() {
         <PlayerZone key={p.pid} player={p} board={board} parent={zone} control={control} />)
       }
       { board.matchPhase === MatchPhase.Started && <TrumpZone parent={zone} trump={board.trump} /> }
-      <ControlZone parentZone={zone} board={board} control={control} />
-      <CenterZone board={board} deck={deckZone} control={control} />
-      <KittyZone board={board} deck={deckZone} />
+      <ControlZone parent={zone} board={board} control={control} />
+      <CenterZone board={board} deck={deck} control={control} />
+      <KittyZone board={board} deck={deck} />
       <AnimatePresence initial={false} mode="wait" onExitComplete={ () => null } >
-      { error.show && <ErrorComponent errorState={error} onClose={() => setError(new ErrorState())} /> }
+      { error.show && <ErrorComponent error={error} onClose={() => setError(new ErrorState())} /> }
       </AnimatePresence>
     </motion.div>
   );

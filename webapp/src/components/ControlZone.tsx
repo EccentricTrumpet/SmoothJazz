@@ -1,63 +1,54 @@
 import { FC } from "react";
-import { Constants, Styles } from "../Constants";
+import { MARGIN, Styles, CARD_WIDTH } from "../Constants";
 import { IControl } from "../abstractions";
 import { Point, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
 import { BoardState } from "../abstractions/states";
 
-interface Inputs { parentZone: Zone; board: BoardState; control: IControl; }
-export const ControlZone: FC<Inputs> = ({parentZone, board, control}) => {
-  const zone = new Zone(
-    new Point(
-      parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,
-      parentZone.top() + parentZone.size.height - Constants.margin - Constants.cardHeight,
-    ),
-    new Size(Constants.cardHeight, Constants.cardHeight)
-  );
-
-  let buttonText = "";
-  let buttonAction = () => {};
-  let buttonDisabled = false;
+interface Inputs { parent: Zone; board: BoardState; control: IControl; }
+export const ControlZone: FC<Inputs> = ({parent, board, control}) => {
+  const zone = parent.inSet(new Point(-MARGIN, -MARGIN), new Size(CARD_WIDTH, CARD_WIDTH));
+  let button = { text: "", action: () => {}, disabled: false };
 
   switch(board.matchPhase) {
     case MatchPhase.Created:
-      buttonText = "Leave";
-      buttonAction = () => control.onLeave();
+      button = { ...button, text: "Leave", action: () => control.leave() };
       break;
     case MatchPhase.Started:
       switch(board.gamePhase) {
         case GamePhase.Draw:
-          buttonText = "Bid";
-          buttonAction = () => control.onBid();
+          button = { ...button, text: "Bid", action: () => control.bid() };
           break;
         case GamePhase.Kitty:
-          buttonText = "Hide";
-          buttonAction = () => control.onHide();
+          button = { ...button, text: "Hide", action: () => control.hide() };
           break;
         case GamePhase.Play:
-          buttonText = "Play";
-          buttonAction = () => control.onPlay();
+          button = { ...button, text: "Play", action: () => control.play() };
           break;
         case GamePhase.End:
-          buttonText = "Next Game";
-          buttonAction = () => control.onNext();
+          button = { ...button, text: "Next game", action: () => control.next() };
           break;
         case GamePhase.Waiting:
-          buttonText = "Waiting...";
-          buttonDisabled = true;
+          button = { ...button, text: "Waiting...", disabled: true };
           break;
       }
+      break;
+    case MatchPhase.Paused:
+      button = { ...button, text: "Match paused", disabled: true };
+      break;
+    case MatchPhase.Ended:
+      button = { ...button, text: "Match ended", disabled: true };
       break;
   }
 
   return (
-    <div className="container" style={{ ...Styles.default, ...Styles.center, ...zone.css() }}>
-      {buttonText && buttonText.length > 0 && (
+    <div className="container" style={{ ...Styles.defaultCenter, ...zone.css() }}>
+      {button.text?.length > 0 && (
         <button
-          className={(buttonDisabled) ? "disabled" : ""}
-          onClick={buttonAction}
-          style={{ ...Styles.center, opacity: buttonDisabled ? "0.4" : "1.0" }}>
-          {buttonText}
+          style={{ ...Styles.center, margin: "0", opacity: button.disabled ? "0.4" : "1.0" }}
+          className={(button.disabled) ? "disabled" : ""}
+          onClick={button.action} >
+          {button.text}
         </button>
       )}
     </div>

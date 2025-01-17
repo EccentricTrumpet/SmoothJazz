@@ -10,8 +10,8 @@ const dropIn = {
   exit: { y: "100vh", opacity: 0 },
 }
 
-interface Inputs { errorState: ErrorState; onClose: () => void; }
-export const ErrorComponent: FC<Inputs> = ({ errorState, onClose = () => {} }) => {
+interface Inputs { error: ErrorState; onClose: () => void; }
+export const ErrorComponent: FC<Inputs> = ({ error, onClose = () => {} }) => {
   return (
     <BackdropComponent onClick={onClose}>
       <motion.div
@@ -30,8 +30,8 @@ export const ErrorComponent: FC<Inputs> = ({ errorState, onClose = () => {} }) =
         animate="visible"
         exit="exit"
       >
-        <h2>{errorState.title}</h2>
-        <h4>{errorState.message}</h4>
+        <h2>{error.title}</h2>
+        <h4>{error.message}</h4>
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}

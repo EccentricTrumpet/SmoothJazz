@@ -1,5 +1,5 @@
 import { Seat } from "../enums";
-import { CardState } from "./CardState";
+import { Cards } from "./CardState";
 
 export class PlayerState {
     constructor(
@@ -7,12 +7,12 @@ export class PlayerState {
         public name = "",
         public level = 2,
         public seat = Seat.South,
-        public hand: CardState[] = [],
-        public play: CardState[] = []
+        public hand: Cards = [],
+        public play: Cards = []
     ) {}
 
     public update = (next: {
-        pid?: number; name?: string; level?: number; seat?: Seat; hand?: CardState[]; play?: CardState[]
+        pid?: number; name?: string; level?: number; seat?: Seat; hand?: Cards; play?: Cards
     } = {}) => new PlayerState (
         this.pid = next?.pid ?? this.pid,
         this.name = next?.name ?? this.name,

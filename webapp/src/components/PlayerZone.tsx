@@ -1,16 +1,17 @@
 // React tooltip require anchor tags without href
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import { FC, ReactNode } from "react";
+import { motion } from "framer-motion";
+import { FC } from "react";
 import { Tooltip } from "react-tooltip";
 import { CardsZone } from ".";
 import { IControl } from "../abstractions";
 import { Point, Size, Zone } from "../abstractions/bounds";
 import { MatchPhase, Seat } from "../abstractions/enums";
 import { BoardState, PlayerState } from "../abstractions/states";
-import { Constants, Styles } from "../Constants";
+import { BACKGROUND, CARD_HEIGHT, CARD_WIDTH, MARGIN, STATUS_CODES, Styles } from "../Constants";
 
-const status = (status: string): ReactNode => {
-  const {codepoint, description} = Constants.statusDetails[status];
+const status = (status: string) => {
+  const {codepoint, description} = STATUS_CODES[status];
   return (
     <h3 style={{ margin: "-6px 0px -6px 0px" }}>
       <a data-tooltip-id={`${status}-tooltip`} data-tooltip-content={description}>
@@ -21,204 +22,51 @@ const status = (status: string): ReactNode => {
   );
 }
 
+const settings: { [id in Seat]: { rotate: number, inset: Point, side: Point } } = {
+  [Seat.East]: { rotate: -90, inset: new Point(-1, 0), side: new Point(0, 1) },
+  [Seat.South]: { rotate: 0, inset: new Point(0, -1), side: new Point(1, 0) },
+  [Seat.West]: { rotate: 90, inset: new Point(1, 0), side: new Point(0, 1) },
+  [Seat.North]: { rotate: 0, inset: new Point(0, 1), side: new Point(1, 0) },
+}
+
 interface Inputs { player: PlayerState; board: BoardState; parent: Zone; control: IControl; }
 export const PlayerZone: FC<Inputs> = ({player, board, parent, control}) => {
-  let hand: Zone, name: Zone, play: Zone, trickStatus: Zone, playerStatus: Zone;
-  let nameRotate: number = 0;
-  const nameHeight = 3*Constants.margin;
+  const { rotate, inset, side } = settings[player.seat];
+  const name = parent.inSet(inset.scale(2.5*MARGIN), Size.square(CARD_HEIGHT))
+    .midSet(new Size(CARD_HEIGHT, 3*MARGIN).rotate(rotate));
+  const trickStatus = name.outSet(side.scale(-MARGIN), Size.square(3*MARGIN));
+  const playerStatus = name.outSet(side.scale(MARGIN), Size.square(3*MARGIN));
+  const play = name.outSet(inset.scale(MARGIN), new Size(2*CARD_HEIGHT, CARD_HEIGHT).rotate(rotate));
+  const handWidth = (rotate === 0 ? parent.size.width : parent.size.height) - 2*(2*MARGIN + CARD_WIDTH);
+  const handHover = inset.scale(CARD_HEIGHT/2);
+  const hand = name.outSet(inset.scale(-MARGIN), new Size(handWidth, CARD_HEIGHT).rotate(rotate));
 
-  switch(player.seat) {
-    case Seat.North:
-      hand = new Zone(
-        new Point(
-          parent.left() + 2*Constants.margin + Constants.cardHeight,
-          parent.top() + Constants.margin
-        ),
-        new Size(
-          parent.size.width - 2*(2*Constants.margin + Constants.cardHeight),
-          Constants.cardHeight
-        )
-      );
-      name = new Zone(
-        new Point(
-          hand.center().x - Constants.cardHeight/2,
-          hand.bottom() + Constants.margin,
-        ),
-        new Size(Constants.cardHeight, nameHeight)
-      );
-      trickStatus = new Zone(
-        new Point(
-          name.left() - nameHeight - Constants.margin,
-          name.top(),
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      playerStatus = new Zone(
-        new Point(
-          name.right() + Constants.margin,
-          name.top(),
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      play = new Zone(
-        new Point(
-          hand.center().x - Constants.cardHeight,
-          name.bottom() + Constants.margin
-        ),
-        new Size(2*Constants.cardHeight, Constants.cardHeight)
-      );
-      break;
-    case Seat.East:
-      hand = new Zone(
-        new Point(
-          parent.right() - Constants.margin - Constants.cardHeight,
-          parent.top() + 2*Constants.margin + Constants.cardHeight
-        ),
-        new Size(
-          Constants.cardHeight,
-          parent.size.height - 2*(2*Constants.margin + Constants.cardHeight)
-        )
-      );
-      trickStatus = new Zone(
-        new Point(
-          hand.left() - nameHeight - Constants.margin,
-          hand.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin/2,
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      playerStatus = new Zone(
-        new Point(
-          hand.left() - nameHeight - Constants.margin,
-          hand.center().y + Constants.cardHeight/2 + 1.5*Constants.margin,
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      name = new Zone(
-        new Point(
-          hand.left() - 2.5*Constants.margin - Constants.cardHeight/2,
-          hand.center().y - Constants.margin
-        ),
-        new Size(Constants.cardHeight, nameHeight)
-      );
-      play = new Zone(
-        new Point(
-          hand.left() - 2*Constants.margin - name.size.height - Constants.cardHeight,
-          name.center().y - Constants.cardHeight
-        ),
-        new Size(Constants.cardHeight, 2*Constants.cardHeight)
-      );
-      nameRotate = -90;
-      break;
-    case Seat.South:
-      hand = new Zone(
-        new Point(
-          parent.left() + 2*Constants.margin + Constants.cardHeight,
-          parent.bottom() - Constants.margin - Constants.cardHeight
-        ),
-        new Size(
-          parent.size.width - 2*(2*Constants.margin + Constants.cardHeight),
-          Constants.cardHeight
-        )
-      );
-      name = new Zone(
-        new Point(
-          hand.center().x - Constants.cardHeight/2,
-          hand.top() - 4*Constants.margin,
-        ),
-        new Size(Constants.cardHeight, nameHeight)
-      );
-      trickStatus = new Zone(
-        new Point(
-          name.left() - nameHeight - Constants.margin,
-          name.top(),
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      playerStatus = new Zone(
-        new Point(
-          name.right() + Constants.margin,
-          name.top(),
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      play = new Zone(
-        new Point(
-          hand.center().x - Constants.cardHeight,
-          name.top() - Constants.margin - Constants.cardHeight
-        ),
-        new Size(2*Constants.cardHeight, Constants.cardHeight)
-      );
-      break;
-    case Seat.West:
-      hand = new Zone(
-        new Point(
-          parent.left() + Constants.margin,
-          parent.top() + 2*Constants.margin + Constants.cardHeight
-        ),
-        new Size(
-          Constants.cardHeight,
-          parent.size.height - 2*(2*Constants.margin + Constants.cardHeight)
-        )
-      );
-      trickStatus = new Zone(
-        new Point(
-          hand.right() + Constants.margin,
-          hand.center().y - Constants.cardHeight/2 - nameHeight - Constants.margin/2,
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      playerStatus = new Zone(
-        new Point(
-          hand.right() + Constants.margin,
-          hand.center().y + Constants.cardHeight/2 + 1.5*Constants.margin,
-        ),
-        new Size(nameHeight, nameHeight)
-      );
-      name = new Zone(
-        new Point(
-          hand.right() + 2.5*Constants.margin - (Constants.cardHeight)/2,
-          hand.center().y - Constants.margin
-        ),
-        new Size(Constants.cardHeight, nameHeight)
-      );
-      play = new Zone(
-        new Point(
-          hand.right() + 2*Constants.margin + name.size.height,
-          name.center().y - Constants.cardHeight
-        ),
-        new Size(Constants.cardHeight, 2*Constants.cardHeight)
-      );
-      nameRotate = 90;
-      break;
-  }
-
-  return <>
-    <CardsZone cards={player.play} seat={player.seat} board={board} zone={play} control={control} />
-    <div className="container" style={{
-      ...Styles.center,
-      ...name.css(),
-      rotate: `${nameRotate}deg`,
-      position: "fixed",
-      borderRadius: Constants.margin,
-      backgroundColor: board.activePID === player.pid ? "var(--ins-color)" : Constants.backgroundColor
-    }}>
-      <h4 style={{ margin: 0 }}>{player.name}</h4>
+  return (
+    <div>
+      <CardsZone cards={player.play} seat={player.seat} board={board} zone={play} control={control} />
+      <div className="container" style={{
+        ...Styles.center, ...name.css(), position: "fixed", borderRadius: MARGIN,
+        backgroundColor: board.activePID === player.pid ? "var(--ins-color)" : BACKGROUND
+      }}>
+        <h4 style={{ margin: 0, rotate: `${rotate}deg` }}>{player.name}</h4>
+      </div>
+      <div className="container" style={{ ...Styles.defaultCenter, ...trickStatus.css() }} >
+        { player.pid === board.winnerPID && status('Winner') }
+      </div>
+      <div className="container" style={{
+        ...Styles.default,
+        ...playerStatus.css(),
+        alignItems: "center",
+        flexDirection: rotate === 0 ? "row" : "column",
+        display: board.matchPhase === MatchPhase.Started ? "flex" : "none",
+      }}>
+        { player.pid === board.kittyPID && status('Kitty') }
+        { board.defenders.includes(player.pid) ? status('Defender') : status('Attacker') }
+        { status(`${player.level}`) }
+      </div>
+      <motion.div whileHover={{ x: handHover.x, y: handHover.y }}>
+        <CardsZone cards={player.hand} seat={player.seat} board={board} zone={hand} control={control} />
+      </motion.div>
     </div>
-    <CardsZone cards={player.hand} seat={player.seat} board={board} zone={hand} control={control} />
-    <div className="container"
-      style={{ ...Styles.default, ...Styles.center, ...trickStatus.css() }}>
-        {player.pid === board.winnerPID && (status('Winner'))}
-    </div>
-    <div className="container" style={{
-      ...Styles.default,
-      ...playerStatus.css(),
-      alignItems: "center",
-      display: board.matchPhase === MatchPhase.Started ? "flex" : "none",
-      flexDirection: player.seat === Seat.North || player.seat === Seat.South ? "row" : "column",
-    }}>
-      {player.pid === board.kittyPID && (status('Kitty'))}
-      {board.defenders.includes(player.pid) ? status('Defender') : status('Attacker')}
-      {status(`${player.level}`)}
-    </div>
-  </>
+  )
 }

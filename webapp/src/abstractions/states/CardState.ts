@@ -31,3 +31,5 @@ export class CardState {
     public toString = () => `[Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
     public toImg = () => `${this.suit}${this.rank}.png`;
 }
+
+export type Cards = CardState[];
