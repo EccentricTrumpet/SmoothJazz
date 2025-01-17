@@ -5,8 +5,8 @@ import { Vector, Size, Zone } from "../abstractions/bounds";
 import { BoardState } from "../abstractions/states";
 import { MARGIN, CARD_WIDTH, Styles } from "../Constants";
 
-interface Inputs { board: BoardState; deck: Zone; control: IControl; }
-export const CenterZone: FC<Inputs> = ({board, deck, control}) => {
+interface Inputs { board: BoardState; deck: Zone; }
+export const CenterZone: FC<Inputs> = ({board, deck}) => {
   const trash = deck.outSet(Vector.Right.scale(MARGIN));
   const kitty = deck.outSet(Vector.Left.scale(MARGIN));
   const labelSize = new Size(CARD_WIDTH, 3*MARGIN);
@@ -46,7 +46,7 @@ export const CenterZone: FC<Inputs> = ({board, deck, control}) => {
     {/* Deck */}
     <div className="container" style={{ ...Styles.default, ...deck.position() }}>
       { board.cards.deck.map((card, i) =>
-        <CardComponent key={card.id} z={i} card={card} onClick={() => control.draw()} />
+        <CardComponent key={card.id} z={i} card={card} onClick={() => board.control?.draw()} />
       )}
     </div>
     {/* Trash */}

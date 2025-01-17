@@ -29,8 +29,8 @@ const settings: { [id in Seat]: { turn: number, inset: Vector, side: Vector } } 
   [Seat.North]: { turn: 0, inset: Vector.Down, side: Vector.Right },
 }
 
-interface Inputs { player: PlayerState; board: BoardState; parent: Zone; control: IControl; }
-export const PlayerZone: FC<Inputs> = ({player, board, parent, control}) => {
+interface Inputs { player: PlayerState; board: BoardState; parent: Zone; }
+export const PlayerZone: FC<Inputs> = ({player, board, parent}) => {
   const { turn, inset, side } = settings[player.seat];
   const name = parent.inSet(inset.scale(2.5*MARGIN), Size.square(CARD_HEIGHT))
     .midSet(new Size(CARD_HEIGHT, 3*MARGIN).turn(turn));
@@ -44,7 +44,7 @@ export const PlayerZone: FC<Inputs> = ({player, board, parent, control}) => {
 
   return (
     <div>
-      <CardsZone cards={player.play} seat={player.seat} board={board} zone={play} control={control} />
+      <CardsZone cards={player.play} seat={player.seat} trump={board.trump} zone={play} />
       <div className="container" style={{
         ...Styles.center, ...name.position(), position: "fixed", borderRadius: MARGIN,
         backgroundColor: board.activePID === player.pid ? "var(--ins-color)" : BACKGROUND
@@ -64,7 +64,9 @@ export const PlayerZone: FC<Inputs> = ({player, board, parent, control}) => {
         { status(`${player.level}`) }
       </div>
       <motion.div whileHover={handHover.position()}>
-        <CardsZone cards={player.hand} seat={player.seat} board={board} zone={hand} control={control} />
+        <CardsZone
+          cards={player.hand} seat={player.seat} trump={board.trump} zone={hand} control={board.control}
+        />
       </motion.div>
     </div>
   )

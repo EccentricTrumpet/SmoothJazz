@@ -24,12 +24,11 @@ export class CardState {
         this.id = card.id;
         this.suit = card.suit;
         this.rank = card.rank;
-        this.next.facedown = card.suit === Suit.Unknown;
         this.next.picked = false;
     }
 
     public card = () => new Card(this.id, this.suit, this.rank);
-    public png = () => this.next.facedown ? this.options.cardBack : `${this.suit}${this.rank}.png`;
+    public png = () => this.suit === Suit.Unknown ? this.options.back : `${this.suit}${this.rank}.png`;
 }
 
 export type Cards = CardState[];

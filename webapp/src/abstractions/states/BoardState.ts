@@ -1,7 +1,10 @@
 import { CardsState, OptionsState, TrumpState } from ".";
 import { GamePhase, MatchPhase } from "../enums";
+import { IControl } from "../IControl";
 
 export class BoardState {
+    public control?: IControl;
+
     constructor(
         public cards = new CardsState(),
         public trump = new TrumpState(),

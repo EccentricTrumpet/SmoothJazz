@@ -1,32 +1,31 @@
 import { FC } from "react";
 import { MARGIN, Styles, CARD_WIDTH } from "../Constants";
-import { IControl } from "../abstractions";
 import { Vector, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
 import { BoardState } from "../abstractions/states";
 
-interface Inputs { parent: Zone; board: BoardState; control: IControl; }
-export const ControlZone: FC<Inputs> = ({parent, board, control}) => {
+interface Inputs { parent: Zone; board: BoardState; }
+export const ControlZone: FC<Inputs> = ({parent, board}) => {
   const zone = parent.inSet(new Vector(-MARGIN, -MARGIN), Size.square(CARD_WIDTH));
   let button = { text: "", action: () => {}, disabled: false };
 
   switch(board.matchPhase) {
     case MatchPhase.Created:
-      button = { ...button, text: "Leave", action: () => control.leave() };
+      button = { ...button, text: "Leave", action: () => board.control?.leave() };
       break;
     case MatchPhase.Started:
       switch(board.gamePhase) {
         case GamePhase.Draw:
-          button = { ...button, text: "Bid", action: () => control.bid() };
+          button = { ...button, text: "Bid", action: () => board.control?.bid() };
           break;
         case GamePhase.Kitty:
-          button = { ...button, text: "Hide", action: () => control.hide() };
+          button = { ...button, text: "Hide", action: () => board.control?.hide() };
           break;
         case GamePhase.Play:
-          button = { ...button, text: "Play", action: () => control.play() };
+          button = { ...button, text: "Play", action: () => board.control?.play() };
           break;
         case GamePhase.End:
-          button = { ...button, text: "Next game", action: () => control.next() };
+          button = { ...button, text: "Next game", action: () => board.control?.next() };
           break;
         case GamePhase.Waiting:
           button = { ...button, text: "Waiting...", disabled: true };

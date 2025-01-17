@@ -1,4 +1,4 @@
 // Board sub-state
 export class OptionsState {
-    constructor(public cardBack = "red.png") {}
+    constructor(public back = "red.png") {}
 }

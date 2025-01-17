@@ -9,13 +9,14 @@ export const seatOf = (seat: number, southSeat: number, seats: number) =>
     SEATING[seats][(seat + seats - southSeat) % seats];
 
 export class MatchResponse {
-    id: number;
-    debug: boolean;
-    seats: number;
-    players: PlayerState[] = [];
+    public id = -1;
+    public debug = false;
+    public seats = -1;
+    public players: PlayerState[] = [];
 
     constructor(jsonText: string) {
         console.log(`raw match response: ${jsonText}`);
+        if (jsonText === undefined) return;
         const jsonObj = JSON.parse(jsonText);
         this.id = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);

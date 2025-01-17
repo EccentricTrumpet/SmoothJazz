@@ -3,7 +3,7 @@ import { CardComponent } from ".";
 import { Vector, Zone } from "../abstractions/bounds";
 import { Seat } from "../abstractions/enums";
 import { IControl } from "../abstractions/IControl";
-import { BoardState, Cards, } from "../abstractions/states";
+import { Cards, TrumpState, } from "../abstractions/states";
 import { CARD_MARGIN, CARD_SIZE, CARD_WIDTH, Styles } from "../Constants";
 
 const settings: { [id in Seat]: { turn: number, pick: Vector, delta: Vector, z: number } } = {
@@ -13,10 +13,10 @@ const settings: { [id in Seat]: { turn: number, pick: Vector, delta: Vector, z: 
   [Seat.North]: { turn: 0, pick: Vector.Down.scale(CARD_MARGIN), delta: Vector.Right, z: -1 },
 }
 
-interface Inputs { cards: Cards; seat: Seat; board: BoardState; zone: Zone; control?: IControl; }
-export const CardsZone: FC<Inputs> = ({cards, seat, board, zone, control = undefined}) => {
+interface Inputs { cards: Cards; trump: TrumpState; zone: Zone; seat?: Seat; control?: IControl; }
+export const CardsZone: FC<Inputs> = ({cards, trump, zone, seat = Seat.South, control}) => {
   // Sort cards for display
-  cards.sort((a, b) => board.trump.orderOf(a) - board.trump.orderOf(b));
+  cards.sort((a, b) => trump.orderOf(a) - trump.orderOf(b));
   const { turn, pick, delta, z } = settings[seat];
 
   const maxRange = turn === 0 ? zone.size.width : zone.size.height;

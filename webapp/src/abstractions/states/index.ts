@@ -7,5 +7,5 @@ export * from './CardUIState';
 export * from './CookieState';
 export * from './OptionsState';
 export * from './PlayerState';
-export * from './StatusState';
+export * from './BoardState';
 export * from './TrumpState';

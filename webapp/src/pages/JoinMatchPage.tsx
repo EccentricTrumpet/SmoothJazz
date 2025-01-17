@@ -28,9 +28,8 @@ export default function JoinMatchPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCookie('shengji', cookieState, { path: '/'})
-    const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/match/${match}`);
-    const matchResponse = new MatchResponse(await response.text());
-    navigate(`/${matchResponse.id}`, { state: { name: cookieState.name, matchResponse: matchResponse } });
+    const response = await (await fetch(`${process.env.REACT_APP_API_URL || ''}/match/${match}`)).text();
+    navigate(`/${new MatchResponse(response).id}`, { state: { name: cookieState.name, match: response } });
   }
 
   return (

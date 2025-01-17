@@ -21,17 +21,15 @@ export const KittyZone: FC<{ board: BoardState; deck: Zone; }> = ({board, deck})
     });
   }
 
-  return (
-    displayKitty ? (
-      <BackdropComponent onClick={toggleKitty}>
-        <CardsZone cards={board.cards.kitty} board={board} zone={display} seat={Seat.South} />
-      </BackdropComponent>
-    ) : (
-      <div className="container" style={{ ...Styles.default, ...kitty.position() }}>
-        { board.cards.kitty.map((card, i) =>
-          <CardComponent key={card.id} z={i} card={card} onClick={toggleKitty} />
-        )}
-      </div>
-    )
-  );
+  return (displayKitty ? (
+    <BackdropComponent onClick={toggleKitty}>
+      <CardsZone cards={board.cards.kitty} trump={board.trump} zone={display} seat={Seat.South} />
+    </BackdropComponent>
+  ) : (
+    <div className="container" style={{ ...Styles.default, ...kitty.position() }}>
+      { board.cards.kitty.map((card, i) =>
+        <CardComponent key={card.id} z={i} card={card} onClick={toggleKitty} />
+      )}
+    </div>
+  ));
 }

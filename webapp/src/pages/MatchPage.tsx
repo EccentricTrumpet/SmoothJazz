@@ -29,7 +29,7 @@ export default function MatchPage() {
   const matchId = Number(id);
   const { state } = useLocation();
   const [name] = useState<string>(state?.name);
-  const [match] = useState<MatchResponse>(state?.matchResponse);
+  const [match] = useState<MatchResponse>(new MatchResponse(state?.match));
 
   // Redirect to join match if missing required match data
   useEffect(() => {
@@ -152,7 +152,7 @@ export default function MatchPage() {
         }
         for (const card of player.play) {
           card.reset();
-          card.next.facedown = !match.debug && player.pid !== thisPID;
+          if (!match.debug && player.pid !== thisPID) card.suit = Suit.Unknown;
         }
         return player.update({ hand: [...player.hand, ...player.play], play: [] });
       }));
@@ -398,19 +398,18 @@ export default function MatchPage() {
     }
   }
   const control = new Control();
+  board.control = control;
 
   return (!socket ?
     <p>Loading ...</p> :
     <motion.div style={Styles.window}>
-      { players.map(p =>
-        <PlayerZone key={p.pid} player={p} board={board} parent={zone} control={control} />)
-      }
+      { players.map(p => <PlayerZone key={p.pid} player={p} board={board} parent={zone} />) }
       { board.matchPhase === MatchPhase.Started && <TrumpZone parent={zone} trump={board.trump} /> }
-      <ControlZone parent={zone} board={board} control={control} />
-      <CenterZone board={board} deck={deck} control={control} />
+      <ControlZone parent={zone} board={board} />
+      <CenterZone board={board} deck={deck} />
       <KittyZone board={board} deck={deck} />
       <AnimatePresence initial={false} mode="wait" onExitComplete={ () => null } >
-      { error.show && <ErrorComponent error={error} onClose={() => setError(new ErrorState())} /> }
+        { error.show && <ErrorComponent error={error} onClose={() => setError(new ErrorState())} /> }
       </AnimatePresence>
     </motion.div>
   );
