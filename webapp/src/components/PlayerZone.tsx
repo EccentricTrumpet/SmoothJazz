@@ -45,10 +45,11 @@ export const PlayerZone: FC<Inputs> = ({player, board, parent}) => {
   return (
     <div>
       <CardsZone cards={player.play} seat={player.seat} trump={board.trump} zone={play} />
-      <div className="container" style={{
-        ...Styles.center, ...name.position(), position: "fixed", borderRadius: MARGIN,
-        backgroundColor: board.activePID === player.pid ? "var(--ins-color)" : BACKGROUND
-      }}>
+      <div className="container" style={{ ...Styles.center, ...name.position(), position: "fixed" }}>
+        <div className="container" style={{
+          ...name.position(), position: "fixed", borderRadius: MARGIN, opacity: 0.7,
+          backgroundColor: board.activePID === player.pid ? "var(--primary)" : BACKGROUND,
+        }} />
         <h4 style={{ margin: 0, rotate: `${turn}turn` }}>{player.name}</h4>
       </div>
       <div className="container" style={{ ...Styles.defaultCenter, ...trickStatus.position() }} >
@@ -57,7 +58,7 @@ export const PlayerZone: FC<Inputs> = ({player, board, parent}) => {
       <div className="container" style={{
         ...Styles.default, ...playerStatus.position(), alignItems: "center",
         flexDirection: turn === 0 ? "row" : "column",
-        display: board.matchPhase === MatchPhase.Started ? "flex" : "none",
+        display: board.match === MatchPhase.Started ? "flex" : "none",
       }}>
         { player.pid === board.kittyPID && status('Kitty') }
         { board.defenders.includes(player.pid) ? status('Defender') : status('Attacker') }

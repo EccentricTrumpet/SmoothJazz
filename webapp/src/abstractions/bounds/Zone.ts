@@ -38,7 +38,5 @@ export class Zone {
     }
 
     // Transform into css position properties
-    public position() { return {
-        left: this.origin.x, top: this.origin.y, width: this.size.width, height: this.size.height
-    } }
+    public position() { return { left: this.origin.x, top: this.origin.y, ...this.size.css() }; }
 }

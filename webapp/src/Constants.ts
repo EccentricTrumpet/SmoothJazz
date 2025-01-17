@@ -33,18 +33,11 @@ export const STATUS_CODES: { [id: string]: { codepoint: number, description: str
 export const BACKGROUND = "rgba(255, 0, 0, 0)";
 
 export class Styles {
-    public static readonly default = {
-        position: "fixed",
-        maxWidth: "none",
-        backgroundColor: BACKGROUND
+    static readonly default = {
+        position: "fixed", maxWidth: "none", backgroundColor: BACKGROUND
     } as React.CSSProperties;
-    public static readonly center = { display: "flex", alignItems: "center", justifyContent: "center" };
-    public static readonly defaultCenter = { ...this.default, ...this.center };
-    public static readonly card = {
-        width: CARD_WIDTH,
-        height: CARD_HEIGHT,
-        borderRadius: CARD_RADIUS,
-        borderStyle: "solid",
-    };
-    public static readonly window = { position: "fixed", width: "100vw", height: "100vh" } as React.CSSProperties;
+    static readonly center = { display: "flex", alignItems: "center", justifyContent: "center" };
+    static readonly defaultCenter = { ...this.default, ...this.center };
+    static readonly card = { ...CARD_SIZE.css(), borderRadius: CARD_RADIUS, borderStyle: "solid" };
+    static readonly window = { position: "fixed", width: "100vw", height: "100vh" } as React.CSSProperties;
 }

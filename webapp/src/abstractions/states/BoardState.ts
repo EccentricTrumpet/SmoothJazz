@@ -14,8 +14,8 @@ export class BoardState {
         public kittyPID = -1,
         public winnerPID = -1,
         public defenders: number[] = [],
-        public gamePhase = GamePhase.Draw,
-        public matchPhase = MatchPhase.Created,
+        public game = GamePhase.Draw,
+        public match = MatchPhase.Created,
     ) {}
 
     public update = (next: {
@@ -38,7 +38,7 @@ export class BoardState {
         next?.kittyPID ?? this.kittyPID,
         next?.winnerPID ?? this.winnerPID,
         next?.defenders ?? this.defenders,
-        next?.game ?? this.gamePhase,
-        next?.match ?? this.matchPhase,
+        next?.game ?? this.game,
+        next?.match ?? this.match,
     );
 }

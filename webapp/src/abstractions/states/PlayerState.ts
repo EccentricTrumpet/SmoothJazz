@@ -1,3 +1,4 @@
+import { Card } from "../Card";
 import { Seat } from "../enums";
 import { Cards } from "./CardState";
 
@@ -11,9 +12,9 @@ export class PlayerState {
         public play: Cards = []
     ) {}
 
-    public update = (next: {
+    update = (next?: {
         pid?: number; name?: string; level?: number; seat?: Seat; hand?: Cards; play?: Cards
-    } = {}) => new PlayerState (
+    }) => new PlayerState (
         next?.pid ?? this.pid,
         next?.name ?? this.name,
         next?.level ?? this.level,
@@ -21,4 +22,9 @@ export class PlayerState {
         next?.hand ?? this.hand,
         next?.play ?? this.play
     )
+
+    updateFocus(focusCards: Map<number, Card> = new Map<number, Card>()) {
+        this.hand.forEach(card => card.next.focus = focusCards.has(card.id));
+        return this.update();
+    }
 }

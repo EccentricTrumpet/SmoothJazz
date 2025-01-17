@@ -17,11 +17,13 @@ export class MatchResponse {
     constructor(jsonText: string) {
         console.log(`raw match response: ${jsonText}`);
         if (jsonText === undefined) return;
+
         const jsonObj = JSON.parse(jsonText);
         this.id = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
         this.seats = Number(jsonObj["seats"]);
         const southSeat = jsonObj.players.length;
+
         for (let i = 0; i < southSeat; i++) {
             const player = jsonObj.players[i];
             this.players.push(new PlayerState(

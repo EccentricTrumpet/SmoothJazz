@@ -11,7 +11,7 @@ const dropIn = {
 }
 
 interface Inputs { error: ErrorState; onClose: () => void; }
-export const ErrorComponent: FC<Inputs> = ({ error, onClose }) => {
+export const Error: FC<Inputs> = ({ error, onClose }) => {
   return (
     <BackdropComponent onClick={onClose}>
       <motion.div

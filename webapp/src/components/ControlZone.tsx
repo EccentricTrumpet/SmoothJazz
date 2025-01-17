@@ -9,12 +9,12 @@ export const ControlZone: FC<Inputs> = ({parent, board}) => {
   const zone = parent.inSet(new Vector(-MARGIN, -MARGIN), Size.square(CARD_WIDTH));
   let button = { text: "", action: () => {}, disabled: false };
 
-  switch(board.matchPhase) {
+  switch(board.match) {
     case MatchPhase.Created:
       button = { ...button, text: "Leave", action: () => board.control?.leave() };
       break;
     case MatchPhase.Started:
-      switch(board.gamePhase) {
+      switch(board.game) {
         case GamePhase.Draw:
           button = { ...button, text: "Bid", action: () => board.control?.bid() };
           break;

@@ -10,7 +10,7 @@ export class CardUIState {
     ) {}
 
     position = () => this.origin.add(this.delta).position();
-    clone = () => new CardUIState(
-        this.picked, this.focus, this.turn, this.origin.clone(), this.delta.clone()
+    clone = (picked?: boolean, turn?: number) => new CardUIState(
+        picked ?? this.picked, this.focus, turn ?? this.turn, this.origin.clone(), this.delta.clone()
     );
 }

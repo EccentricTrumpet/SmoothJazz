@@ -11,7 +11,7 @@ export const CardComponent: FC<Inputs> = ({z, card, onClick = () => {}}) => {
       onClick={onClick}
       style={{
         ...Styles.card, position: "fixed", top: 0, left: 0, zIndex: z,
-        boxShadow: card.next.focus ? "0 0 5px 5px var(--ins-color)" : ""
+        boxShadow: card.next.focus ? "0 0 5px 5px var(--primary)" : ""
       }}
       initial={{ ...initial.position(), rotate: `${initial.turn}turn` }}
       animate={{ ...card.next.position(), rotate: `${card.next.turn}turn` }}

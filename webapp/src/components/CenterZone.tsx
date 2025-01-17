@@ -1,6 +1,5 @@
 import { FC } from "react";
 import { CardComponent } from ".";
-import { IControl } from "../abstractions";
 import { Vector, Size, Zone } from "../abstractions/bounds";
 import { BoardState } from "../abstractions/states";
 import { MARGIN, CARD_WIDTH, Styles } from "../Constants";
