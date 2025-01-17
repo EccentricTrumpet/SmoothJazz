@@ -14,11 +14,11 @@ export class PlayerState {
     public update = (next: {
         pid?: number; name?: string; level?: number; seat?: Seat; hand?: Cards; play?: Cards
     } = {}) => new PlayerState (
-        this.pid = next?.pid ?? this.pid,
-        this.name = next?.name ?? this.name,
-        this.level = next?.level ?? this.level,
-        this.seat = next?.seat ?? this.seat,
-        this.hand = next?.hand ?? this.hand,
-        this.play = next?.play ?? this.play
+        next?.pid ?? this.pid,
+        next?.name ?? this.name,
+        next?.level ?? this.level,
+        next?.seat ?? this.seat,
+        next?.hand ?? this.hand,
+        next?.play ?? this.play
     )
 }

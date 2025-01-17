@@ -13,10 +13,7 @@ export default function JoinMatchPage() {
 
   useEffect(() => {
     const savedOptions = cookie['shengji'];
-    setCookieState({
-      name: savedOptions?.['name'] || "",
-      debug: savedOptions?.['debug'] || false
-    });
+    setCookieState({ name: savedOptions?.['name'] || "", debug: savedOptions?.['debug'] || false });
   }, [cookie])
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {

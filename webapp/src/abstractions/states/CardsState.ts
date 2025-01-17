@@ -2,16 +2,8 @@ import { Cards } from "./CardState";
 
 // Board sub-state
 export class CardsState {
-    constructor(
-        public deck: Cards = [],
-        public kitty: Cards = [],
-        public discard: Cards = []
-    ) {}
+    constructor(public deck: Cards = [], public kitty: Cards = [], public trash: Cards = []) {}
 
-    public update = (next: { deck?: Cards; kitty?: Cards; discard?: Cards; }) =>
-        new CardsState(
-            next?.deck ?? this.deck,
-            next?.kitty ?? this.kitty,
-            next?.discard ?? this.discard
-        );
+    public update = (val: { deck?: Cards; kitty?: Cards; trash?: Cards; }) =>
+        new CardsState(val?.deck ?? this.deck, val?.kitty ?? this.kitty, val?.trash ?? this.trash);
 }

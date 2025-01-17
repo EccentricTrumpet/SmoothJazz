@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { Card, IControl } from "../abstractions";
-import { Point, Size, Zone } from "../abstractions/bounds";
+import { Vector, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase, Suit } from "../abstractions/enums";
 import { CardsEvent, JoinEvent, MatchResponse, PlayerEvent, seatOf } from "../abstractions/messages";
 import { BoardState, CardState, ErrorState, PlayerState, TrumpState } from "../abstractions/states";
@@ -14,7 +14,7 @@ import {
 import {
   CenterZone, ControlZone, ErrorComponent, KittyZone, PlayerZone, TrumpZone
 } from "../components";
-import { CARD_HEIGHT, CARD_WIDTH, Styles } from "../Constants";
+import { CARD_SIZE, Styles } from "../Constants";
 
 function partition<T>(array: T[], condition: (element: T) => boolean) : [T[], T[]] {
   return array.reduce(([pass, fail], elem) => {
@@ -38,9 +38,9 @@ export default function MatchPage() {
 
   // UI states
   const [zone, setZone] = useState(new Zone(
-    Point.Origin, new Size(window.innerWidth, window.innerHeight)
+    Vector.Origin, new Size(window.innerWidth, window.innerHeight)
   ));
-  const deck = zone.midSet(new Size(CARD_WIDTH, CARD_HEIGHT));
+  const deck = zone.midSet(CARD_SIZE);
   const [error, setError] = useState(new ErrorState());
 
   // Game states
@@ -52,7 +52,7 @@ export default function MatchPage() {
   // Establish window size
   useEffect(() => {
     const handleResize = debounce(() => setZone(new Zone(
-      new Point(0, 0), new Size(window.innerWidth, window.innerHeight)
+      Vector.Origin, new Size(window.innerWidth, window.innerHeight)
     )), 1);
     window.addEventListener("resize", handleResize);
     return () => {
@@ -123,19 +123,19 @@ export default function MatchPage() {
 
       // Remove played cards from players
       setPlayers(prevPlayers => {
-        const discards: CardState[] = [];
+        const trash: CardState[] = [];
         const newPlayers = prevPlayers.map(player => {
           for (const card of player.play) {
             card.reset();
-            card.next.rotate = 0;
-            discards.push(card);
+            card.next.turn = 0;
+            trash.push(card);
           }
           return player.update({ play: [] });
         });
 
         // Update board states
         setBoard(prev => prev.update({
-          cards: prev.cards.update({discard: [...prev.cards.discard, ...discards]}),
+          cards: prev.cards.update({trash: [...prev.cards.trash, ...trash]}),
           activePID: activePID,
           winnerPID: -1,
           score: score
@@ -169,7 +169,7 @@ export default function MatchPage() {
         setPlayers(prevPlayers => prevPlayers.map(player => {
           for (const card of player.hand) {
             if (hintCards.has(card.id)) {
-              card.next.highlight = true;
+              card.next.focus = true;
             }
           }
 
@@ -219,14 +219,16 @@ export default function MatchPage() {
     socket.on("start", (obj) => {
       console.log(`raw start update: ${JSON.stringify(obj)}`);
       const update = new StartUpdate(obj);
-      const deck = Array.from({length: update.cards}, (_, i) => new CardState(-1 - i));
 
-      setBoard(prev => prev.update({
-        cards: prev.cards.update({deck: deck, kitty: [], discard: []}),
-        trump: new TrumpState(update.cards, update.rank, Suit.Unknown),
-        activePID: update.activePID,
-        game: GamePhase.Draw
-      }));
+      setBoard(prev => {
+        const deck = Array.from({length: update.cards}, (_, i) => new CardState(prev.options, -1-i));
+
+        return prev.update({
+          cards: prev.cards.update({deck: deck, kitty: [], trash: []}),
+          trump: new TrumpState(update.cards, update.rank, Suit.Joker),
+          activePID: update.activePID,
+          game: GamePhase.Draw
+      })});
       setPlayers(prevPlayers => prevPlayers.map(player => player.update({ play: [] })));
     });
 
@@ -282,7 +284,7 @@ export default function MatchPage() {
 
           for (const card of kitty) {
             card.update(kittyCards.get(card.id)!);
-            card.next.rotate = 0;
+            card.next.turn = 0;
           }
 
           setBoard(prev => prev.update({
@@ -363,14 +365,14 @@ export default function MatchPage() {
 
   class Control implements IControl {
     private pid = () => match.debug ? board.activePID : PID;
-    private selection = () => players.find(p => p.pid === this.pid())!.hand
-      .filter(c => c.next.selected).map(c => c.toCard());
+    private picked = () => players.find(p => p.pid === this.pid())!.hand
+      .filter(c => c.next.picked).map(c => c.card());
 
-    select(selectedCard: CardState) {
+    pick(picked: CardState) {
       setPlayers(players.map(player => player.update({ hand: player.hand.map(card => {
-        if (card.id === selectedCard.id && (match.debug || player.pid === PID)) {
+        if (card.id === picked.id && (match.debug || player.pid === PID)) {
           card.reset();
-          card.next.selected = !card.next.selected;
+          card.next.picked = !card.next.picked;
         }
         return card;
       })})));
@@ -383,16 +385,16 @@ export default function MatchPage() {
 
     leave() { socket?.emit("leave", new PlayerEvent(matchId, this.pid())); };
     draw() { socket?.emit("draw", new PlayerEvent(matchId, this.pid())); }
-    bid() { socket?.emit("bid", new CardsEvent(matchId, this.pid(), this.selection())); }
-    hide() { socket?.emit("kitty", new CardsEvent(matchId, this.pid(), this.selection())); }
+    bid() { socket?.emit("bid", new CardsEvent(matchId, this.pid(), this.picked())); }
+    hide() { socket?.emit("kitty", new CardsEvent(matchId, this.pid(), this.picked())); }
     play() {
       // Reset highlights
       setPlayers(prevPlayers => prevPlayers.map(player => {
-        player.hand.forEach(card => card.next.highlight = false);
+        player.hand.forEach(card => card.next.focus = false);
         return player.update();
       }));
 
-      socket?.emit("play", new CardsEvent(matchId, this.pid(), this.selection()));
+      socket?.emit("play", new CardsEvent(matchId, this.pid(), this.picked()));
     }
   }
   const control = new Control();

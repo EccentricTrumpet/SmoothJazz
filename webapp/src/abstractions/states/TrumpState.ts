@@ -1,27 +1,22 @@
 import { CardState } from ".";
 import { Suit } from "../enums";
 
+const nonTrumps: { [suit in Suit]: Suit[] } = {
+  [Suit.Joker]: [Suit.Spade, Suit.Heart, Suit.Club, Suit.Diamond],
+  [Suit.Unknown]: [Suit.Spade, Suit.Heart, Suit.Club, Suit.Diamond],
+  [Suit.Spade]: [Suit.Heart, Suit.Club, Suit.Diamond],
+  [Suit.Heart]: [Suit.Spade, Suit.Diamond, Suit.Club],
+  [Suit.Club]: [Suit.Heart, Suit.Spade, Suit.Diamond],
+  [Suit.Diamond]: [Suit.Spade, Suit.Heart, Suit.Club],
+}
+
 // Board sub-state
 export class TrumpState {
     public order = new Map<string, number>();
 
-    constructor(public cards = 0, public rank = 0, public suit = Suit.Unknown) {
+    constructor(private size = 0, public rank = 0, public suit = Suit.Joker) {
         const ranks = [1, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].filter(r => r !== rank);
-        let nonTrumpSuits = [Suit.Spade, Suit.Heart, Suit.Club, Suit.Diamond];
-        switch(this.suit) {
-            case Suit.Spade:
-                nonTrumpSuits = [Suit.Heart, Suit.Club, Suit.Diamond];
-                break;
-            case Suit.Heart:
-                nonTrumpSuits = [Suit.Spade, Suit.Diamond, Suit.Club];
-                break;
-            case Suit.Club:
-                nonTrumpSuits = [Suit.Heart, Suit.Spade, Suit.Diamond];
-                break;
-            case Suit.Diamond:
-                nonTrumpSuits = [Suit.Spade, Suit.Heart, Suit.Club];
-                break;
-        }
+        let nonTrumpSuits = nonTrumps[suit];
 
         // Jokers
         this.order.set(`${Suit.Joker}${2}`, this.order.size);
@@ -48,6 +43,6 @@ export class TrumpState {
         }
     }
 
-    orderOf = (card: CardState) => (this.order.get(`${card.suit}${card.rank}`) ?? 0) * this.cards + card.id;
-    update = (suit?: Suit) => new TrumpState(this.cards, this.rank, suit ?? this.suit);
+    orderOf = (card: CardState) => (this.order.get(`${card.suit}${card.rank}`) ?? 0)*this.size + card.id;
+    update = (suit?: Suit) => new TrumpState(this.size, this.rank, suit ?? this.suit);
 }

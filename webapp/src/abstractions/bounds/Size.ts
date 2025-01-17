@@ -1,8 +1,10 @@
+import { Vector } from ".";
+
 export class Size {
     constructor(public width: number, public height: number) {}
 
-    public rotate (degrees = 0) {
-        return degrees === 90 || degrees === -90 ? new Size(this.height, this.width) : this;
-    }
     public static square = (size: number) => new Size(size, size);
+
+    public vector = () => new Vector(this.width, this.height);
+    public turn = (turn = 0) => Math.abs(turn) === 0.25 ? new Size(this.height, this.width) : this;
 }

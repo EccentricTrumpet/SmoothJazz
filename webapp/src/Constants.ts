@@ -1,9 +1,12 @@
+import { Size } from "./abstractions/bounds";
+
 // Sizes
 export const MARGIN = 10;
 export const CARD_WIDTH = 120;
 export const CARD_HEIGHT = 168;
 export const CARD_RADIUS = 5;
 export const CARD_MARGIN = 25;
+export const CARD_SIZE = new Size(CARD_WIDTH, CARD_HEIGHT);
 
 // Status
 export const STATUS_CODES: { [id: string]: { codepoint: number, description: string } } = {
@@ -27,7 +30,7 @@ export const STATUS_CODES: { [id: string]: { codepoint: number, description: str
 }
 
 // Debugging
-export const BACKGROUND = "rgba(255, 0, 0, 0.5)";
+export const BACKGROUND = "rgba(255, 0, 0, 0)";
 
 export class Styles {
     public static readonly default = {

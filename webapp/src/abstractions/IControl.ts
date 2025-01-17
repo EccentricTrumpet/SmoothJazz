@@ -1,7 +1,7 @@
 import { CardState } from "./states";
 
 export interface IControl {
-    select: (card: CardState) => void;
+    pick: (card: CardState) => void;
     draw: () => void;
     bid: () => void;
     hide: () => void;

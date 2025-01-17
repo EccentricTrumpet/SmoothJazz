@@ -1,9 +1,10 @@
-import { CardUIState } from ".";
+import { CardUIState, OptionsState } from ".";
 import { Card } from "..";
 import { Suit } from "../enums";
 
 export class CardState {
     constructor(
+        private options: OptionsState,
         public id: number,
         public suit: Suit = Suit.Unknown,
         public rank: number = 0,
@@ -24,12 +25,11 @@ export class CardState {
         this.suit = card.suit;
         this.rank = card.rank;
         this.next.facedown = card.suit === Suit.Unknown;
-        this.next.selected = false;
+        this.next.picked = false;
     }
 
-    public toCard = () => new Card(this.id, this.suit, this.rank);
-    public toString = () => `[Card id: ${this.id} suit: ${this.suit} rank: ${this.rank}]`;
-    public toImg = () => `${this.suit}${this.rank}.png`;
+    public card = () => new Card(this.id, this.suit, this.rank);
+    public png = () => this.next.facedown ? this.options.cardBack : `${this.suit}${this.rank}.png`;
 }
 
 export type Cards = CardState[];
