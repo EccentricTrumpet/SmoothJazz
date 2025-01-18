@@ -1,31 +1,18 @@
-import { Position } from "../bounds";
+import { Vector } from "../bounds";
 
 export class CardUIState {
     constructor(
-        public facedown: boolean = true,
-        public selected: boolean = false,
-        public highlighted: boolean = false,
-        public rotate: number = 0,
-        public position: Position = new Position(0, 0),
-        public offset: Position = new Position(0, 0),
+        public picked = false,
+        public focus = false,
+        public turn = 0,
+        public origin = new Vector(0, 0),
+        public delta = new Vector(0, 0),
     ) {}
 
-    x(): number {
-        return this.position.x + this.offset.x;
-    }
+    position = () => this.origin.add(this.delta).position();
+    clone = (picked?: boolean, turn?: number) => new CardUIState(
+        picked ?? this.picked, this.focus, turn ?? this.turn, this.origin.clone(), this.delta.clone()
+    );
 
-    y(): number {
-        return this.position.y + this.offset.y;
-    }
-
-    clone(): CardUIState {
-        return new CardUIState(
-            this.facedown,
-            this.selected,
-            this.highlighted,
-            this.rotate,
-            this.position.clone(),
-            this.offset.clone()
-        )
-    }
+    set(origin: Vector, delta: Vector) { this.origin.set(origin); this.delta.set(delta); }
 }

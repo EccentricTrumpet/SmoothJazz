@@ -13,20 +13,14 @@ export class CardsUpdate {
 
     constructor(jsonObj: PlayJsonInterface) {
         this.pid = Number(jsonObj.pid);
-        for (const card of jsonObj.cards) {
-            this.cards.push(Card.fromJson(card));
-        }
-        if ('nextPID' in jsonObj) {
+        jsonObj.cards.map(Card.fromJson).forEach(c => this.cards.push(c));
+        if ('nextPID' in jsonObj)
             this.nextPID = Number(jsonObj.nextPID);
-        }
-        if ('hintPID' in jsonObj) {
+        if ('hintPID' in jsonObj)
             this.hintPID = Number(jsonObj.hintPID);
-        }
-        if ('phase' in jsonObj) {
+        if ('phase' in jsonObj)
             this.phase = jsonObj.phase as GamePhase;
-        }
-        if ('score' in jsonObj) {
+        if ('score' in jsonObj)
             this.score = Number(jsonObj.score);
-        }
     }
 }

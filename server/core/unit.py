@@ -6,7 +6,8 @@ from abstractions import Card, Cards, PlayerError
 from core import Order
 
 TUnit = TypeVar("TUnit", bound="Unit")
-Ids_ = list[int] | None
+type CardsDict = dict[int, Card]
+type ints_ = list[int] | None
 
 
 class Unit(ABC):
@@ -14,7 +15,7 @@ class Unit(ABC):
         self._cards = cards
         self._highest = cards[0]
         self._length = len(cards)
-        self._complement: Self | None = None
+        self._match: Self | None = None
         self._name = type(self).__name__.lower()
         self._root = self._name
 
@@ -31,8 +32,8 @@ class Unit(ABC):
         return self._length
 
     @property
-    def complement(self):
-        return self._complement
+    def match(self) -> Self | None:
+        return self._match
 
     def _matches(self, hand: list[TUnit], order: Order) -> list[Self]:
         matches: list[Self] = []
@@ -57,11 +58,11 @@ class Unit(ABC):
         raise NotImplementedError
 
     # Default resolution implementation
-    def _resolve(self, play: dict[int, Card], matches: list[Self]) -> Ids_:
+    def _resolve(self, play: CardsDict, matches: list[Self]) -> ints_:
         for match in matches:
             ids = [card.id for card in match.cards]
             if all(id in play for id in ids):
-                self._complement = match
+                self._match = match
                 return ids
 
         raise PlayerError(
@@ -70,11 +71,11 @@ class Unit(ABC):
             self.generate_hints(matches),
         )
 
-    def resolve(self, play: dict[int, Card], hand: list[TUnit], order: Order) -> Ids_:
+    def resolve(self, play: CardsDict, hand: list[TUnit], order: Order) -> ints_:
         return self._resolve(play, self._matches(hand, order))
 
     def reset(self) -> None:
-        self._complement = None
+        self._match = None
 
 
 class Single(Unit):
@@ -111,12 +112,12 @@ class Pair(Unit):
     def generate_hints(self, matches: list[Self]) -> Cards:
         return [card for pair in matches for card in pair.cards]
 
-    def resolve(self, play: dict[int, Card], hand: list[Unit], order: Order) -> Ids_:
+    def resolve(self, play: CardsDict, hand: list[Unit], order: Order) -> ints_:
         if len(matches := self._matches(hand, order)) > 0:
             return self._resolve(play, matches)
 
     def reset(self) -> None:
-        self._complement = None
+        self._match = None
         for single in self.singles:
             single.reset()
 
@@ -163,12 +164,12 @@ class Tractor(Unit):
                 peers.append(Tractor(new_match))
         return peers
 
-    def resolve(self, play: dict[int, Card], hand: list[Unit], order: Order) -> Ids_:
+    def resolve(self, play: CardsDict, hand: list[Unit], order: Order) -> ints_:
         matches = list(chain(*[c.__peers() for c in self._matches(hand, order)]))
         if len(matches) > 0:
             return self._resolve(play, matches)
 
     def reset(self) -> None:
-        self._complement = None
+        self._match = None
         for pair in self.pairs:
             pair.reset()

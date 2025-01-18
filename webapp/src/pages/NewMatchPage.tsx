@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CookiesProvider, useCookies } from 'react-cookie'
+import { CookiesProvider, useCookies } from 'react-cookie';
 import { useNavigate } from 'react-router-dom';
-import { CookieState } from '../abstractions/states';
 import { MatchResponse } from '../abstractions/messages';
+import { CookieState } from '../abstractions/states';
 
 export default function NewMatchPage() {
   const [cookie, setCookie] = useCookies(['shengji'])
@@ -26,16 +26,12 @@ export default function NewMatchPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCookie('shengji', cookieState, { path: '/'});
-    const name = cookieState.name
-    const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/match`, {
+    const response = await (await fetch(`${process.env.REACT_APP_API_URL || ''}/match`, {
       method: 'POST',
-      headers:new Headers({
-        'Content-type': 'application/json'
-      }),
+      headers: new Headers({ 'Content-type': 'application/json' }),
       body: JSON.stringify(cookieState)
-    });
-    const matchResponse = new MatchResponse(await response.text());
-    navigate(`/${matchResponse.matchId}`, { state: { name: name, matchResponse: matchResponse } });
+    })).text();
+    navigate(`/${new MatchResponse(response).id}`, { state: { name: cookieState.name, match: response } });
   }
 
   return (
@@ -63,7 +59,7 @@ export default function NewMatchPage() {
                   role="switch"
                   id="debug"
                   name="debug"
-                  checked={cookieState.debug || false}
+                  checked={cookieState.debug}
                   onChange={handleChange}
                 />
                 Debug mode

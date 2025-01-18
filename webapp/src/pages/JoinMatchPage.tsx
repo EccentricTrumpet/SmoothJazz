@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CookiesProvider, useCookies } from 'react-cookie'
+import { CookiesProvider, useCookies } from 'react-cookie';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CookieState } from '../abstractions/states';
 import { MatchResponse } from '../abstractions/messages';
+import { CookieState } from '../abstractions/states';
 
 export default function JoinMatchPage() {
   const [searchParams] = useSearchParams()
@@ -13,29 +13,23 @@ export default function JoinMatchPage() {
 
   useEffect(() => {
     const savedOptions = cookie['shengji'];
-    setCookieState({
-      name: savedOptions?.['name'] || "",
-      debug: savedOptions?.['debug'] || false
-    });
+    setCookieState({ name: savedOptions?.['name'] || "", debug: savedOptions?.['debug'] || false });
   }, [cookie])
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const name = event.target.name;
     const value = event.target.value;
     setCookieState(values => ({...values, [name]: value}));
   }
 
-  const handleMatchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMatchChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     setMatch(parseInt(event.target.value));
-  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCookie('shengji', cookieState, { path: '/'})
-    const name = cookieState.name
-    const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/match/${match}`);
-    const matchResponse = new MatchResponse(await response.text());
-    navigate(`/${matchResponse.matchId}`, { state: { name: name, matchResponse: matchResponse } });
+    const response = await (await fetch(`${process.env.REACT_APP_API_URL || ''}/match/${match}`)).text();
+    navigate(`/${new MatchResponse(response).id}`, { state: { name: cookieState.name, match: response } });
   }
 
   return (
@@ -51,7 +45,7 @@ export default function JoinMatchPage() {
             name="name"
             placeholder="Name"
             value={cookieState.name || ""}
-            onChange={handleChange}
+            onChange={handleNameChange}
             required
           />
           <label htmlFor="match">Match</label>

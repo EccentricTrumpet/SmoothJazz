@@ -1,126 +1,42 @@
-import { ControllerInterface } from "../abstractions";
-import { Position, Size, Zone } from "../abstractions/bounds";
-import { BoardState, OptionsState } from "../abstractions/states";
-import { Constants } from "../Constants";
-import { CardComponent } from ".";
 import { FC } from "react";
+import { CardComponent } from ".";
+import { Vector, Size, Zone } from "../abstractions/bounds";
+import { BoardState } from "../abstractions/states";
+import { MARGIN, CARD_WIDTH, Styles } from "../Constants";
 
-interface CenterZoneInputs {
-  board: BoardState;
-  deckZone: Zone;
-  options: OptionsState;
-  controller: ControllerInterface;
-}
+interface Inputs { board: BoardState; deck: Zone; }
+export const CenterZone: FC<Inputs> = ({board, deck}) => {
+  const trash = deck.outSet(Vector.Right.scale(MARGIN));
+  const kitty = deck.outSet(Vector.Left.scale(MARGIN));
+  const labelSize = new Size(CARD_WIDTH, 3*MARGIN);
 
-export const CenterZone: FC<CenterZoneInputs> = ({board, deckZone, options, controller}) => {
-  const cardSize = new Size(Constants.cardWidth, Constants.cardHeight);
-  const discardZone = new Zone(
-    new Position(
-      deckZone.right() + Constants.margin,
-      deckZone.top()
-    ),
-    cardSize
-  );
+  board.deck.forEach((card, i) => card.next.set(deck.origin, new Vector(i/3, 0)));
+  board.trash.forEach(card => card.next.set(trash.origin, Vector.Origin));
 
-  board.deck.forEach((card, i) => {
-    card.state.position.x = deckZone.position.x;
-    card.state.position.y = deckZone.position.y;
-    card.state.offset.x = i / 3;
-  });
+  const labelCSS = (parent: Zone, delta: Vector) =>
+    ({ ...Styles.defaultCenter, ...parent.midSet(labelSize, delta).position() })
 
-  board.discard.forEach(card => {
-    card.state.position.x = discardZone.position.x;
-    card.state.position.y = discardZone.position.y;
-    card.state.offset.x = 0;
-    card.state.offset.y = 0;
-  });
+  const labelComponent = (parent: Zone, title: string, value: number) =>
+    (<>
+      <div style={labelCSS(parent, Vector.Up.scale(-labelSize.height/2))} >
+        <h4 style={{ margin: 0 }}>{title}</h4>
+      </div>
+      <div style={labelCSS(parent, Vector.Down.scale(-labelSize.height/2))} >
+        <h4 style={{ margin: 0 }}>{value}</h4>
+      </div>
+    </>);
 
-  return (
-    <>
-      {/* Deck count UI */}
-      { board.deck.length > 0 && (
-        <>
-          <div className="container" style={{
-            position: "fixed",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            left: deckZone.left() - Constants.margin - Constants.cardWidth,
-            top: deckZone.center().y - 3*Constants.margin,
-            width: Constants.cardWidth,
-            height: 3*Constants.margin,
-            backgroundColor: Constants.backgroundColor,
-          }}>
-            <h4 style={{ margin: 0 }}>Deck:</h4>
-          </div>
-          <div className="container" style={{
-            position: "fixed",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            left: deckZone.left() - Constants.margin - Constants.cardWidth,
-            top: deckZone.center().y,
-            width: Constants.cardWidth,
-            height: 3*Constants.margin,
-            backgroundColor: Constants.backgroundColor,
-          }}>
-            <h4 style={{ margin: 0 }}>{board.deck.length}</h4>
-          </div>
-        </>
+
+  return <>
+    { board.deck.length > 0 && labelComponent(kitty, "Deck:", board.deck.length) }
+    { labelComponent(deck, "Score:", board.score) }
+    <div style={{ ...Styles.default, ...deck.position() }}>
+      { board.deck.map((card, i) =>
+        <CardComponent key={card.id} z={i} card={card} onClick={() => board.control?.draw()} />
       )}
-      {/* Score UI */}
-      <div className="container" style={{
-        position: "fixed",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        left: deckZone.left(),
-        top: deckZone.center().y - 3*Constants.margin,
-        width: Constants.cardWidth,
-        height: 3*Constants.margin,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        <h4 style={{ margin: 0 }}>Score:</h4>
-      </div>
-      <div className="container" style={{
-        position: "fixed",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        left: deckZone.left(),
-        top: deckZone.center().y,
-        width: Constants.cardWidth,
-        height: 3*Constants.margin,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        <h4 style={{ margin: 0 }}>{board.score}</h4>
-      </div>
-      {/* Deck */}
-      <div className="container" style={{
-        position: "fixed",
-        left: deckZone.left(),
-        top: deckZone.top(),
-        width: deckZone.size.width,
-        height: deckZone.size.height,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        { board.deck.map((card, idx) => {
-          return <CardComponent key={card.id} idx={idx} card={card} options={options} onClick={() => controller.onDraw()}/>
-        })}
-      </div>
-      {/* Discard */}
-      <div className="container" style={{
-        position: "fixed",
-        left: discardZone.left(),
-        top: discardZone.top(),
-        width: discardZone.size.width,
-        height: discardZone.size.height,
-        backgroundColor: Constants.backgroundColor,
-      }}>
-        { board.discard.map((card, idx) => {
-          return <CardComponent key={card.id} idx={idx} card={card} options={options} />
-        })}
-      </div>
-    </>
-  );
+    </div>
+    <div style={{ ...Styles.default, ...trash.position() }}>
+      { board.trash.map((card, i) => <CardComponent key={card.id} z={i} card={card} />) }
+    </div>
+  </>
 }

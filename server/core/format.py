@@ -95,10 +95,10 @@ class Format:
 
     # Recreate this format using the given format as a template
     def reform(self, format: Self) -> None:
-        if all(unit.complement is not None for unit in format.units):
-            self.tractors = [tractor.complement for tractor in format.tractors]
-            self.pairs = [pair.complement for pair in format.pairs]
-            self.singles = [single.complement for single in format.singles]
+        if all(unit.match is not None for unit in format.units):
+            self.tractors = [t.match for t in format.tractors if t.match is not None]
+            self.pairs = [p.match for p in format.pairs if p.match is not None]
+            self.singles = [s.match for s in format.singles if s.match is not None]
             self.units = list(chain(self.tractors, self.pairs, self.singles))
 
     def cards_in_suit(self, suit: Suit, include_trumps: bool) -> Cards:

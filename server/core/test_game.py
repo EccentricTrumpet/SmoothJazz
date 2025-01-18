@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from abstractions import Room
+from abstractions import Event, Room
 from core import Order, Player
 from core.format import Format
 from core.game import Game
@@ -56,7 +56,7 @@ class GameTests(TestCase):
                 players = Players()
                 for level in start_levels:
                     players.add("", "").level = level
-                game = Game(2, players, Room(0, ""))
+                game = Game(players, Room(Event("", {"matchId": 0})), 0)
                 game._tricks.append(Trick(4, Order(2)))
 
                 # Set protected fields
@@ -87,7 +87,7 @@ class GameTests(TestCase):
 
                 order = Order(2)
                 players = Players([Player(i, "", "") for i in range(2)])
-                game = Game(2, players, Room(0, ""))
+                game = Game(players, Room(Event("", {"matchId": 0})), 0)
                 trick = Trick(2, order)
                 trick.winner_pid = player
                 trick._plays[player] = Format(order, play)

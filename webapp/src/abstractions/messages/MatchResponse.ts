@@ -1,27 +1,36 @@
-import { seatOf } from "..";
+import { Seat } from "../enums";
 import { PlayerState } from "../states";
 
+const SEATING: {[id: number]: Seat[]} = {
+    4: [Seat.South, Seat.East, Seat.North, Seat.West]
+}
+
+export const seatOf = (seat: number, southSeat: number, seats: number) =>
+    SEATING[seats][(seat + seats - southSeat) % seats];
+
 export class MatchResponse {
-    matchId: number;
-    debug: boolean;
-    numPlayers: number;
-    seatOffset: number;
+    id = -1;
+    debug = false;
+    seats = -1;
     players: PlayerState[] = [];
 
     constructor(jsonText: string) {
         console.log(`raw match response: ${jsonText}`);
+        if (jsonText === undefined) return;
+
         const jsonObj = JSON.parse(jsonText);
-        this.matchId = Number(jsonObj["id"]);
+        this.id = Number(jsonObj["id"]);
         this.debug = Boolean(jsonObj["debug"]);
-        this.numPlayers = Number(jsonObj["numPlayers"]);
-        this.seatOffset = jsonObj.players.length;
-        for (let i = 0; i < this.seatOffset; i++) {
+        this.seats = Number(jsonObj["seats"]);
+        const southSeat = jsonObj.players.length;
+
+        for (let i = 0; i < southSeat; i++) {
             const player = jsonObj.players[i];
             this.players.push(new PlayerState(
                 Number(player.pid),
                 player.name,
                 Number(player.level),
-                seatOf(i, this.seatOffset, this.numPlayers)
+                seatOf(i, southSeat, this.seats)
             ));
         }
     }

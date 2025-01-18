@@ -1,85 +1,61 @@
-import { FC } from "react";
-import { Constants } from "../Constants";
-import { ControllerInterface } from "../abstractions";
-import { Position, Size, Zone } from "../abstractions/bounds";
+import { FC, useEffect } from "react";
+import { MARGIN, Styles, CARD_WIDTH } from "../Constants";
+import { Vector, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
-import { StatusState } from "../abstractions/states";
+import { BoardState } from "../abstractions/states";
 
-interface ControlZoneInputs {
-  parentZone: Zone;
-  statusState: StatusState;
-  controller: ControllerInterface;
-}
+interface Inputs { parent: Zone; board: BoardState; }
+export const ControlZone: FC<Inputs> = ({parent, board}) => {
+  const zone = parent.inSet(new Vector(-MARGIN, -MARGIN), Size.square(CARD_WIDTH));
+  let button = { text: "", action: () => {}, disabled: false };
 
-export const ControlZone: FC<ControlZoneInputs> = ({parentZone, statusState, controller}) => {
-  const zone = new Zone(
-    new Position(
-      parentZone.left() + parentZone.size.width - Constants.margin - Constants.cardHeight,
-      parentZone.top() + parentZone.size.height - Constants.margin - Constants.cardHeight,
-    ),
-    new Size(Constants.cardHeight, Constants.cardHeight)
-  );
-
-  let buttonText = "";
-  let buttonAction = () => {};
-  let buttonDisabled = false;
-
-  switch(statusState.matchPhase) {
-    case MatchPhase.CREATED:
-      buttonText = "Leave";
-      buttonAction = () => controller.onLeave();
+  switch(board.match) {
+    case MatchPhase.Created:
+      button = { ...button, text: "Leave", action: () => board.control?.leave() };
       break;
-    case MatchPhase.STARTED:
-      switch(statusState.gamePhase) {
+    case MatchPhase.Started:
+      switch(board.game) {
         case GamePhase.Draw:
-          buttonText = "Bid";
-          buttonAction = () => controller.onBid();
+          button = { ...button, text: "Bid", action: () => board.control?.bid() };
           break;
         case GamePhase.Kitty:
-          buttonText = "Hide";
-          buttonAction = () => controller.onHide();
+          button = { ...button, text: "Hide", action: () => board.control?.hide() };
           break;
         case GamePhase.Play:
-          buttonText = "Play";
-          buttonAction = () => controller.onPlay();
+          button = { ...button, text: "Play", action: () => board.control?.play() };
           break;
         case GamePhase.End:
-          buttonText = "Next Game";
-          buttonAction = () => controller.onNext();
+          button = { ...button, text: "Next game", action: () => board.control?.next() };
           break;
         case GamePhase.Waiting:
-          buttonText = "Waiting...";
-          buttonDisabled = true;
+          button = { ...button, text: "Waiting...", disabled: true };
           break;
       }
       break;
+    case MatchPhase.Paused:
+      button = { ...button, text: "Match paused", disabled: true };
+      break;
+    case MatchPhase.Ended:
+      button = { ...button, text: "Match ended", disabled: true };
+      break;
   }
+  const action = button.action;
 
-
+  useEffect(() => {
+    const spaceBar = (e: KeyboardEvent) => e.key === ' ' ? action() : console.log();
+    document.addEventListener('keydown', spaceBar);
+    return () => document.removeEventListener('keydown', spaceBar);
+  }, [action]);
 
   return (
-    <div className="container" style={{
-      position: "fixed",
-      left: zone.left(),
-      top: zone.top(),
-      width: zone.size.width,
-      height: zone.size.height,
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: Constants.backgroundColor,
-    }}>
-      {buttonText && buttonText.length > 0 && (
+    <div style={{ ...Styles.defaultCenter, ...zone.position() }}>
+      {button.text?.length > 0 && (
         <button
-          className={(buttonDisabled) ? "disabled" : ""}
-          onClick={buttonAction}
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            opacity: (buttonDisabled) ? "0.4" : "1.0"
-          }}>
-          {buttonText}
+          style={{ ...Styles.center, margin: "0", opacity: button.disabled ? "0.4" : "1.0" }}
+          className={(button.disabled) ? "disabled" : ""}
+          onClick={button.action}
+        >
+          {button.text}
         </button>
       )}
     </div>

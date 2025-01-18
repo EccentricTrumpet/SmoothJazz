@@ -1,9 +1,9 @@
 import { MatchPhase } from "../enums";
 
 export class MatchUpdate {
-    matchPhase: MatchPhase;
+    phase: MatchPhase;
 
     constructor(jsonObj: any) {
-        this.matchPhase = jsonObj['phase'] as MatchPhase;
+        this.phase = jsonObj['phase'] as MatchPhase;
     }
 }

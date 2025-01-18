@@ -28,7 +28,7 @@ class Trick:
     def winning_play(self) -> Format:
         return self._plays[self.winner_pid]
 
-    def __infer_format(self, player: Player, cards: Cards) -> Format | None:
+    def __resolve_format(self, player: Player, cards: Cards) -> Format | None:
         # Must contain at least one card
         if len(cards) == 0:
             raise PlayerError("Invalid play", "Must play at least 1 card.")
@@ -91,7 +91,7 @@ class Trick:
     # Checks legality and update trick states
     def play(self, player: Player, cards: Cards) -> None:
         # Resolve format
-        format = self.__infer_format(player, cards)
+        format = self.__resolve_format(player, cards)
 
         # Remove cards from player's hand
         player.play(cards)

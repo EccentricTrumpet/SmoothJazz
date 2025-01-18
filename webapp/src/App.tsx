@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
-import NewMatchPage from './pages/NewMatchPage';
-import MatchPage from './pages/MatchPage';
 import JoinMatchPage from './pages/JoinMatchPage';
+import MatchPage from './pages/MatchPage';
+import NewMatchPage from './pages/NewMatchPage';
 
 function App() {
 

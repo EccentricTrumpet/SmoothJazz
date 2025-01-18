@@ -1,7 +1,6 @@
 from itertools import count
 from typing import Iterator
 
-from abstractions import PInfos
 from core import Player
 
 
@@ -20,8 +19,8 @@ class Players:
     def __getitem__(self, pid: int) -> Player:
         return self.__players[pid]
 
-    def infos(self) -> PInfos:
-        return [player.info() for player in self.__players.values()]
+    def json(self) -> list[dict]:
+        return [player.json() for player in self.__players.values()]
 
     def add(self, name: str, sid: str) -> Player:
         player = Player(next(self.__player_ids), name, sid)
@@ -34,7 +33,7 @@ class Players:
     def first(self) -> Player:
         return next(iter(self.__players.values()))
 
-    def next(self, pid: int, increment: int = 1) -> int:
+    def next(self, pid: int, increment=1) -> int:
         if pid not in self.__players:
             raise KeyError(f"No player found for pid: {pid}.")
         pids = list(self.__players.keys())

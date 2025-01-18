@@ -1,49 +1,24 @@
 import { FC } from "react";
-import { Constants } from "../Constants";
-import { Position, Size, Zone } from "../abstractions/bounds";
+import { MARGIN, Styles, CARD_WIDTH } from "../Constants";
+import { Vector, Size, Zone } from "../abstractions/bounds";
 import { Suit } from "../abstractions/enums";
 import { TrumpState } from "../abstractions/states";
 
-interface TrumpZoneInputs {
-  parentZone: Zone;
-  trumpState: TrumpState;
-}
-
-export const TrumpZone: FC<TrumpZoneInputs> = ({parentZone, trumpState}) => {
-  const zone = new Zone(
-    new Position(
-      parentZone.left() + Constants.margin,
-      parentZone.top() + parentZone.size.height - Constants.margin - Constants.cardHeight,
-    ),
-    new Size(Constants.cardHeight, Constants.cardHeight)
-  );
-  const trump = trumpState.trumpSuit === Suit.Joker || trumpState.trumpSuit === Suit.Unknown
-    ? 'J2' : `${trumpState.trumpSuit}${trumpState.trumpRank}`
+export const TrumpZone: FC<{ parent: Zone; trump: TrumpState; }> = ({parent, trump}) => {
+  const suit = trump.suit;
+  const card = suit === Suit.Joker || suit === Suit.Unknown ? 'J2' : `${suit}${trump.rank}`
 
   return (
-    <div className="container" style={{
-      position: "fixed",
-      left: zone.left(),
-      top: zone.top(),
-      width: zone.size.width,
-      height: zone.size.height,
+    <div style={{
+      ...Styles.default,
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
       overflow: "hidden",
-      backgroundColor: Constants.backgroundColor,
+      ...parent.inSet(new Vector(MARGIN, -MARGIN), Size.square(CARD_WIDTH)).position(),
     }}>
-      <h4 style={{ marginBottom: 10 }}>Trump:</h4>
-      <img
-        style={{
-          width: Constants.cardWidth,
-          height: Constants.cardHeight,
-          borderRadius: Constants.cardRadius,
-          borderStyle: "solid",
-        }}
-        src={require(`../assets/${trump}.png`)}
-        alt={trump}
-      />
+      <h4 style={{ marginBottom: 5 }}>Trump:</h4>
+      <img style={{ ...Styles.card }} src={require(`../assets/${card}.png`)} alt={card} />
     </div>
   );
 }
