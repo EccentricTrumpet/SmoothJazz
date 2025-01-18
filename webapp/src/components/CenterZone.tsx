@@ -10,48 +10,33 @@ export const CenterZone: FC<Inputs> = ({board, deck}) => {
   const kitty = deck.outSet(Vector.Left.scale(MARGIN));
   const labelSize = new Size(CARD_WIDTH, 3*MARGIN);
 
-  board.cards.deck.forEach((card, i) => {
-    card.next.origin.set(deck.origin);
-    card.next.delta.x = i / 3;
-  });
+  board.deck.forEach((card, i) => card.next.set(deck.origin, new Vector(i/3, 0)));
+  board.trash.forEach(card => card.next.set(trash.origin, Vector.Origin));
 
-  board.cards.trash.forEach(card => {
-    card.next.origin.set(trash.origin);
-    card.next.delta.set(Vector.Origin);
-  });
+  const labelCSS = (parent: Zone, delta: Vector) =>
+    ({ ...Styles.defaultCenter, ...parent.midSet(labelSize, delta).position() })
 
-  const labelCSS = (parent: Zone, delta: Vector) => {
-    return { ...Styles.defaultCenter, ...parent.midSet(labelSize, delta).position() }
-  }
+  const labelComponent = (parent: Zone, title: string, value: number) =>
+    (<>
+      <div style={labelCSS(parent, Vector.Up.scale(-labelSize.height/2))} >
+        <h4 style={{ margin: 0 }}>{title}</h4>
+      </div>
+      <div style={labelCSS(parent, Vector.Down.scale(-labelSize.height/2))} >
+        <h4 style={{ margin: 0 }}>{value}</h4>
+      </div>
+    </>);
 
-  const labelComponent = (parent: Zone, title: string, value: number) => {
-    return (
-      <>
-        <div className="container" style={labelCSS(parent, Vector.Up.scale(-labelSize.height/2))} >
-          <h4 style={{ margin: 0 }}>{title}</h4>
-        </div>
-        <div className="container" style={labelCSS(parent, Vector.Down.scale(-labelSize.height/2))} >
-          <h4 style={{ margin: 0 }}>{value}</h4>
-        </div>
-      </>
-    );
-  }
 
   return <>
-    {/* Deck count UI */}
-    { board.cards.deck.length > 0 && labelComponent(kitty, "Deck:", board.cards.deck.length) }
-    {/* Score UI */}
+    { board.deck.length > 0 && labelComponent(kitty, "Deck:", board.deck.length) }
     { labelComponent(deck, "Score:", board.score) }
-    {/* Deck */}
-    <div className="container" style={{ ...Styles.default, ...deck.position() }}>
-      { board.cards.deck.map((card, i) =>
+    <div style={{ ...Styles.default, ...deck.position() }}>
+      { board.deck.map((card, i) =>
         <CardComponent key={card.id} z={i} card={card} onClick={() => board.control?.draw()} />
       )}
     </div>
-    {/* Trash */}
-    <div className="container" style={{ ...Styles.default, ...trash.position() }}>
-      { board.cards.trash.map((card, i) => <CardComponent key={card.id} z={i} card={card} />) }
+    <div style={{ ...Styles.default, ...trash.position() }}>
+      { board.trash.map((card, i) => <CardComponent key={card.id} z={i} card={card} />) }
     </div>
   </>
-  ;
 }

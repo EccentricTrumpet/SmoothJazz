@@ -13,4 +13,6 @@ export class CardUIState {
     clone = (picked?: boolean, turn?: number) => new CardUIState(
         picked ?? this.picked, this.focus, turn ?? this.turn, this.origin.clone(), this.delta.clone()
     );
+
+    set(origin: Vector, delta: Vector) { this.origin.set(origin); this.delta.set(delta); }
 }

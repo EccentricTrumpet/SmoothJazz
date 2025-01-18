@@ -113,10 +113,7 @@ export default function MatchPage() {
 
         // Update board states
         setBoard(prev => prev.update({
-          cards: prev.cards.update({trash: [...prev.cards.trash, ...trash]}),
-          activePID: activePID,
-          winnerPID: -1,
-          score: score
+          trash: [...prev.trash, ...trash], activePID: activePID, winnerPID: -1, score: score
         }));
 
         return players;
@@ -187,10 +184,8 @@ export default function MatchPage() {
 
       setPlayers(prev => prev.map(player => player.update({ play: [] })));
       setBoard(prev => prev.update({
-          cards: prev.cards.update({
-            deck: Array.from({length: update.cards}, (_, i) => new CardState(prev.options, -1-i)),
-            trash: []
-          }),
+          deck: Array.from({length: update.cards}, (_, i) => new CardState(prev.options, -1-i)),
+          trash: [],
           trump: new TrumpState(update.cards, update.rank, Suit.Joker),
           activePID: update.activePID,
           game: GamePhase.Draw
@@ -207,7 +202,7 @@ export default function MatchPage() {
       const update = new CardsUpdate(obj);
 
       setBoard(prev => {
-        const draw = prev.cards.deck.splice(-update.cards.length, update.cards.length);
+        const draw = prev.deck.splice(-update.cards.length, update.cards.length);
         draw.forEach((card, i) => card.update(update.cards[i]));
 
         // Add new cards to player's hand
@@ -244,7 +239,7 @@ export default function MatchPage() {
 
         const [kitty, hand] = partition(player.hand, card => kittyCards.has(card.id));
         kitty.forEach(card => card.update(kittyCards.get(card.id), 0));
-        setBoard(prev => prev.update({ cards: prev.cards.update({kitty: kitty}), game: update.phase }));
+        setBoard(prev => prev.update({ kitty: kitty, game: update.phase }));
         return player.update({ hand: hand });
       }));
     });
@@ -276,18 +271,15 @@ export default function MatchPage() {
       // Display kitty
       const kittyCards = toCardDict(update.kitty.cards);
       setBoard(prev => {
-        prev.cards.kitty.forEach(card => card.update(kittyCards.get(card.id)));
+        prev.kitty.forEach(card => card.update(kittyCards.get(card.id)));
 
         setPlayers(prevPlayers => prevPlayers.map(player => player.update({
           level: update.levels.get(player.pid),
-          play: player.pid === update.kitty.pid ? prev.cards.kitty : player.play
+          play: player.pid === update.kitty.pid ? prev.kitty : player.play
         })));
 
         return prev.update({
-          cards: prev.cards.update({ kitty: [] }),
-          activePID: update.kitty.nextPID,
-          game: GamePhase.End,
-          score: update.kitty.score
+          kitty: [],activePID: update.kitty.nextPID,game: GamePhase.End,score: update.kitty.score
         });
       });
     });

@@ -7,5 +7,5 @@ export class Size {
 
     vector = () => new Vector(this.width, this.height);
     turn = (turn = 0) => Math.abs(turn) === 0.25 ? new Size(this.height, this.width) : this;
-    css() { return { width: this.width, height: this.height }; }
+    properties() { return { width: this.width, height: this.height }; }
 }

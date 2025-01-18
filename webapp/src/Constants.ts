@@ -2,10 +2,10 @@ import { Size } from "./abstractions/bounds";
 
 // Sizes
 export const MARGIN = 10;
-export const CARD_WIDTH = 120;
-export const CARD_HEIGHT = 168;
+export const CARD_WIDTH = 135;
+export const CARD_HEIGHT = 189;
 export const CARD_RADIUS = 5;
-export const CARD_MARGIN = 25;
+export const CARD_MARGIN = 30;
 export const CARD_SIZE = new Size(CARD_WIDTH, CARD_HEIGHT);
 
 // Status
@@ -38,6 +38,6 @@ export class Styles {
     } as React.CSSProperties;
     static readonly center = { display: "flex", alignItems: "center", justifyContent: "center" };
     static readonly defaultCenter = { ...this.default, ...this.center };
-    static readonly card = { ...CARD_SIZE.css(), borderRadius: CARD_RADIUS, borderStyle: "solid" };
+    static readonly card = { ...CARD_SIZE.properties(), borderRadius: CARD_RADIUS, borderStyle: "solid" };
     static readonly window = { position: "fixed", width: "100vw", height: "100vh" } as React.CSSProperties;
 }

@@ -9,10 +9,10 @@ export const seatOf = (seat: number, southSeat: number, seats: number) =>
     SEATING[seats][(seat + seats - southSeat) % seats];
 
 export class MatchResponse {
-    public id = -1;
-    public debug = false;
-    public seats = -1;
-    public players: PlayerState[] = [];
+    id = -1;
+    debug = false;
+    seats = -1;
+    players: PlayerState[] = [];
 
     constructor(jsonText: string) {
         console.log(`raw match response: ${jsonText}`);

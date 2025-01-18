@@ -14,6 +14,11 @@ export class CardState {
         public prev: CardUIState | undefined = undefined
     ) {}
 
+    card = () => new Card(this.id, this.suit, this.rank);
+    png = () => this.suit === Suit.Unknown ? this.options.back : `${this.suit}${this.rank}.png`;
+    update = (c?: Card, turn?: number) =>
+        this.reset({ id: c?.id, suit: c?.suit, rank: c?.rank, picked: false, turn: turn});
+
     reset(next?: { id?: number, suit?: Suit, rank?: number, picked?: boolean, turn?: number }) {
         this.id = next?.id ?? this.id;
         this.suit = next?.suit ?? this.suit;
@@ -22,10 +27,6 @@ export class CardState {
         this.next = this.next.clone(next?.picked, next?.turn);
         return this;
     }
-    update = (c?: Card, turn?: number) =>
-        this.reset({ id: c?.id, suit: c?.suit, rank: c?.rank, picked: false, turn: turn});
-    card = () => new Card(this.id, this.suit, this.rank);
-    png = () => this.suit === Suit.Unknown ? this.options.back : `${this.suit}${this.rank}.png`;
 }
 
 export type Cards = CardState[];

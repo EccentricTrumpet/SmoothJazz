@@ -1,12 +1,14 @@
-import { CardsState, OptionsState, TrumpState } from ".";
+import { Cards, OptionsState, TrumpState } from ".";
 import { GamePhase, MatchPhase } from "../enums";
 import { IControl } from "../IControl";
 
 export class BoardState {
-    public control?: IControl;
+    control?: IControl;
 
     constructor(
-        public cards = new CardsState(),
+        public deck: Cards = [],
+        public kitty: Cards = [],
+        public trash: Cards = [],
         public trump = new TrumpState(),
         public options = new OptionsState(),
         public score = 0,
@@ -18,8 +20,10 @@ export class BoardState {
         public match = MatchPhase.Created,
     ) {}
 
-    public update = (next: {
-        cards?: CardsState;
+    update = (next: {
+        deck?: Cards;
+        kitty?: Cards;
+        trash?: Cards;
         trump?: TrumpState;
         options?: OptionsState;
         score?: number;
@@ -30,7 +34,9 @@ export class BoardState {
         game?: GamePhase;
         match?: MatchPhase;
     }) => new BoardState(
-        next?.cards ?? this.cards,
+        next?.deck ?? this.deck,
+        next?.kitty ?? this.kitty,
+        next?.trash ?? this.trash,
         next?.trump ?? this.trump,
         next?.options ?? this.options,
         next?.score ?? this.score,

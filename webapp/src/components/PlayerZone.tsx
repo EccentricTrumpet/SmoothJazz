@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { FC } from "react";
 import { Tooltip } from "react-tooltip";
 import { CardsZone } from ".";
-import { IControl } from "../abstractions";
 import { Vector, Size, Zone } from "../abstractions/bounds";
 import { MatchPhase, Seat } from "../abstractions/enums";
 import { BoardState, PlayerState } from "../abstractions/states";
@@ -45,17 +44,17 @@ export const PlayerZone: FC<Inputs> = ({player, board, parent}) => {
   return (
     <div>
       <CardsZone cards={player.play} seat={player.seat} trump={board.trump} zone={play} />
-      <div className="container" style={{ ...Styles.center, ...name.position(), position: "fixed" }}>
-        <div className="container" style={{
+      <div style={{ ...Styles.center, ...name.position(), position: "fixed" }}>
+        <div style={{
           ...name.position(), position: "fixed", borderRadius: MARGIN, opacity: 0.7,
           backgroundColor: board.activePID === player.pid ? "var(--primary)" : BACKGROUND,
         }} />
         <h4 style={{ margin: 0, rotate: `${turn}turn` }}>{player.name}</h4>
       </div>
-      <div className="container" style={{ ...Styles.defaultCenter, ...trickStatus.position() }} >
+      <div style={{ ...Styles.defaultCenter, ...trickStatus.position() }} >
         { player.pid === board.winnerPID && status('Winner') }
       </div>
-      <div className="container" style={{
+      <div style={{
         ...Styles.default, ...playerStatus.position(), alignItems: "center",
         flexDirection: turn === 0 ? "row" : "column",
         display: board.match === MatchPhase.Started ? "flex" : "none",

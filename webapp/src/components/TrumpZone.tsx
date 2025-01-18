@@ -9,7 +9,7 @@ export const TrumpZone: FC<{ parent: Zone; trump: TrumpState; }> = ({parent, tru
   const card = suit === Suit.Joker || suit === Suit.Unknown ? 'J2' : `${suit}${trump.rank}`
 
   return (
-    <div className="container" style={{
+    <div style={{
       ...Styles.default,
       display: "flex",
       flexDirection: "column",

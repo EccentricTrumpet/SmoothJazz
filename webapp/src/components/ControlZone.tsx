@@ -41,7 +41,7 @@ export const ControlZone: FC<Inputs> = ({parent, board}) => {
   }
 
   return (
-    <div className="container" style={{ ...Styles.defaultCenter, ...zone.position() }}>
+    <div style={{ ...Styles.defaultCenter, ...zone.position() }}>
       {button.text?.length > 0 && (
         <button
           style={{ ...Styles.center, margin: "0", opacity: button.disabled ? "0.4" : "1.0" }}

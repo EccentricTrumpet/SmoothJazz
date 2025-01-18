@@ -25,14 +25,13 @@ export const CardsZone: FC<Inputs> = ({cards, trump, zone, seat = Seat.South, co
   const start = zone.center().add(delta.scale(range).add(offset).scale(-0.5));
   const margin = Math.min(CARD_MARGIN, (range - CARD_WIDTH)/Math.max(cards.length-1, 1));
 
-  for (let i = 0; i < cards.length; i++) {
-    cards[i].next.turn = turn;
-    cards[i].next.origin = start.add(delta.scale(i*margin));
-    cards[i].next.delta.set(cards[i].next.picked ? pick : Vector.Origin);
-  }
+  cards.forEach((card, i) => {
+    card.next.turn = turn;
+    card.next.set(start.add(delta.scale(i*margin)), card.next.picked ? pick : Vector.Origin);
+  });
 
   return (
-    <div className="container" style={{ ...Styles.default, ...zone.position() }}>
+    <div style={{ ...Styles.default, ...zone.position() }}>
       { cards.map((c, i) =>
         <CardComponent key={c.id} z={i*z} card={c} onClick={() => control?.pick(c)} />
       )}
