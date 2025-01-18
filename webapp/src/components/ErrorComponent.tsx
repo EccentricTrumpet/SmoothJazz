@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { ErrorState } from "../abstractions/states";
 import { Styles } from "../Constants";
 import { BackdropComponent } from "./BackdropComponent";
@@ -12,6 +12,13 @@ const dropIn = {
 
 interface Inputs { error: ErrorState; onClose: () => void; }
 export const Error: FC<Inputs> = ({ error, onClose }) => {
+  // Close on space bar
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' ? onClose() : console.log();
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [onClose]);
+
   return (
     <BackdropComponent onClick={onClose}>
       <motion.div

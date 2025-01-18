@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { MARGIN, Styles, CARD_WIDTH } from "../Constants";
 import { Vector, Size, Zone } from "../abstractions/bounds";
 import { GamePhase, MatchPhase } from "../abstractions/enums";
@@ -39,6 +39,13 @@ export const ControlZone: FC<Inputs> = ({parent, board}) => {
       button = { ...button, text: "Match ended", disabled: true };
       break;
   }
+  const action = button.action;
+
+  useEffect(() => {
+    const spaceBar = (e: KeyboardEvent) => e.key === ' ' ? action() : console.log();
+    document.addEventListener('keydown', spaceBar);
+    return () => document.removeEventListener('keydown', spaceBar);
+  }, [action]);
 
   return (
     <div style={{ ...Styles.defaultCenter, ...zone.position() }}>

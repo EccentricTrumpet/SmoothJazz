@@ -31,7 +31,7 @@ const settings: { [id in Seat]: { turn: number, inset: Vector, side: Vector } } 
 interface Inputs { player: PlayerState; board: BoardState; parent: Zone; }
 export const PlayerZone: FC<Inputs> = ({player, board, parent}) => {
   const { turn, inset, side } = settings[player.seat];
-  const name = parent.inSet(inset.scale(2.5*MARGIN), Size.square(CARD_HEIGHT))
+  const name = parent.inSet(inset.scale(3.5*MARGIN), Size.square(CARD_HEIGHT))
     .midSet(new Size(CARD_HEIGHT, 3*MARGIN).turn(turn));
 
   const trickStatus = name.outSet(side.scale(-MARGIN), Size.square(3*MARGIN));
