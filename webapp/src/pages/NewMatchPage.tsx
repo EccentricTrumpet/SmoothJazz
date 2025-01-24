@@ -11,10 +11,7 @@ export default function NewMatchPage() {
 
   useEffect(() => {
     const savedOptions = cookie['shengji'];
-    setCookieState(new CookieState(
-      savedOptions?.['name'],
-      JSON.parse(savedOptions?.['debug'] || false)
-    ));
+    setCookieState(new CookieState(savedOptions));
   }, [cookie])
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +60,17 @@ export default function NewMatchPage() {
                   onChange={handleChange}
                 />
                 Debug mode
+              </label>
+              <label htmlFor="debug">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  id="logs"
+                  name="logs"
+                  checked={cookieState.logs}
+                  onChange={handleChange}
+                />
+                Game logs
               </label>
             </fieldset>
           </details>

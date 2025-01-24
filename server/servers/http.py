@@ -11,8 +11,7 @@ class MatchPost(MethodView):
         self.__match_service = match_service
 
     def post(self):
-        debug = bool(request.json["debug"])
-        return self.__match_service.create(debug).json()
+        return self.__match_service.create(request.json).json()
 
 
 class MatchGet(MethodView):

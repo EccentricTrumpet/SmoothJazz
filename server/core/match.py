@@ -5,28 +5,39 @@ from core.players import Players
 from core.updates import MatchPhase, MatchUpdate, PlayerUpdate
 
 
+class MatchSettings:
+    def __init__(self, json: dict) -> None:
+        self.seats = json["seats"] if "seats" in json else 4
+        self.debug = json["debug"] if "debug" in json else False
+        self.logs = json["logs"] if "logs" in json else False
+
+    def json(self) -> dict:
+        return {
+            "seats": self.seats,
+            "debug": self.debug,
+            "logs": self.logs,
+        }
+
+
 class MatchResponse(Response):
-    def __init__(self, id: int, debug: bool, seats: int, players: Players) -> None:
+    def __init__(self, id: int, settings, players: Players) -> None:
         self.__id = id
-        self.__debug = debug
-        self.__seats = seats
+        self.__settings = settings
         self.__players = players
 
     def json(self) -> dict:
         return {
             "id": self.__id,
-            "debug": self.__debug,
-            "seats": self.__seats,
+            "settings": self.__settings.json(),
             "players": self.__players.json(),
         }
 
 
 class Match:
-    def __init__(self, id: int, debug: bool, seats=4) -> None:
+    def __init__(self, id: int, settings: MatchSettings) -> None:
         # Inputs
         self.__id = id
-        self.__debug = debug
-        self.__seats = seats
+        self.__settings = settings
 
         # Private
         self.__phase = MatchPhase.CREATED
@@ -43,7 +54,7 @@ class Match:
             raise PlayerError("Invalid cards", "You don't have those cards.")
 
     def response(self) -> MatchResponse:
-        return MatchResponse(self.__id, self.__debug, self.__seats, self.players)
+        return MatchResponse(self.__id, self.__settings, self.players)
 
     def join(self, event: JoinEvent, room: Room) -> None:
         # Do not process join event if match if full or ended
@@ -53,12 +64,12 @@ class Match:
         self.__add_player(event.player_name, event.sid, room)
 
         # Add mock players for debug mode
-        if self.__debug and len(self.players) == 1:
-            for i in range(len(self.players), self.__seats):
+        if self.__settings.debug and len(self.players) == 1:
+            for i in range(len(self.players), self.__settings.seats):
                 self.__add_player(f"Mock{i}", event.sid, room)
 
         # Start the game if all players have joined
-        if len(self.players) == self.__seats:
+        if len(self.players) == self.__settings.seats:
             # In the first game, the bidder is the kitty player
             new_game = Game(self.players, room, self.players.first().pid, True)
             self.__games.append(new_game)
@@ -94,6 +105,6 @@ class Match:
 
     def next(self, event: PlayerEvent, room: Room) -> None:
         game = self.__games[-1]
-        if self.__debug or game.ready(event.pid):
+        if self.__settings.debug or game.ready(event.pid):
             new_game = Game(self.players, room, game.next_pid)
             self.__games.append(new_game)

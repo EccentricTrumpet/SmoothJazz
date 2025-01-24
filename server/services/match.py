@@ -2,7 +2,7 @@ from itertools import count
 from typing import Callable, Iterator
 
 from abstractions import CardsEvent, Event, JoinEvent, PlayerError, PlayerEvent, Room
-from core.match import Match, MatchResponse
+from core.match import Match, MatchResponse, MatchSettings
 
 
 class MatchService:
@@ -29,9 +29,9 @@ class MatchService:
         if event.pid in match.players:
             return self._try(event, Room(event), call(match))
 
-    def create(self, debug: bool) -> MatchResponse:
+    def create(self, json: dict) -> MatchResponse:
         match_id = next(self.__match_id)
-        new_match = Match(match_id, debug)
+        new_match = Match(match_id, MatchSettings(json))
         self.__matches[match_id] = new_match
         return new_match.response()
 

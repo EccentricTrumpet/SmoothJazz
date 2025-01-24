@@ -5,13 +5,24 @@ const SEATING: {[id: number]: Seat[]} = {
     4: [Seat.South, Seat.East, Seat.North, Seat.West]
 }
 
+class MatchSettings {
+    seats: number;
+    debug: boolean;
+    logs: boolean;
+
+    constructor(jsonObj?: any) {
+        this.seats =  jsonObj && "seats" in jsonObj ? Number(jsonObj["seats"]) : -1;
+        this.debug = jsonObj && "debug" in jsonObj ? Boolean(jsonObj["debug"]) : false;
+        this.logs = jsonObj && "logs" in jsonObj ? Boolean(jsonObj["logs"]) : false;
+    }
+}
+
 export const seatOf = (seat: number, southSeat: number, seats: number) =>
     SEATING[seats][(seat + seats - southSeat) % seats];
 
 export class MatchResponse {
     id = -1;
-    debug = false;
-    seats = -1;
+    settings = new MatchSettings();
     players: PlayerState[] = [];
 
     constructor(jsonText: string) {
@@ -20,8 +31,7 @@ export class MatchResponse {
 
         const jsonObj = JSON.parse(jsonText);
         this.id = Number(jsonObj["id"]);
-        this.debug = Boolean(jsonObj["debug"]);
-        this.seats = Number(jsonObj["seats"]);
+        this.settings = new MatchSettings(jsonObj.settings);
         const southSeat = jsonObj.players.length;
 
         for (let i = 0; i < southSeat; i++) {
@@ -30,7 +40,7 @@ export class MatchResponse {
                 Number(player.pid),
                 player.name,
                 Number(player.level),
-                seatOf(i, southSeat, this.seats)
+                seatOf(i, southSeat, this.settings.seats)
             ));
         }
     }
