@@ -30,7 +30,7 @@ export const STATUS_CODES: { [id: string]: { codepoint: number, description: str
 }
 
 // Debugging
-export const BACKGROUND = "rgba(255, 0, 0, 0)";
+export const BACKGROUND = "rgba(255, 0, 0, 0.0)";
 
 export class Styles {
     static readonly default = {

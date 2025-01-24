@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Manager, Socket } from "socket.io-client";
 import { Card, IControl } from "../abstractions";
@@ -10,7 +10,7 @@ import { BoardState, CardState, ErrorState, PlayerState, TrumpState } from "../a
 import {
   CardsUpdate, EndUpdate, ErrorUpdate, MatchUpdate, PlayerUpdate, StartUpdate, TeamUpdate
 } from "../abstractions/updates";
-import { CenterZone, ControlZone, Error, KittyZone, PlayerZone, TrumpZone } from "../components";
+import { CenterZone, ControlZone, Error, KittyZone, LogsZone, PlayerZone, TrumpZone } from "../components";
 import { CARD_SIZE, Styles } from "../Constants";
 
 function partition<T>(a: T[], cond: (e: T) => boolean) : [T[], T[]] {
@@ -24,7 +24,7 @@ export default function MatchPage() {
   const matchId = Number(id);
   const { state } = useLocation();
   const [name] = useState<string>(state?.name);
-  const [match] = useState(new MatchResponse(state?.match));
+  const match = useMemo(() => new MatchResponse(state?.match), [state]);
 
   // Redirect to join match if missing required match data
   useEffect(() => {
@@ -42,6 +42,7 @@ export default function MatchPage() {
   const [error, setError] = useState(new ErrorState());
   const [PID, setPID] = useState(-1);
   const [board, setBoard] = useState(new BoardState());
+  const [logs, setLogs] = useState([] as string[]);
   const [players, setPlayers] = useState(match?.players);
   const [socket, setSocket] = useState<Socket>();
 
@@ -88,16 +89,34 @@ export default function MatchPage() {
     const toCardDict = (cards: Card[]) =>
       cards.reduce((dict, card) => dict.set(card.id, card), new Map<number, Card>());
 
-    const playCards = (cards: Card[], winnerPID?: number) => {
-      const dict = toCardDict(cards);
+    const playCards = (update: CardsUpdate, message = "played") => {
+      const dict = toCardDict(update.cards);
+      const trickCompleted = update.score !== undefined;
 
-      setPlayers(prev => prev.map(player => {
-        const [play, hand] = partition(player.hand, card => dict.has(card.id));
-        play.forEach(card => card.update(dict.get(card.id)));
-        return player.update({ hand: hand, play: [...player.play, ...play] });
-      }));
+      setPlayers(prev => {
+        let winnerName = "";
+        const players = prev.map(player => {
+          if (trickCompleted && player.pid === update.nextPID)
+            winnerName = player.name;
+          if (player.pid !== update.pid)
+            return player;
 
-      setBoard(prev => prev.update({ winnerPID: winnerPID }));
+          const name = prev.find(player => player.pid === update.pid)?.name;
+          addLog(`${name} ${message} ${update.cards.map(c => c.toString()).join(", ")}`);
+          const [play, hand] = partition(player.hand, card => dict.has(card.id));
+          play.forEach(card => card.update(dict.get(card.id)));
+          return player.update({ hand: hand, play: [...player.play, ...play] });
+        });
+
+        setBoard(prev => {
+          if (update.score !== undefined)
+            addLog(`${winnerName} won the trick ${update.score! > prev.score
+              ? ` and scored ${update.score! - prev.score} points` : ""}`);
+          return prev.update({ winnerPID: update.hintPID })
+        });
+
+        return players;
+      });
     }
 
     const cleanupTrickAsync = async (score?: number, activePID?: number) => {
@@ -126,11 +145,15 @@ export default function MatchPage() {
           return player;
 
         player.play.forEach(card =>
-          card.reset({ suit: (!match.debug && player.pid !== thisPID) ? Suit.Unknown : card.suit }));
+          card.reset({ suit:
+            (!match.settings.debug && player.pid !== thisPID) ? Suit.Unknown : card.suit
+          }));
 
         return player.update({ hand: [...player.hand, ...player.play], play: [] });
       }));
     }
+
+    const addLog = (log: string) => setLogs(p => [...p, log].slice(Math.max(p.length - 5, 0)));
 
     // Messages
     socket.on("error", (obj) => {
@@ -143,6 +166,7 @@ export default function MatchPage() {
     socket.on("leave", (obj) => {
       console.log(`raw leave update: ${JSON.stringify(obj)}`);
       const update = new PlayerUpdate(obj);
+      addLog(`${update.name} has left the match`);
 
       if (update.PID === thisPID)
         navigate('/');
@@ -151,7 +175,7 @@ export default function MatchPage() {
         const newPlayers = prev.filter(player => player.pid !== update.PID);
         const southSeat = newPlayers.findIndex(player => player.pid === thisPID);
         for (let i = 0; i < newPlayers.length; i++)
-          newPlayers[i].seat = seatOf(i, southSeat, match.seats);
+          newPlayers[i].seat = seatOf(i, southSeat, match.settings.seats);
         return newPlayers;
       });
     });
@@ -159,6 +183,7 @@ export default function MatchPage() {
     socket.on("join", (obj) => {
       console.log(`raw join update: ${JSON.stringify(obj)}`);
       const update = new PlayerUpdate(obj);
+      addLog(`${update.name} has joined the match`);
 
       if (update.name === name && thisPID === -1) {
         thisPID = update.PID;
@@ -167,7 +192,7 @@ export default function MatchPage() {
 
       setPlayers(prev => {
         const south = update.PID === thisPID ? prev.length : prev.findIndex(p => p.pid === thisPID);
-        const seat = seatOf(prev.length, south, match.seats);
+        const seat = seatOf(prev.length, south, match.settings.seats);
         return [...prev, new PlayerState(update.PID, update.name, update.level, seat)];
       });
     });
@@ -175,12 +200,15 @@ export default function MatchPage() {
     socket.on("team", (obj) => {
       console.log(`raw team update: ${JSON.stringify(obj)}`);
       const update = new TeamUpdate(obj);
-      setBoard(prev => prev.update({ kittyPID: update.kittyPID, defenders: update.defenders }));
+      setBoard(prev => {
+        return prev.update({ kittyPID: update.kittyPID, defenders: update.defenders });
+      });
     });
 
     socket.on("start", (obj) => {
       console.log(`raw start update: ${JSON.stringify(obj)}`);
       const update = new StartUpdate(obj);
+      addLog(`Level ${update.rank} game started`);
 
       setPlayers(prev => prev.map(player => player.update({ play: [] })));
       setBoard(prev => prev.update({
@@ -194,7 +222,9 @@ export default function MatchPage() {
 
     socket.on("match", (obj) => {
       console.log(`raw match update: ${JSON.stringify(obj)}`);
-      setBoard(prev => prev.update({match: new MatchUpdate(obj).phase}));
+      const update = new MatchUpdate(obj);
+      addLog(`Match ${MatchPhase[update.phase].toLowerCase()}`);
+      setBoard(prev => prev.update({match: update.phase}));
     });
 
     socket.on("draw", (obj) => {
@@ -222,9 +252,11 @@ export default function MatchPage() {
       console.log(`raw bid update: ${JSON.stringify(obj)}`);
       const update = new CardsUpdate(obj);
 
-      playCards(update.cards);
+      playCards(update, "made a bid of");
       withdrawPlaying(update.pid);
-      setBoard(prev => prev.update({ trump: prev.trump.update(update.cards[0].suit) }));
+      setBoard(prev => {
+        return prev.update({ trump: prev.trump.update(update.cards[0].suit) })
+      });
     });
 
     socket.on("kitty", (obj) => {
@@ -249,12 +281,14 @@ export default function MatchPage() {
       const update = new CardsUpdate(obj);
 
       // Play cards
-      playCards(update.cards, update.hintPID);
+      playCards(update);
 
       // Update states according to trick completion
-      update.score === undefined
-        ? setBoard(prev => prev.update({activePID: update.nextPID}))
-        : await cleanupTrickAsync(update.score, update.nextPID);
+      if (update.score === undefined) {
+        setBoard(prev => prev.update({activePID: update.nextPID}));
+      } else {
+        await cleanupTrickAsync(update.score, update.nextPID);
+      }
     });
 
     socket.on("end", async (obj) => {
@@ -262,7 +296,7 @@ export default function MatchPage() {
       const update = new EndUpdate(obj);
 
       // Play cards
-      playCards(update.play.cards, update.play.hintPID);
+      playCards(update.play);
 
       // Cleanup trick
       await cleanupTrickAsync(update.play.score);
@@ -273,13 +307,21 @@ export default function MatchPage() {
       setBoard(prev => {
         prev.kitty.forEach(card => card.update(kittyCards.get(card.id)));
 
-        setPlayers(prevPlayers => prevPlayers.map(player => player.update({
-          level: update.levels.get(player.pid),
-          play: player.pid === update.kitty.pid ? prev.kitty : player.play
-        })));
+        setPlayers(prevPlayers => prevPlayers.map(player => {
+          if (player.pid === update.kitty.pid) {
+            const name = prevPlayers.find(player => player.pid === update.kitty.pid)?.name;
+            addLog(`${name}'s kitty was ${update.kitty.cards.map(c => c.toString()).join(", ")}`);
+            addLog(`${prev.defenders.includes(update.kitty.nextPID!) ? "Defenders" : "Attackers"}
+              won with a final score of ${update.kitty.score}`);
+          }
+          return player.update({
+            level: update.levels.get(player.pid),
+            play: player.pid === update.kitty.pid ? prev.kitty : player.play
+          })
+        }));
 
         return prev.update({
-          kitty: [],activePID: update.kitty.nextPID,game: GamePhase.End,score: update.kitty.score
+          kitty: [], activePID: update.kitty.nextPID, game: GamePhase.End, score: update.kitty.score
         });
       });
     });
@@ -304,7 +346,7 @@ export default function MatchPage() {
   }, [socket, name, matchId, match, navigate]);
 
   class Control implements IControl {
-    private pid = () => match.debug ? board.activePID : PID;
+    private pid = () => match.settings.debug ? board.activePID : PID;
     private picked = () => players.find(p => p.pid === this.pid())?.hand
       ?.filter(c => c.next.picked)?.map(c => c.card()) ?? [];
 
@@ -316,8 +358,10 @@ export default function MatchPage() {
       setBoard(prev => prev.update({game: GamePhase.Waiting}));
       socket?.emit("next", new PlayerEvent(matchId, this.pid()));
     };
-    pick = (picked: CardState) => setPlayers(players.map(p => p.update({ hand: p.hand.map(c =>
-      c.reset({ picked: (c.id === picked.id && (match.debug || p.pid === PID)) !== c.next.picked })
+    pick = (picked: CardState) => setPlayers(players.map(player => player.update({
+      hand: player.hand.map(card => card.reset({ picked:
+        (card.id === picked.id && (match.settings.debug || player.pid === PID)) !== card.next.picked
+      })
     )})));
     play = () => {
       // Reset highlights
@@ -335,6 +379,7 @@ export default function MatchPage() {
       <ControlZone parent={zone} board={board} />
       <CenterZone board={board} deck={deck} />
       <KittyZone board={board} deck={deck} />
+      { match.settings.logs && <LogsZone logs={logs} deck={deck} /> }
       <AnimatePresence initial={false} mode="wait">
         { error.show && <Error error={error} onClose={() => setError(new ErrorState())} /> }
       </AnimatePresence>
