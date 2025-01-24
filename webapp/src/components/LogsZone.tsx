@@ -10,7 +10,7 @@ export const LogsZone: FC<{ logs: string[]; deck: Zone; }> = ({logs, deck}) => {
     <motion.div whileHover={{ height: "auto" }} style={{
       ...Styles.default,
       ...zone.position(),
-      backgroundColor: "var(--primary-focus)",
+      backgroundColor: "var(--muted-border-color)",
       borderRadius: MARGIN,
       borderStyle: "solid",
       overflow: "hidden",

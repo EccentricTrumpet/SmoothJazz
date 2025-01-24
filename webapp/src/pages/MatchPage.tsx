@@ -310,7 +310,7 @@ export default function MatchPage() {
         setPlayers(prevPlayers => prevPlayers.map(player => {
           if (player.pid === update.kitty.pid) {
             const name = prevPlayers.find(player => player.pid === update.kitty.pid)?.name;
-            addLog(`${name} hid kitty ${update.kitty.cards.map(c => c.toString()).join(", ")}`);
+            addLog(`${name}'s kitty was ${update.kitty.cards.map(c => c.toString()).join(", ")}`);
             addLog(`${prev.defenders.includes(update.kitty.nextPID!) ? "Defenders" : "Attackers"}
               won with a final score of ${update.kitty.score}`);
           }
